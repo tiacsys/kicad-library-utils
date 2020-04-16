@@ -153,11 +153,15 @@ class Component(object):
         for line in data:
             checksum_data += line.strip()
             line = line.replace('\n', '')
-            s = shlex.shlex(line)
-            s.whitespace_split = True
-            s.commenters = ''
-            s.quotes = '"'
-            line = list(s)
+            if '\\"' in line:
+                import re
+                line = re.findall(r'(?:[^\s,"]|"(?:\\.|[^"])*")+', line)
+            else:
+                s = shlex.shlex(line)
+                s.whitespace_split = True
+                s.commenters = ''
+                s.quotes = '"'
+                line = list(s)
 
             if len(line) == 0:
                 continue
