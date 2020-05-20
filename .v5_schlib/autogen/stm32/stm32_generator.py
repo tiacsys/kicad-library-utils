@@ -6,6 +6,8 @@ import math
 import os
 import re
 import sys
+import multiprocessing
+from itertools import repeat
 
 from lxml import etree
 
@@ -344,9 +346,8 @@ class Device:
                 f"{{ram}}KB RAM, {freqstr}{voltstr}{self.io} GPIO, "
                 f"{pkgstr}")
         keywords = f"{self.core} {self.family} {self.line}"
-        datasheet = "" if self.pdf is None else (f"http://www.st.com/"
-                f"st-web-ui/static/active/en/resource/technical/document/"
-                f"datasheet/{self.pdf}")
+        datasheet = "" if self.pdf is None else (f"https://www.st.com/"
+                f"resource/en/datasheet/{self.pdf}")
 
         # Make the symbol
         self.symbol = gen.addSymbol(self.name, dcm_options={
@@ -670,6 +671,13 @@ class Device:
                 visibility=SymbolField.FieldVisibility.INVISIBLE)
 
 
+def run_pdf2txt(pdffile, pdfdir):
+    pdffile = os.path.join(pdfdir, pdffile)
+    pdfparsedfile = pdffile + ".par"
+    if not os.path.isfile(pdfparsedfile) and pdffile.endswith(".pdf"):
+        logging.info(f"Converting: {pdffile}")
+        os.system("pdf2txt.py -o " + pdfparsedfile + " " + pdffile)
+
 def main():
     parser = argparse.ArgumentParser(
             description='Generator for STM32 microcontroller symbols')
@@ -696,28 +704,25 @@ def main():
 
     # Parse text from PDFs
     for _, _, filenames in os.walk(args.pdfdir):
-        for pdffile in filenames:
-            pdffile = os.path.join(args.pdfdir, pdffile)
-            pdfparsedfile = pdffile + ".par"
-            if not os.path.isfile(pdfparsedfile) and pdffile.endswith(".pdf"):
-                logging.info(f"Converting: {pdffile}")
-                os.system("pdf2txt.py -o " + pdfparsedfile + " " + pdffile)
-        break
+        filenames.sort()
+        with multiprocessing.Pool() as pool:
+            pool.starmap(run_pdf2txt, zip(filenames, repeat(args.pdfdir)))
 
     # Load devices from XML, sorted by family
     libraries = {}
     for _, _, filenames in os.walk(args.xmldir):
         filenames.sort()
         for xmlfile in filenames:
-            # Load information about the part(s)
-            mcu = Device(os.path.join(args.xmldir, xmlfile), args.pdfdir)
-            # If there isn't a SymbolGenerator for this family yet, make one
-            if mcu.family not in libraries:
-                libraries[mcu.family] = SymbolGenerator(
-                        lib_name=f"MCU_ST_{mcu.family}")
-            # If the part has a datasheet PDF, make a symbol for it
-            if mcu.pdf is not None:
-                mcu.create_symbol(libraries[mcu.family])
+            if xmlfile.startswith("STM"):
+                # Load information about the part(s)
+                mcu = Device(os.path.join(args.xmldir, xmlfile), args.pdfdir)
+                # If there isn't a SymbolGenerator for this family yet, make one
+                if mcu.family not in libraries:
+                    libraries[mcu.family] = SymbolGenerator(
+                            lib_name=f"MCU_ST_{mcu.family}")
+                # If the part has a datasheet PDF, make a symbol for it
+                if mcu.pdf is not None:
+                    mcu.create_symbol(libraries[mcu.family])
         break
 
     # Write libraries
