@@ -45,7 +45,7 @@ class Rule(KLCRule):
             self.error("footprint name (in file) was '{0}', but expected (from filename) '{1}'.\n".format(module.name, os.path.splitext(os.path.basename(module.filename))[0]))
             err = True
 
-        if module.value['value'] != module.name:
+        if str(module.value['value']) != module.name:
             self.error("Value label '{lbl}' does not match filename '{fn}'".format(
                 lbl=module.value['value'],
                 fn = module.name))

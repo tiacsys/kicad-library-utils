@@ -22,7 +22,7 @@ class Rule(KLCRule):
             self.error("Missing 'value' field")
             return True
 
-        if not val['value'] == mod.name:
+        if not str(val['value']) == mod.name:
             errors.append("Value text should match footprint name:")
             errors.append("Value text is '{v}', expected: '{n}'".format(
                 v = val['value'],
