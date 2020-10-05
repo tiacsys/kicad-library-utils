@@ -39,7 +39,7 @@ class Rule(KLCRule):
                     self.error(fp_desc + "must be set to invisible.")
 
                 # Footprint field should be of the format "Footprint_Library:Footprint_Name"
-                if fp_name.count(":") != 1 or fp_name.startswith(":") or fp_name.endswith(":"):
+                if fp_name.count(":") is not 1 or fp_name.startswith(":") or fp_name.endswith(":"):
                     fail = True
                     self.error(fp_desc + "must be of the format '<Library>:<Footprint>'")
 

@@ -1,0 +1,17 @@
+image: python:latest
+  
+before_script:
+  - python -V
+
+symbol_rulechecker:
+  only:
+    refs:
+      - merge_requests
+    changes:
+      - "schlib/*"
+      - "schlib/test/*"
+  script:
+    - python schlib/check_kicad_sym.py -u schlib/test/*
+  artifacts:
+    reports:
+      metrics: metrics.txt

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from rules.rule import *
-import math
 
 
 class Rule(KLCRule):
-    v6 = True
     """
     Create the methods check and fix to use with the kicad lib files.
     """
@@ -20,33 +18,29 @@ class Rule(KLCRule):
         """
 
         # no checks for power-symbols or graphical symbols:
-        if self.component.is_power_symbol() or self.component.is_graphic_symbol():
+        if self.component.isPowerSymbol() or self.component.isGraphicSymbol():
             return False
 
         rectangle_need_fix = False
         # check if component has just one rectangle, if not, skip checking
-        self.n_rectangles = len(self.component.rectangles)
+        self.n_rectangles = len(self.component.draw['rectangles'])
         if self.n_rectangles != 1:
             return False
-        r0 = self.component.rectangles[0]
 
-        if self.component.is_small_component_heuristics():
-            if (not math.isclose(r0.stroke_width, self.mil_to_mm(10))):
-                self.warning("Component outline is thickness {0}mil, recommended is {1}mil for standard symbol".format(self.mm_to_mil(r0.stroke_width), 10))
+        if self.component.isSmallComponentHeuristics():
+            if (self.component.draw['rectangles'][0]['thickness'] != '10'):
+                self.warning("Component outline is thickness {0}mil, recommended is {1}mil for standard symbol".format(self.component.draw['rectangles'][0]['thickness'], 10))
                 self.warningExtra("exceptions are allowed for small symbols like resistor, transistor, ...")
                 rectangle_need_fix = False
         else:
-            if (not math.isclose(r0.stroke_width, self.mil_to_mm(10))):
-                self.error("Component outline is thickness {0}mil, recommended is {1}mil".format(self.mm_to_mil(r0.stroke_width), 10))
+            if (self.component.draw['rectangles'][0]['thickness'] != '10'):
+                self.error("Component outline is thickness {0}mil, recommended is {1}mil".format(self.component.draw['rectangles'][0]['thickness'], 10))
                 rectangle_need_fix = True
 
-        if (r0.fill_type != 'background'):
-            msg = "Component background is filled with {0} color, recommended is filling with {1} color".format(r0.fill_type, 'background')
-            if self.component.is_small_component_heuristics():
-                self.warning(msg)
+        if (self.component.draw['rectangles'][0]['fill'] != 'f'):
+            self.warning("Component background is filled with {0} color, recommended is filling with {1} color".format(backgroundFillToStr(self.component.draw['rectangles'][0]['fill']), backgroundFillToStr('f')))
+            if self.component.isSmallComponentHeuristics():
                 self.warningExtra("exceptions are allowed for small symbols like resistor, transistor, ...")
-            else:
-              self.error(msg)
             rectangle_need_fix = True
 
         return True if rectangle_need_fix else False
@@ -55,4 +49,8 @@ class Rule(KLCRule):
         """
         Proceeds the fixing of the rule, if possible.
         """
-        return False
+        self.info("Fixing...")
+        self.component.draw['rectangles'][0]['thickness'] = '10'
+        self.component.draw['rectangles'][0]['fill'] = 'f'
+
+        self.recheck()

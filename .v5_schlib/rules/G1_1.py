@@ -5,7 +5,6 @@ import string
 
 
 class Rule(KLCRule):
-    v6 = True
     """
     Create the methods check and fix to use with the kicad lib files.
     """

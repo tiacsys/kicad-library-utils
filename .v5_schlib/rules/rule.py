@@ -59,7 +59,7 @@ def backgroundFillToStr(bgFill):
 def pinString(pin, loc=True, unit=None, convert=None):
     return "Pin {name} ({num}){loc}{unit}".format(
         name=pin['name'],
-        num=pin['number'],
+        num=pin['num'],
         loc=' @ ({x},{y})'.format(x=pin['posx'], y=pin['posy']) if loc else '',
         unit=' in unit {n}'.format(n=unit) if unit else '')
 
@@ -79,14 +79,9 @@ class KLCRule(KLCRuleBase):
     """
 
     verbosity = 0
-    v6 = False
 
     def __init__(self, component, description):
+
         KLCRuleBase.__init__(self, description)
+
         self.component = component
-
-    def mil_to_mm(self, mil):
-      return mil * 0.0254
-
-    def mm_to_mil(self, mm):
-      return mm / 0.0254
