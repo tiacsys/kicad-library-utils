@@ -89,4 +89,4 @@ class KLCRule(KLCRuleBase):
       return mil * 0.0254
 
     def mm_to_mil(self, mm):
-      return mm / 0.0254
+      return round(mm / 0.0254)

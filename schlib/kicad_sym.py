@@ -23,7 +23,6 @@ def _parse_at(i):
       rot = None
     return (posx, posy, rot)
 
-
 def _get_array(data, value, result=None, level=0, max_level=None):
     """return the array which has value as first element"""
     if result is None: result = []
@@ -41,7 +40,6 @@ def _get_array(data, value, result=None, level=0, max_level=None):
                 result.append(data)
     return result
 
-
 def _get_array2(data, value):
     ret = []
     for i in data:
@@ -49,11 +47,45 @@ def _get_array2(data, value):
             ret.append(i)
     return ret
 
+def _get_color(sexpr):
+    col = None
+    for i in sexpr:
+        if type(i) == type([]) and i[0] == 'color':
+            col = Color(i[1], i[2], i[3], i[4])
+    return col
+
+
+def _get_stroke(sexpr):
+    width = None
+    col = None
+    for i in sexpr:
+        if type(i) == type([]) and i[0] == 'stroke':
+            width = _get_value_of(i, 'width')
+            col = _get_color(i)
+            break
+    return (width, col)
+
+def _get_fill(sexpr):
+    fill = None
+    col = None
+    for i in sexpr:
+        if type(i) == type([]) and i[0] == 'fill':
+            fill = _get_value_of(i, 'type')
+            col = _get_color(i)
+            break
+    return (fill, col)
+
+def _get_xy(sexpr, lookup):
+    for i in sexpr:
+        if type(i) == type([]) and i[0] == lookup:
+            return (i[1], i[2])
+    return (0, 0)
+
 def _get_value_ofRecursively(data, path, item_to_get=False):
     """return the array which has value as first element, but recursively
 
         if item_to_get is != 0, return the array element with that index
-        """
+    """
     # if we walked the whole path we are done. return the data
     if len(path) == 0:
         # in some cases it is usefull to only get the 2nd item, for
@@ -77,23 +109,21 @@ def _get_value_of(data, lookup):
     return None
 
 
-##
-########
-###
-
-
 class KicadSymbolBase(object):
     def as_json(self):
       return json.dumps(self, default=lambda x: x.__dict__, indent=2)
 
 @dataclass
 class Color(KicadSymbolBase):
+    """Encode the color of an entiry. Currently not used in the kicad_sym format"""
     r: int
     g: int
     b: int
     a: int
+
 @dataclass
 class TextEffect(KicadSymbolBase):
+    """Encode the text effect of an entiry"""
     sizex: float
     sizey: float
     is_italic: bool = False
@@ -142,6 +172,7 @@ class TextEffect(KicadSymbolBase):
             if 'left' in justify[0]: h_justify = 'left'
             if 'right' in justify[0]: h_justify = 'right'
         return TextEffect(sizex, sizey, is_italic, is_bold, is_hidden, is_mirrored, h_justify, v_justify)
+
 @dataclass
 class Pin(KicadSymbolBase):
     name: str
@@ -209,44 +240,6 @@ class Pin(KicadSymbolBase):
                    unit = unit,
                    is_hidden=is_hidden,
                    is_global=is_global)
-
-
-
-
-def _get_color(sexpr):
-    col = None
-    for i in sexpr:
-        if type(i) == type([]) and i[0] == 'color':
-            col = Color(i[1], i[2], i[3], i[4])
-    return col
-
-
-def _get_stroke(sexpr):
-    width = None
-    col = None
-    for i in sexpr:
-        if type(i) == type([]) and i[0] == 'stroke':
-            width = _get_value_of(i, 'width')
-            col = _get_color(i)
-            break
-    return (width, col)
-
-
-def _get_fill(sexpr):
-    fill = None
-    col = None
-    for i in sexpr:
-        if type(i) == type([]) and i[0] == 'fill':
-            fill = _get_value_of(i, 'type')
-            col = _get_color(i)
-            break
-    return (fill, col)
-
-def _get_xy(sexpr, lookup):
-    for i in sexpr:
-        if type(i) == type([]) and i[0] == lookup:
-            return (i[1], i[2])
-    return (0, 0)
 
 @dataclass
 class Circle(KicadSymbolBase):
@@ -367,8 +360,6 @@ class Polyline(KicadSymbolBase):
         (fill, fcolor) = _get_fill(sexpr)
         return Polyline(pts, stroke, scolor, fill, fcolor, unit=unit)
 
-
-
 @dataclass
 class Text(KicadSymbolBase):
     text: str
@@ -418,6 +409,11 @@ class Rectangle(KicadSymbolBase):
             ['fill', ['type', s.fill_type]]
         ]
         return sx
+
+    def get_center(s):
+        x = (s.endx + s.startx)  / 2
+        y = (s.endy + s.starty) / 2
+        return (x, y)
 
     @classmethod
     def from_sexpr(cls, sexpr, unit):
@@ -480,8 +476,8 @@ class KicadSymbol(KicadSymbolBase):
 
     def get_property(self, pname):
         for p in self.properties:
-            if p['property'] == pname:
-                return p['value']
+            if p.name == pname:
+                return p.value
         return None
 
     def is_graphic_symbol(self):
@@ -490,6 +486,9 @@ class KicadSymbol(KicadSymbolBase):
 
     def is_power_symbol(self):
         return self.is_power
+
+    def is_locked(self):
+      return self.get_property('ki_locked') != None
 
     def does_extend(self):
         return does_extend

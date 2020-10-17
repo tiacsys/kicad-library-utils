@@ -5,6 +5,7 @@ import math
 
 
 class Rule(KLCRule):
+    v6 = True
     """
     Create the methods check and fix to use with the kicad lib files.
     """
@@ -17,31 +18,28 @@ class Rule(KLCRule):
         single filled rectangle is present) or on pin positions.
         """
 
-        # Check units separately if they have different drawing ("units_locked")
-        units_locked = self.component.definition['units_locked'] == 'L'
-        unit_count = int(self.component.definition['unit_count']) if units_locked else 1
+        # Check units separately
+        unit_locked = self.component.is_locked()
+        unit_count = self.component.unit_count
 
-        for unit in range(1, unit_count+1):
+        for unit in range(1, unit_count + 1):
             # If there is only a single filled rectangle, we assume that it is the
             # main symbol outline.
-            drawing = self.component.draw
-            filled_rects = [rect for rect in drawing['rectangles']
-                            if ((not units_locked) or (int(rect['unit']) == unit)) and (rect['fill'] == 'f')]
+            # TODO this will change once rects are replaced with polylines
+            filled_rects = [rect for rect in self.component.rectangles
+                            if ((rect.unit in [unit, 0])) and (rect.fill_type == 'background')]
             if len(filled_rects) == 1:
-                # We now find it's center
-                rect = filled_rects[0]
-                x = (int(rect['startx']) + int(rect['endx'])) // 2
-                y = (int(rect['starty']) + int(rect['endy'])) // 2
+                (x, y) = filled_rects[0].get_center()
             else:
                 pins = [pin for pin in self.component.pins
-                        if (not units_locked) or (int(pin['unit']) == unit)]
+                        if (pin.unit in [unit, 0])]
 
                 # No pins? Ignore check.
                 # This can be improved to include graphical items too...
                 if len(pins) == 0:
                     continue
-                x_pos = [int(pin['posx']) for pin in pins]
-                y_pos = [int(pin['posy']) for pin in pins]
+                x_pos = [pin.posx for pin in pins]
+                y_pos = [pin.posy for pin in pins]
                 x_min = min(x_pos)
                 x_max = max(x_pos)
                 y_min = min(y_pos)
@@ -51,18 +49,20 @@ class Rule(KLCRule):
                 x = (x_min + x_max) / 2
                 y = (y_min + y_max) / 2
 
+            # convert to mil
+            x = self.mm_to_mil(x)
+            y = self.mm_to_mil(y)
             # Right on the middle!
             if x == 0 and y == 0:
                 continue
             elif math.fabs(x) <= 50 and math.fabs(y) <= 50:
-                self.info("Symbol unit {unit} slightly off-center".format(unit=unit))
-                self.info("  Center calculated @ ({x}, {y})".format(x=x, y=y))
+                self.warning("Symbol unit {unit} slightly off-center".format(unit=unit))
+                self.warningExtra("  Center calculated @ ({x}, {y})".format(x=x, y=y))
             else:
-                self.warning("Symbol unit {unit} not centered on origin".format(unit=unit))
-                self.warningExtra("Center calculated @ ({x}, {y})".format(x=x, y=y))
+                self.error("Symbol unit {unit} not centered on origin".format(unit=unit))
+                self.errorExtra("Center calculated @ ({x}, {y})".format(x=x, y=y))
 
         return False
 
     def fix(self):
-
-        self.recheck()
+        return False
