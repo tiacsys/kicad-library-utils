@@ -86,7 +86,7 @@ def do_rulecheck(symbol, rules, metrics):
     metrics.append('{l}.{p}.errors={n}'.format(l=symbol.libname, p=symbol.name, n=symbol_error_count))
     return(symbol_error_count, symbol_warning_count)
 
-def check_library(filename, rules, metrics):
+def check_library(filename, rules, metrics, args):
     error_count  = 0
     warning_count = 0
     if not os.path.exists(filename):
@@ -102,11 +102,19 @@ def check_library(filename, rules, metrics):
     except Exception as e:
         printer.red('could not parse library: %s' % filename)
         if args.verbose:
-            #printer.red("Error: " + str(e))
+            printer.red("Error: " + str(e))
             traceback.print_exc()
         return (1,0)
 
     for symbol in library.symbols:
+        if args.component:
+            if args.component.lower() != symbol.name.lower():
+                continue
+
+        if args.pattern:
+            if not re.search(args.pattern, symbol.name, flags=re.IGNORECASE):
+                continue
+
         # check which kind of tests we want to run
         if args.unittest:
             (ec, wc) = do_unittest(symbol, rules, metrics)
@@ -177,7 +185,7 @@ metrics = []
 error_count = 0
 warning_count = 0
 for filename in files:
-    (ec, wc) = check_library(filename, rules, metrics)
+    (ec, wc) = check_library(filename, rules, metrics, args)
     error_count += ec
     warning_count += wc
 
