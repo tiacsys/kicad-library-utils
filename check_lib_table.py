@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 This script checks the validity of a library table against existing libraries
@@ -11,12 +11,9 @@ It is important that the official libraries match the entries in these tables.
 
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys
-
 from lib_table import LibTable
 
 parser = argparse.ArgumentParser(description='Compare a sym-lib-table file against a list of .lib library files')
