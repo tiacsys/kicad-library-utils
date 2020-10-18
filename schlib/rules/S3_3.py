@@ -16,38 +16,37 @@ class Rule(KLCRule):
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
-            * n_rectangles
+            * center_rect_polyline
         """
 
         # no checks for power-symbols or graphical symbols:
         if self.component.is_power_symbol() or self.component.is_graphic_symbol():
             return False
 
-        rectangle_need_fix = False
         # check if component has just one rectangle, if not, skip checking
-        self.n_rectangles = len(self.component.rectangles)
-        if self.n_rectangles != 1:
+        center_rect_polyline = self.component.get_center_rectangle(range(self.component.unit_count))
+        if center_rect_polyline == None:
             return False
-        r0 = self.component.rectangles[0]
 
+        rectangle_need_fix = False
         if self.component.is_small_component_heuristics():
-            if (not math.isclose(r0.stroke_width, self.mil_to_mm(10))):
-                self.warning("Component outline is thickness {0}mil, recommended is {1}mil for standard symbol".format(self.mm_to_mil(r0.stroke_width), 10))
+            if (not math.isclose(center_rect_polyline.stroke_width, self.mil_to_mm(10))):
+                self.warning("Component outline is thickness {0}mil, recommended is {1}mil for standard symbol".format(self.mm_to_mil(center_rect_polyline.stroke_width), 10))
                 self.warningExtra("exceptions are allowed for small symbols like resistor, transistor, ...")
                 rectangle_need_fix = False
         else:
-            if (not math.isclose(r0.stroke_width, self.mil_to_mm(10))):
-                self.error("Component outline is thickness {0}mil, recommended is {1}mil".format(self.mm_to_mil(r0.stroke_width), 10))
+            if (not math.isclose(center_rect_polyline.stroke_width, self.mil_to_mm(10))):
+                self.error("Component outline is thickness {0}mil, recommended is {1}mil".format(self.mm_to_mil(center_rect_polyline.stroke_width), 10))
                 rectangle_need_fix = True
 
-        if (r0.fill_type != 'background'):
-            msg = "Component background is filled with {0} color, recommended is filling with {1} color".format(r0.fill_type, 'background')
+        if (center_rect_polyline.fill_type != 'background'):
+            msg = "Component background is filled with {0} color, recommended is filling with {1} color".format(center_rect_polyline.fill_type, 'background')
             if self.component.is_small_component_heuristics():
                 self.warning(msg)
                 self.warningExtra("exceptions are allowed for small symbols like resistor, transistor, ...")
             else:
               self.error(msg)
-            rectangle_need_fix = True
+              rectangle_need_fix = True
 
         return True if rectangle_need_fix else False
 

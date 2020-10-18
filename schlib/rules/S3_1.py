@@ -25,11 +25,9 @@ class Rule(KLCRule):
         for unit in range(1, unit_count + 1):
             # If there is only a single filled rectangle, we assume that it is the
             # main symbol outline.
-            # TODO this will change once rects are replaced with polylines
-            filled_rects = [rect for rect in self.component.rectangles
-                            if ((rect.unit in [unit, 0])) and (rect.fill_type == 'background')]
-            if len(filled_rects) == 1:
-                (x, y) = filled_rects[0].get_center()
+            center_pl = self.component.get_center_rectangle([0, unit])
+            if center_pl != None:
+                (x, y) = center_pl.get_center_of_boundingbox()
             else:
                 pins = [pin for pin in self.component.pins
                         if (pin.unit in [unit, 0])]

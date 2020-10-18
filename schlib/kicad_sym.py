@@ -346,6 +346,40 @@ class Polyline(KicadSymbolBase):
         ]
         return sx
 
+    def is_closed(s):
+        # if the last and first point are the same, we consider the polyline closed
+        # a closed triangle will have 4 points (A-B-C-A) stored in the list of points
+        return len(s.pts) > 3 and s.pts[0].__eq__(s.pts[-1])
+
+    def get_center_of_boundingbox(s):
+        (minx, maxx, miny, maxy) = (0, 0, 0, 0)
+        for p in s.pts:
+            minx = min(minx, p.x)
+            maxx = max(maxx, p.x)
+            miny = min(miny, p.y)
+            maxy = max(maxy, p.y)
+        return ((minx + maxx) / 2, ((miny + maxy) / 2))
+
+    def is_rectangle(s):
+        # a rectangle has 5 points and is closed
+        if len(s.pts) != 5 or not s.is_closed():
+            return False
+
+        # construct lines between the points
+        p0 = s.pts[0]
+        for p1_idx in range(1, len(s.pts)):
+            p1 = s.pts[p1_idx]
+            dx = p1.x - p0.x
+            dy = p1.y - p0.y
+            if dx != 0 and dy != 0:
+                # if a line is neither horizontal or vertical its not
+                # part of a rectangle
+                return False
+            # select next point
+            p0 = p1
+
+        return True
+
     @classmethod
     def from_sexpr(cls, sexpr, unit):
         sexpr_orig = sexpr.copy()
@@ -391,6 +425,8 @@ class Text(KicadSymbolBase):
 
 @dataclass
 class Rectangle(KicadSymbolBase):
+    """Some v6 symbols use rectangles, newer ones encode them as polylines.
+       At some point in time we can most likely remove this class since its not used anymore"""
     startx: float
     starty: float
     endx: float
@@ -409,6 +445,16 @@ class Rectangle(KicadSymbolBase):
             ['fill', ['type', s.fill_type]]
         ]
         return sx
+
+    def as_polyline(s):
+        pts = [
+            Point(s.startx, s.starty),
+            Point(s.endx, s.starty),
+            Point(s.endx, s.endy),
+            Point(s.startx, s.endy),
+            Point(s.startx, s.starty),
+        ]
+        return Polyline(pts, s.stroke_width, s.stroke_color, s.fill_type, s.fill_color, unit=s.unit)
 
     def get_center(s):
         x = (s.endx + s.startx)  / 2
@@ -466,13 +512,30 @@ class KicadSymbol(KicadSymbolBase):
     pins: List[Pin] = field(default_factory=list)
     circles: List[Circle] = field(default_factory=list)
     arcs: List[Arc] = field(default_factory=list)
-    rectangles: List[Rectangle] = field(default_factory=list)
     polylines: List[Polyline] = field(default_factory=list)
     texts: List[Text] = field(default_factory=list)
     is_power: bool = False
     extends: str = None
     unit_count: int = 0
     demorgan_count: int = 0
+
+
+    def get_center_rectangle(s, units: List):
+        # return a polyline for the requested unit that is a rectangle
+        # and is closest to the center
+        candidates = {}
+        # building a dict with floats as keys.. there needs to be a rule against that^^
+        for pl in s.polylines:
+          if pl.unit in units and pl.is_rectangle():
+            # extract the center, calculate the distance to origin
+            (x, y) = pl.get_center_of_boundingbox()
+            dist = math.sqrt(x*x + y*y)
+            candidates[dist] = pl
+
+        if len(candidates) > 0:
+            # sort the list return the first (smalles) item
+            return candidates[sorted(candidates.keys())[0]]
+        return None
 
     def get_property(self, pname):
         for p in self.properties:
@@ -523,11 +586,7 @@ class KicadSymbol(KicadSymbolBase):
         if len(self.pins) <= 2:
             return True
 
-        # If there is only a single filled rectangle, we assume that it is the
-        # main symbol outline.
-        filled_rects = [
-            rect for rect in self.rectangles if rect.fill_type == 'background'
-        ]
+        filled_rects = self.get_center_rectangle(range(self.unit_count))
 
         # if there is no filled rectangle as symbol outline and we have 3 or 4 pins, we assume this
         # is a small symbol
@@ -609,7 +668,7 @@ class KicadLibrary(KicadSymbolBase):
                 for arc in _get_array(item, 'arc'):
                     symbol.arcs.append(Arc.from_sexpr(arc, unit))
                 for rect in _get_array(item, 'rectangle'):
-                    symbol.rectangles.append(Rectangle.from_sexpr(rect, unit))
+                    symbol.polylines.append(Rectangle.from_sexpr(rect, unit).as_polyline())
                 for poly in _get_array(item, 'polyline'):
                     symbol.polylines.append(Polyline.from_sexpr(poly, unit))
                 for text in _get_array(item, 'text'):
