@@ -13,7 +13,7 @@ class Rule(KLCRule):
 
     def check(self):
 
-        offset = self.mm_to_mil(self.component.pin_names_offset)
+        offset = mm_to_mil(self.component.pin_names_offset)
 
         if self.component.hide_pin_names == True:
             # If the pin names aren't drawn, the offset doesn't matter.
@@ -43,6 +43,6 @@ class Rule(KLCRule):
         Proceeds the fixing of the rule, if possible.
         """
         self.info("Fixing, assuming typical symbol geometry...")
-        self.component.pin_names_offset = self.mil_to_mm(20)
+        self.component.pin_names_offset = mil_to_mm(20)
 
         self.recheck()

@@ -34,6 +34,10 @@ def do_unittest(symbol, rules, metrics):
                 printer.red("Test '{sym}' failed".format(sym=symbol.name))
                 error_count += 1
                 continue
+            if unittest_result == 'Pass' and (rule.warningCount() != 0 or rule.errorCount != 0):
+                printer.red("Test '{sym}' failed".format(sym=symbol.name))
+                error_count += 1
+                continue
             printer.green("Test '{sym}' passed".format(sym=symbol.name))
                     
         else:

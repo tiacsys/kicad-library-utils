@@ -7,254 +7,167 @@ class Rule(KLCRule):
     """
     Create the methods check and fix to use with the kicad lib files.
     """
+    special_power_pins = ['power_in', 'power_out', 'output']
+    v6 = True
+
     def __init__(self, component):
         super(Rule, self).__init__(component, 'Rules for pin stacking')
-        self.different_names = False
-        self.NC_stacked = False
-        self.different_types = False
-        self.only_one_visible = False
-        # variables for fixing special pin-stack pins
-        self.fix_make_invisible = set()
-        self.fix_make_visible = set()
-        self.fix_make_passive = set()
+        self.different_names = []
+        self.different_types = []
+        self.visible_pin_not_lowest = []
+        self.NC_stacked = []
+        self.more_then_one_visible = False
 
-    def stackStr(self, stack):
-        multi_unit = int(self.component.definition['unit_count']) > 1
-        unit_str = " (unit {u})".format(u=stack['u']) if multi_unit else ""
 
-        # WHY are pins flipped vertically? Mega sad face :(
-        return "Pinstack @ ({x},{y}){u}".format(
-            x=int(stack['x']),
-            y=-1 * int(stack['y']),
-            u=unit_str)
-
-    def pinStr(self, pin):
-        multi_unit = int(self.component.definition['unit_count']) > 1
-
-        if multi_unit:
-            unit = pin['unit']
-        else:
-            unit = None
-
-        return pinString(pin, unit)
+    def count_pin_etypes(self, pins, etyp):
+        n = 0
+        for pin in pins:
+           if pin.etype == etyp:
+               n += 1
+        return n
 
     def check(self):
-        self.component.padInSpecialPowerStack = set()
+        possible_power_pin_stacks = []
 
-        # List of lists of pins that are entirely duplicated
-        self.duplicated_pins = []
+        # iterate over pinstacks
+        for (pos, pins) in self.component.get_pinstacks().items():
+            common_pin_name = pins[0].name
+            visible_pin = None
+            common_etype = pins[0].etype
 
-        pin_locations = []
+            # find the smallest pin number
+            min_pin_number = pins[0].number
+            for p in pins:
+                min_pin_number = min(p.number, min_pin_number)
 
-        for pin in self.component.pins:
+            for pin in pins:
+                # Check1: If a single pin in a stack is of type NC, we consider this an error
+                if pin.etype == 'unconnected':
+                    self.error("NC {pin} is stacked on other pins".format(
+                               pin=pinString(pin),
+                               x=pin.posx,
+                               y=pin.posy))
+                    self.NC_stacked.append(pin)
 
-            # To be "identical", all following properties much be the same
+                # Check2: all pins should have the same name
+                if pin.name != common_pin_name and not pos in self.different_names:
+                    self.error("Pin names in the stack have different names")
+                    self.different_names.append(pos)
+                    for pin in pins:
+                        self.errorExtra(pinString(pin))
 
-            pinx = pin['posx']     # x coordinate
-            piny = pin['posy']     # y coordinate
-            pinu = pin['unit']     # unit (for multi-unit parts)
-            pinc = pin['convert']  # convert (de morgan)
-
-            dupe = False
-
-            for loc in pin_locations:
-
-                locx = loc['x']
-                locy = loc['y']
-                locu = loc['u']
-                locc = loc['c']
-
-                if pinx == locx and piny == locy and pinu == locu and pinc == locc:
-                    loc['pins'].append(pin)
-                    dupe = True
-
-            if not dupe:
-                new_loc = {'x': pinx, 'y': piny, 'u': pinu, 'c': pinc}
-                new_loc['pins'] = [pin]
-                pin_locations.append(new_loc)
-
-        err = False
-
-        for loc in pin_locations:
-            if len(loc['pins']) > 1:
-
-                pin_units = set()
-                pin_nums = set()
-                pin_names = set()
-                pin_etypes = set()
-
-                vis_pin_count = 0
-
-                for pin in loc['pins']:
-                    pin_nums.add(pin['num'])
-                    pin_names.add(pin['name'])
-                    pin_units.add(pin['unit'])
-                    pin_etypes.add(pin['electrical_type'])
-
-                    # Add visibile pins
-                    if not pin['pin_type'].startswith('N'):
-                        vis_pin_count += 1
-
-                    # NC pins must never be stacked
-                    if pin['electrical_type'] == 'N':
-                        self.error("NC {pin} @ ({x},{y})is stacked on other pins".format(
-                            pin=self.pinStr(pin),
-                            x=pin['posx'],
-                            y=-1*int(pin['posy'])))
-                        err = True
-                        self.NC_stacked = True
-
-                # Fewer pin numbers than pins
-                if len(pin_nums) < len(loc['pins']):
-                    self.error("Duplicate pins @ ({x},{y})".format(
-                        x=loc['x'],
-                        y=-1 * int(loc['y'])))
-                    err = True
-                    for pin in loc['pins']:
-                        self.errorExtra(self.pinStr(pin))
-
-                    # If ALL pins are identical, go to next group (no further checks needed)
-                    if len(pin_nums) == len(pin_names) == len(pin_units) == 1:
-                        self.duplicated_pins.append([pin for pin in loc['pins']])
-                        continue
-
-                # Different names!
-                if len(pin_names) > 1:
-                    self.error(self.stackStr(loc) + " have different names")
-                    err = True
-                    for pin in loc['pins']:
-                        self.errorExtra(self.pinStr(pin))
-                        self.different_names = True
-
-                # Different types!
-                isSpecialXPassivePinStack = False
-                isSpecialSingleTypeStack = ((len(pin_etypes) == 1) and (("w" in pin_etypes) or ("O" in pin_etypes)))
-                if (len(pin_etypes) > 1) or isSpecialSingleTypeStack:
-                    # an exception is done for some special pin-stacks:
-                    # isSpecialXPassivePinStack are those pins stacks that fulfill one of the following conditions:
-                    #    1. consists only of output and passive pins
-                    #    2. consists only of power-output and passive pins
-                    #    3. consists only of power-input and passive pins
-                    #    4. consists only of power-output/output pins (isSpecialSingleTypeStack)
-                    if ((len(pin_etypes) == 2) and ("O" in pin_etypes) and ("P" in pin_etypes)) or ((len(pin_etypes) == 2) and ("w" in pin_etypes) and ("P" in pin_etypes)) or ((len(pin_etypes) == 2) and ("W" in pin_etypes) and ("P" in pin_etypes)) or isSpecialSingleTypeStack:
-                        isSpecialXPassivePinStack = True
-
-                    # a non-special pin-stack needs to have all pins of the same type
-                    if not isSpecialXPassivePinStack:
-                        self.error(self.stackStr(loc) + " have different types")
-                        err = True
-                        for pin in loc['pins']:
-                            self.errorExtra("{pin} : {etype}".format(
-                                pin=self.pinStr(pin),
-                                etype=pinElectricalTypeToStr(pin['electrical_type'])))
-                            self.different_types = True
+                # Check3: exactly one pin should be visible
+                if pin.is_hidden == False:
+                    if visible_pin != None:
+                        if self.more_then_one_visible == False:
+                            self.error("A pin stack must have exactly one (1) visible pin")
+                            for pin in pins:
+                                self.errorExtra("{pin} is visible".format(pin=pinString(pin)))
+                        self.more_then_one_visible = True
                     else:
-                        # in special pin stacks the power-input/power-output/output pin has to be visible and the passive pins need to be invisible
-                        specialpincount = 0
-                        for pin in loc['pins']:
-                            self.component.padInSpecialPowerStack.add(pin['num'])
-                            # check if all passive pins are invisible
-                            if pin['electrical_type'] == 'P' and (not pin['pin_type'].startswith('N')):
-                                self.error("{pin} : {etype} should be invisible (power-pin stack)".format(
-                                    pin=self.pinStr(pin),
-                                    etype=pinElectricalTypeToStr(pin['electrical_type'])))
-                                err = True
-                                self.fix_make_invisible.add(pin['num'])
-                            # check if power-pin is visible
-                            if (pin['electrical_type'] == 'O' or pin['electrical_type'] == 'w' or pin['electrical_type'] == 'W'):
-                                if pin['pin_type'].startswith('N'):
-                                    self.error("{pin} : {etype} should be visible in a power-in/power-out/output pin stack".format(
-                                        pin=self.pinStr(pin),
-                                        etype=pinElectricalTypeToStr(pin['electrical_type'])))
-                                    err = True
-                                    self.fix_make_visible.add(pin['num'])
-                                    specialpincount += 1
-                                    if specialpincount <= 1:
-                                        self.fix_make_visible.add(pin['num'])
-                                else:
-                                    specialpincount += 1
-                            if specialpincount > 1:
-                                self.error("{pin} : {etype} should be an invisible PASSIVE pin power-in/power-out/output pin stack".format(
-                                    pin=self.pinStr(pin),
-                                    etype=pinElectricalTypeToStr(pin['electrical_type'])))
-                                self.fix_make_invisible.add(pin['num'])
-                                self.fix_make_passive.add(pin['num'])
+                        visible_pin = pin
 
-                # Only one pin should be visible (checks have already been done, when isSpecialXPassivePinStack=true)
-                if (not isSpecialXPassivePinStack) and (not vis_pin_count == 1):
-                    self.error(self.stackStr(loc) + " must have exactly one (1) visible pin")
-                    err = True
-                    for pin in loc['pins']:
-                        self.errorExtra("{pin} is {vis}".format(
-                            pin=self.pinStr(pin),
-                            vis='INVISIBLE' if pin['pin_type'].startswith('N') else 'VISIBLE'))
-                        self.only_one_visible = True
+                    # the visible pin should have the lowest pin_number
+                    if pin.number != min_pin_number and not pos in self.visible_pin_not_lowest:
+                        self.warning("The pin with the lowest number in a pinstack should be visible")
+                        self.warningExtra("Pin {0} is visible, the lowest number in this stack is {1}".format(pinString(pin), min_pin_number))
+                        self.visible_pin_not_lowest.append(pos)
 
-        # check for invisible power I/O-pins (unless in power.lib)
-        isPowerLib = (self.component.reference == '#PWR')
-        if (not err) and (not isPowerLib):
-            for pin in self.component.pins:
-                if ((pin['electrical_type'] == 'w') or (pin['electrical_type'] == 'W')) and pin['pin_type'].startswith('N'):
-                    self.error("{pin} : {etype} should be visible (power-in/power-out pins may never be invisible, unless in a power-net tag/symbol)".format(
-                                    pin=self.pinStr(pin),
-                                    etype=pinElectricalTypeToStr(pin['electrical_type'])))
-                    self.fix_make_visible.add(pin['num'])
-                    err = True
-        return err
+                # Check4: all pins should have the same electrical type.
+                #         exceptions are power-pin-stacks
+                if pin.etype != common_etype:
+                    # this could be one of the special cases
+                    # at least one of the two checked pins need to be 'special' type. if not, this is an error
+                    if pin.etype in self.special_power_pins or common_etype in self.special_power_pins:
+                        possible_power_pin_stacks.append(pos)
+                    else:
+                        if not pos in self.different_types:
+                            self.error("Pin names in the stack have different electrical types")
+                            for pin in pins:
+                                self.errorExtra("{0} is of type {1}".format(pinString(pin), pin.etype))
+                            self.different_types.append(pos)
+
+        # check the possible power pin_stacks
+        special_stack_err = False
+        for pos in possible_power_pin_stacks:
+            pins = self.component.get_pinstacks()[pos]
+
+            # 1. consists only of output and passive pins
+            # 2. consists only of power-output and passive pins
+            # 3. consists only of power-input and passive pins
+            # 4. consists only of power-output/output pins
+
+            # find the smallest pin number
+            min_pin_number = pins[0].number
+            for p in pins:
+                min_pin_number = min(p.number, min_pin_number)
+
+            # count types of pins
+            n_power_in  = self.count_pin_etypes(pins, 'power_in')
+            n_power_out = self.count_pin_etypes(pins, 'power_out')
+            n_output    = self.count_pin_etypes(pins, 'output')
+            n_passive   = self.count_pin_etypes(pins, 'passive')
+            n_others    = len(pins) - n_power_in - n_power_out - n_passive - n_output
+            n_total     = len(pins)
+
+            # check for cases 1..3
+            if n_passive == n_total - 1 and (n_power_in == 1 or n_power_out == 1 or n_output == 1):
+                # find the passive pins, they must be invisible
+                for pin in pins:
+                    if pin.etype == 'passive' and pin.is_hidden == False:
+                        self.error("Passive pins in a pinstack are hidden")
+                        special_stack_err = True
+                        for ipin in pins:
+                            if ipin.etype == 'passive' and ipin.is_hidden == False:
+                                self.errorExtra("{0} is of type {1} and visible".format(pinString(ipin), ipin.etype))
+                        break
+
+                # find the non-passive pin, it must be visible. Also, it should have the lowest pin-number of all
+                for pin in pins:
+                    if pin.etype != 'passive':
+                        # we found the non-passive pin
+                        if pin.is_hidden == True:
+                            self.error("Non passive pins in a pinstack are visible")
+                            special_stack_err = True
+                            self.errorExtra("{0} is of type {1} and invisible".format(pinString(pin), pin.etype))
+
+                        if pin.number != min_pin_number and not pos in self.visible_pin_not_lowest:
+                            self.warning("The pin with the lowest number in a pinstack should be visible")
+                            self.warningExtra("Pin {0} is visible, the lowest number in this stack is {1}".format(pinString(pin), min_pin_number))
+                            self.visible_pin_not_lowest.append(pos)
+                        break
+
+            # check for case 4
+            elif n_output == n_total or n_power_out == n_total:
+                visible_pin = None
+                # all but one pins should be invisible
+                for pin in pins:
+                    if pin.is_hidden == False:
+                        if visible_pin == None:
+                            # this is the first time we found a visible pin in this stack
+                            visible_pin = pin
+                            if pin.number != min_pin_number and not pos in self.visible_pin_not_lowest:
+                                self.warning("The pin with the lowest number in a pinstack should be visible")
+                                self.warningExtra("Pin {0} is visible, the lowest number in this stack is {1}".format(pinString(pin), min_pin_number))
+                                self.visible_pin_not_lowest.append(pos)
+                        else:
+                            # more than one visible pin found
+                            special_stack_err = True
+                            self.error("Only one pin in a pinstack is visible")
+                            for vpin in list(filter(lambda p: p.is_hidden == False, pins)):
+                                self.errorExtra("Pin {0} is visible".format(pinString(ivpin)))
+
+            else:
+                # pinstack is none of the above cases.
+                self.error("Illegal pin stack configuration next to {}".format(pinString(pins[0])))
+                self.errorExtra("Power input pins: {}".format(n_power_in))
+                self.errorExtra("Power output pins: {}".format(n_power_out))
+                self.errorExtra("Output pins: {}".format(n_output))
+                self.errorExtra("Passive pins: {}".format(n_passive))
+                self.errorExtra("Other type pins: {}".format(n_others))
+                special_stack_err = True
+
+        return self.more_then_one_visible or len(self.different_types) > 0 or len(self.NC_stacked) > 0 or len(self.different_names) > 0 or special_stack_err
 
     def fix(self):
-        # Delete duplicate pins
-        if len(self.duplicated_pins) > 0:
-            self.info("Removing duplicate pins")
-
-            for pin_groups in self.duplicated_pins:
-                # Leave first pin and delete all others
-                pin = pin_groups[0]
-
-                count = 0
-                # Iterate through component pins
-                i = 0
-                while i < len(self.component.drawOrdered):
-
-                    el = self.component.drawOrdered[i]
-                    if not el[0] == 'X':  # Pins
-                        i += 1
-                        continue
-
-                    p_test = el[1]
-
-                    # All these keys must be identical!
-                    keys = ['name', 'num', 'unit', 'posx', 'posy', 'convert']
-
-                    # Found duplicate
-                    if all([p_test[key] == pin[key] for key in keys]):
-                        count += 1
-                        # Skip the first instance, delete all others
-                        if count > 1:
-                            del self.component.drawOrdered[i]
-                            self.info("Deleting {pin} @ ({x},{y})".format(
-                                pin=self.pinStr(pin),
-                                x=pin['posx'],
-                                y=pin['posy']))
-                            continue
-                    i += 1
-
-        for pin in self.component.pins:
-            if pin['num'] in self.fix_make_passive:
-                pin['electrical_type'] = 'P'
-                self.info("pin "+pin['num']+" "+pin['name']+" is passive now (pin['electrical_type']="+pin['electrical_type']+")")
-            if pin['num'] in self.fix_make_invisible:
-                pin['pin_type'] = 'N'+pin['pin_type']
-                self.info("pin "+pin['num']+" "+pin['name']+" is invisible now (pin['pin_type']="+pin['pin_type']+")")
-            if pin['num'] in self.fix_make_visible:
-                pin['pin_type'] = pin['pin_type'][1:len(pin['pin_type'])]
-                self.info("pin "+pin['num']+" "+pin['name']+" is visible now (pin['pin_type']="+pin['pin_type']+")")
-
-        if self.different_names:
-            self.info("FIX for 'different pin names' not supported (yet)! Please fix manually.")
-        if self.NC_stacked:
-            self.info("FIX for 'NC pins stacked' not supported! Please fix manually.")
-        if self.different_types:
-            self.info("FIX for 'different pin types' not supported (yet)! Please fix manually.")
-        if self.only_one_visible:
-            self.info("FIX for 'only one pin in a pin stack is visible' not supported (yet)! Please fix manually.")
+        self.info("FIX not supported (yet)! Please fix manually.")

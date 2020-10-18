@@ -211,6 +211,20 @@ class Pin(KicadSymbolBase):
         ]
         return sx
 
+    def get_direction(s):
+       if s.rotation == 0:
+         return 'R'
+       elif s.rotation == 90:
+         return 'U'
+       elif s.rotation == 180:
+         return 'L'
+       elif s.rotation == 270:
+         return 'D'
+
+    def is_duplicate(s, p):
+       if p.number == s.number and p.unit == s.unit and p.demorgan == s.demorgan:
+           return True
+
     @classmethod
     def from_sexpr(cls, sexpr, unit):
         sexpr_orig = sexpr.copy()
@@ -234,7 +248,7 @@ class Pin(KicadSymbolBase):
         # create and return a pin with the just extraced values
         return Pin(name,
                    name_effect,
-                   number,
+                   int(number),
                    number_effect,
                    posx,
                    posy,
@@ -545,6 +559,16 @@ class KicadSymbol(KicadSymbolBase):
             # sort the list return the first (smalles) item
             return candidates[sorted(candidates.keys())[0]]
         return None
+
+    def get_pinstacks(s):
+        stacks = {}
+        for pin in s.pins:
+            loc = "{0}_{1}".format(pin.posx, pin.posy)
+            if loc in stacks:
+                stacks[loc].append(pin)
+            else:
+                stacks[loc] = [pin]
+        return stacks
 
     def get_property(self, pname):
         for p in self.properties:

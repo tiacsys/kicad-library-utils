@@ -20,10 +20,10 @@ class Rule(KLCRule):
         """
         self.violating_properties = []
         for prop in self.component.properties:
-            text_size = self.mm_to_mil(prop.effects.sizex)
+            text_size = mm_to_mil(prop.effects.sizex)
             if (text_size != 50):
                 self.violating_properties.append(prop)
-                message = ("{0} at posx {1} posy {2}".format(prop.name, self.mm_to_mil(prop.posx), self.mm_to_mil(prop.posy)))
+                message = ("{0} at posx {1} posy {2}".format(prop.name, mm_to_mil(prop.posx), mm_to_mil(prop.posy)))
                 self.error(" - Field {0} size {1}".format(message, text_size))
 
         self.violating_pins = []
@@ -35,8 +35,8 @@ class Rule(KLCRule):
         """
 
         for pin in self.component.pins:
-            name_text_size = self.mm_to_mil(pin.name_effect.sizex)
-            num_text_size = self.mm_to_mil(pin.number_effect.sizex)
+            name_text_size = mm_to_mil(pin.name_effect.sizex)
+            num_text_size = mm_to_mil(pin.number_effect.sizex)
 
             if (name_text_size < 20) or (name_text_size > 50) or (num_text_size < 20) or (num_text_size > 50):
                 self.violating_pins.append(pin)
@@ -60,14 +60,14 @@ class Rule(KLCRule):
         if len(self.violating_properties) > 0:
             self.info("Fixing field text size")
         for prop in self.violating_properties:
-            prop.effects.sizex = self.mil_to_mm(50)
-            prop.effects.sizey = self.mil_to_mm(50)
+            prop.effects.sizex = mil_to_mm(50)
+            prop.effects.sizey = mil_to_mm(50)
 
         if len(self.violating_pins) > 0:
             self.info("Fixing pin text size")
         for pin in self.violating_pins:
-            pin.name_effect.sizex = self.mil_to_mm(50)
-            pin.name_effect.sizey = self.mil_to_mm(50)
-            pin.number_effect.sizex = self.mil_to_mm(50)
-            pin.number_effect.sizey = self.mil_to_mm(50)
+            pin.name_effect.sizex = mil_to_mm(50)
+            pin.name_effect.sizey = mil_to_mm(50)
+            pin.number_effect.sizex = mil_to_mm(50)
+            pin.number_effect.sizey = mil_to_mm(50)
         self.recheck()

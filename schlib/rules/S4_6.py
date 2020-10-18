@@ -5,13 +5,13 @@ import re
 
 
 class Rule(KLCRule):
+    v6 = True
 
     # No-connect pins should be "N"
     NC_PINS = ['^nc$', '^dnc$', '^n\.c\.$']
 
     # check if a pin name fits within a list of possible pins (using regex testing)
     def test(self, pinName, nameList):
-
         for name in nameList:
             if re.search(name, pinName, flags=re.IGNORECASE) is not None:
                 return True
@@ -25,26 +25,21 @@ class Rule(KLCRule):
         super(Rule, self).__init__(component, 'Unused pins should be set as NOT CONNECTED and should be INVISIBLE')
 
     def checkNCPins(self, pins):
-
         self.invisible_errors = []
         self.type_errors = []
 
         for pin in pins:
-
-            name = pin['name'].lower()
-            etype = pin['electrical_type']
-
-            visible = not (pin['pin_type'].startswith('N'))
+            name = pin.name.lower()
+            etype = pin.etype
 
             # Check NC pins
-            if self.test(name.lower(), self.NC_PINS) or etype == 'N':
-
-                # NC pins should be of type N
-                if not etype == 'N':  # Not set to NC
+            if self.test(name, self.NC_PINS) or etype == 'unconnected':
+                # NC pins should be of type unconnected
+                if not etype == 'unconnected':  # Not set to NC
                     self.type_errors.append(pin)
 
                 # NC pins should be invisible
-                if visible:
+                if pin.is_hidden == False:
                     self.invisible_errors.append(pin)
 
         if len(self.type_errors) > 0:
@@ -53,7 +48,7 @@ class Rule(KLCRule):
             for pin in self.type_errors:
                 self.errorExtra("{pin} should be of type NOT CONNECTED, but is of type {pintype}".format(
                     pin=pinString(pin),
-                    pintype=pinElectricalTypeToStr(pin['electrical_type'])))
+                    pintype=etype))
 
         if len(self.invisible_errors) > 0:
             self.warning("NC pins are VISIBLE (should be INVISIBLE):")
@@ -85,13 +80,13 @@ class Rule(KLCRule):
         self.info("Fixing...")
 
         for pin in self.invisible_errors:
-            if not pin['pin_type'].startswith("N"):
-                pin['pin_type'] = 'N' + pin['pin_type']
-                self.info("Setting pin {n} to INVISIBLE".format(n=pin['num']))
+            if not pin.is_hidden == True:
+                pin.is_hidden = True
+                self.info("Setting pin {n} to INVISIBLE".format(n=pin.number))
 
         for pin in self.type_errors:
-            if not pin['electrical_type'] == 'N':
-                pin['electrical_type'] = 'N'
-                self.info("Changing pin {n} type to NO_CONNECT".format(n=pin['num']))
+            if not pin.etype == 'unconnected':
+                pin.etype = 'unconnected'
+                self.info("Changing pin {n} type to NO_CONNECT".format(n=pin.number))
 
         self.recheck()

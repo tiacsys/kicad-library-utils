@@ -30,13 +30,13 @@ class Rule(KLCRule):
 
         rectangle_need_fix = False
         if self.component.is_small_component_heuristics():
-            if (not math.isclose(center_rect_polyline.stroke_width, self.mil_to_mm(10))):
-                self.warning("Component outline is thickness {0}mil, recommended is {1}mil for standard symbol".format(self.mm_to_mil(center_rect_polyline.stroke_width), 10))
+            if (not math.isclose(center_rect_polyline.stroke_width, mil_to_mm(10))):
+                self.warning("Component outline is thickness {0}mil, recommended is {1}mil for standard symbol".format(mm_to_mil(center_rect_polyline.stroke_width), 10))
                 self.warningExtra("exceptions are allowed for small symbols like resistor, transistor, ...")
                 rectangle_need_fix = False
         else:
-            if (not math.isclose(center_rect_polyline.stroke_width, self.mil_to_mm(10))):
-                self.error("Component outline is thickness {0}mil, recommended is {1}mil".format(self.mm_to_mil(center_rect_polyline.stroke_width), 10))
+            if (not math.isclose(center_rect_polyline.stroke_width, mil_to_mm(10))):
+                self.error("Component outline is thickness {0}mil, recommended is {1}mil".format(mm_to_mil(center_rect_polyline.stroke_width), 10))
                 rectangle_need_fix = True
 
         if (center_rect_polyline.fill_type != 'background'):

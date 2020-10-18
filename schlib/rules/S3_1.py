@@ -48,8 +48,8 @@ class Rule(KLCRule):
                 y = (y_min + y_max) / 2
 
             # convert to mil
-            x = self.mm_to_mil(x)
-            y = self.mm_to_mil(y)
+            x = mm_to_mil(x)
+            y = mm_to_mil(y)
             # Right on the middle!
             if x == 0 and y == 0:
                 continue
