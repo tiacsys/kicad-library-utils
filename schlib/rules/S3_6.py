@@ -7,14 +7,15 @@ class Rule(KLCRule):
     """
     Create the methods check and fix to use with the kicad lib files.
     """
+    v6 = True
     def __init__(self, component):
         super(Rule, self).__init__(component, 'Pin name position offset')
 
     def check(self):
 
-        offset = int(self.component.definition['text_offset'])
+        offset = self.mm_to_mil(self.component.pin_names_offset)
 
-        if self.component.definition['draw_pinname'] == 'N':
+        if self.component.hide_pin_names == True:
             # If the pin names aren't drawn, the offset doesn't matter.
             return False
         elif offset == 0:
@@ -42,6 +43,6 @@ class Rule(KLCRule):
         Proceeds the fixing of the rule, if possible.
         """
         self.info("Fixing, assuming typical symbol geometry...")
-        self.component.definition['text_offset'] = '20'
+        self.component.pin_names_offset = self.mil_to_mm(20)
 
         self.recheck()

@@ -100,7 +100,6 @@ def _get_value_ofRecursively(data, path, item_to_get=False):
         if type(i) == type([]) and i[0] == path[0]:
             return _get_value_ofRecursively(i, path[1:], item_to_get)
 
-
 def _get_value_of(data, lookup):
     """find the array which has lookup as first element, return its 2nd element"""
     for i in data:
@@ -108,6 +107,12 @@ def _get_value_of(data, lookup):
             return i[1]
     return None
 
+def _has_value(data, lookup):
+    """return true if the lookup item exists"""
+    for i in data:
+        if type(i) == type([]) and i[0] == lookup:
+            return True
+    return False
 
 class KicadSymbolBase(object):
     def as_json(self):
@@ -514,11 +519,15 @@ class KicadSymbol(KicadSymbolBase):
     arcs: List[Arc] = field(default_factory=list)
     polylines: List[Polyline] = field(default_factory=list)
     texts: List[Text] = field(default_factory=list)
+    pin_names_offset: float = 0
+    hide_pin_names: bool = False
+    hide_pin_numbers: bool = False
     is_power: bool = False
+    in_bom: bool = False
+    on_board: bool = False
     extends: str = None
     unit_count: int = 0
     demorgan_count: int = 0
-
 
     def get_center_rectangle(s, units: List):
         # return a polyline for the requested unit that is a rectangle
@@ -638,14 +647,30 @@ class KicadLibrary(KicadSymbolBase):
                 if len(extends) > 0:
                   symbol.extends = extends[0][1]
 
-                # check if its a power symbol 
-                symbol.is_power = len(_get_array2(item, 'power')) > 0
-
                 # extract properties
                 for prop in _get_array(item, 'property'):
                     symbol.properties.append(Property.from_sexpr(prop))
 
-                # TODO pin offset
+                # get flags
+                if _has_value(item, 'in_bom'):
+                    symbol.in_bom = True
+                if _has_value(item, 'power'):
+                    symbol.is_power = True
+                if _has_value(item, 'on_board'):
+                    symbol.on_board = True
+
+                # get pin-numbers properties
+                pin_numbers_info = _get_array2(item, 'pin_numbers')
+                if pin_numbers_info:
+                    if 'hide' in pin_numbers_info[0]:
+                        symbol.hide_pin_numbers = True
+
+                # get pin-name properties
+                pin_names_info = _get_array2(item, 'pin_names')
+                if pin_names_info:
+                    if 'hide' in pin_names_info[0]:
+                        symbol.hide_pin_names = True
+                    symbol.pin_names_offset = _get_value_of(pin_names_info[0], 'offset')
              
                 # add it to the list of symbols
                 library.symbols.append(symbol)
