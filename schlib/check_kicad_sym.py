@@ -82,13 +82,14 @@ def do_rulecheck(symbol, rules, metrics):
 
     # done checking the symbol
     # count errors and update metrics
-    metrics.append('{l}.{p}.warnings={n}'.format(l=symbol.libname, p=symbol.name, n=symbol_warning_count))
-    metrics.append('{l}.{p}.errors={n}'.format(l=symbol.libname, p=symbol.name, n=symbol_error_count))
+    metrics.append('{l}.{p}.warnings {n}'.format(l=symbol.libname, p=symbol.name, n=symbol_warning_count))
+    metrics.append('{l}.{p}.errors {n}'.format(l=symbol.libname, p=symbol.name, n=symbol_error_count))
     return(symbol_error_count, symbol_warning_count)
 
 def check_library(filename, rules, metrics, args):
     error_count  = 0
     warning_count = 0
+    libname = ""
     if not os.path.exists(filename):
         printer.red('File does not exist: %s' % filename)
         return (1,0)
@@ -123,10 +124,11 @@ def check_library(filename, rules, metrics, args):
 
         error_count += ec
         warning_count += wc
+        libname = symbol.libname
 
     # done checking the lib
-    metrics.append('total_errors={n}'.format(n=error_count))
-    metrics.append('total_warnings={n}'.format(n=warning_count))
+    metrics.append('{lib}.total_errors {n}'.format(lib=libname, n=error_count))
+    metrics.append('{lib}.total_warnings {n}'.format(lib=libname, n=warning_count))
     return (error_count, warning_count)
 
 parser = argparse.ArgumentParser(description='Checks KiCad library files (.kicad_sym) against KiCad Library Convention (KLC) rules. You can find the KLC at http://kicad-pcb.org/libraries/klc/')
@@ -191,7 +193,7 @@ for filename in files:
 
 # done checking all files
 if args.metrics or args.unittest:
-  metrics_file = file2 = open(r"metrics.txt","w") 
+  metrics_file = file2 = open(r"metrics.txt","a+")
   for line in metrics:
     metrics_file.write(line + "\n")
   metrics_file.close()

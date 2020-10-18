@@ -10,7 +10,7 @@ import sys
 import os
 from glob import glob
 import fnmatch
-import hashlib
+import filecmp
 
 # Path to common directory
 common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
@@ -37,6 +37,7 @@ parser.add_argument("--check-aliases", help="Do not only check symbols but also 
 parser.add_argument("--shownochanges", help="Show libraries that have not changed", action="store_true")
 
 (args, extra) = parser.parse_known_args()
+printer = PrintColor(use_color=not args.nocolor)
 
 if not args.new:
     ExitError("New file(s) not supplied")
@@ -45,15 +46,6 @@ if not args.new:
 if not args.old:
     ExitError("Original file(s) not supplied")
     # TODO print help
-
-
-def hash_file_sha256(fname):
-    h = hashlib.sha256()
-    with open(fname) as fh:
-        for line in fh:
-            h.update(line.encode('utf-8'))
-    return (h.hexdigest())
-
 
 def KLCCheck(lib, component):
     # Wrap library in "quotes" if required
@@ -73,45 +65,42 @@ def KLCCheck(lib, component):
 
     return os.system(call)
 
+def build_library_dict(filelist):
+    """Take a list of files, expand globs if required. Build a dict in for form {'libname': filename}"""
+    libs = {}
+    for lib in filelist:
+        flibs = glob(lib)
 
-printer = PrintColor(use_color=not args.nocolor)
+        for l in flibs:
+            if os.path.isdir(l):
+                for root, dirnames, filenames in os.walk(l):
+                    for filename in fnmatch.filter(filenames, '*.kicad_sym'):
+                        libs[os.path.basename(filename)] = os.path.abspath(
+                            os.path.join(root, filename))
 
-new_libs = {}
-old_libs = {}
+            elif l.endswith('.kicad_sym') and os.path.exists(l):
+                libs[os.path.basename(l)] = os.path.abspath(l)
+    return libs
 
-for lib in args.new:
-    libs = glob(lib)
 
-    for l in libs:
-        if os.path.isdir(l):
-            for root, dirnames, filenames in os.walk(l):
-                for filename in fnmatch.filter(filenames, '*.kicad_sym'):
-                    new_libs[os.path.basename(filename)] = os.path.abspath(
-                        os.path.join(root, filename))
-
-        elif l.endswith('.kicad_sym') and os.path.exists(l):
-            new_libs[os.path.basename(l)] = os.path.abspath(l)
-
-for lib in args.old:
-    libs = glob(lib)
-
-    for l in libs:
-        if os.path.isdir(l):
-            for root, dirnames, filenames in os.walk(l):
-                for filename in fnmatch.filter(filenames, '*.kicad_sym'):
-                    old_libs[os.path.basename(filename)] = os.path.abspath(
-                        os.path.join(root, filename))
-
-        elif l.endswith('.kicad_sym') and os.path.exists(l):
-            old_libs[os.path.basename(l)] = os.path.abspath(l)
-
+# prepare variables
+new_libs = build_library_dict(args.new)
+old_libs = build_library_dict(args.old)
 errors = 0
 design_breaking_changes = 0
 
+# iterate over all new libraries
 for lib_name in new_libs:
-
     lib_path = new_libs[lib_name]
     new_lib = KicadLibrary.from_file(lib_path)
+
+    # If library checksums match, we can skip entire library check
+    if lib_name in old_libs:
+        if filecmp.cmp(old_libs[lib_name], lib_path) == True:
+            if args.verbose and args.shownochanges:
+                printer.yellow(
+                    "No changes to library '{lib}'".format(lib=lib_name))
+            continue
 
     # New library has been created!
     if not lib_name in old_libs:
@@ -129,13 +118,6 @@ for lib_name in new_libs:
     old_lib_path = old_libs[lib_name]
     old_lib = KicadLibrary.from_file(old_lib_path)
 
-    # If library checksums match, we can skip entire library check
-    if hash_file_sha256(old_lib_path) == hash_file_sha256(lib_path):
-        if args.verbose and args.shownochanges:
-            printer.yellow(
-                "No changes to library '{lib}'".format(lib=lib_name))
-        continue
-
     new_sym = {}
     old_sym = {}
     for sym in new_lib.symbols:
@@ -152,7 +134,7 @@ for lib_name in new_libs:
         # Component is 'new' (not in old library)
         alias_info = ''
         if new_sym[symname].extends:
-            alias_info = ' alias of {}'.format(sym.extends)
+            alias_info = ' alias of {}'.format(new_sym[symname].extends)
 
         if not symname in old_sym:
             if args.verbose:
@@ -217,7 +199,7 @@ for lib_name in new_libs:
         # Component has been deleted from library
         if not symname in new_sym:
             alias_info = ''
-            if old_sym[sym].extends:
+            if old_sym[symname].extends:
                 alias_info = ' was an alias of {}'.format(
                     old_sym[symname].extends)
 
@@ -227,7 +209,7 @@ for lib_name in new_libs:
             if args.design_breaking_changes:
                 design_breaking_changes += 1
 
-# Entire lib has been deleted?
+# Check if an entire lib has been deleted?
 for lib_name in old_libs:
     if not lib_name in new_libs:
         if args.verbose:

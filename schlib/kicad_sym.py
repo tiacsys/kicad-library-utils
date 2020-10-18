@@ -461,7 +461,7 @@ class Property(KicadSymbolBase):
 class KicadSymbol(KicadSymbolBase):
     name: str
     libname: str
-    filename: str
+    filename: str = field(compare=False)
     properties: List[Property] = field(default_factory=list)
     pins: List[Pin] = field(default_factory=list)
     circles: List[Circle] = field(default_factory=list)
