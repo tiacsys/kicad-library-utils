@@ -595,12 +595,11 @@ class KicadSymbol(KicadSymbolBase):
         if len(self.pins) <= 2:
             return True
 
-        filled_rects = self.get_center_rectangle(range(self.unit_count))
+        filled_rect = self.get_center_rectangle(range(self.unit_count))
 
         # if there is no filled rectangle as symbol outline and we have 3 or 4 pins, we assume this
         # is a small symbol
-        if len(self.pins) >= 3 and len(
-                self.pins) <= 4 and len(filled_rects) == 0:
+        if len(self.pins) >= 3 and len(self.pins) <= 4 and filled_rect == None:
             return True
 
         return False
