@@ -118,6 +118,22 @@ class KicadSymbolBase(object):
     def as_json(self):
       return json.dumps(self, default=lambda x: x.__dict__, indent=2)
 
+    def compare_pos(s, x, y):
+        if 'posx' in s.__dict__ and 'posy' in s.__dict__:
+            return s.posx == x and s.posy == y
+        return False
+
+    @classmethod
+    def dir_to_rotation(cls, d):
+       if d == 'R':
+           return 0
+       if d == 'U':
+           return 90
+       if d == 'L':
+           return 180
+       if d == 'D':
+           return 270
+
 @dataclass
 class Color(KicadSymbolBase):
     """Encode the color of an entiry. Currently not used in the kicad_sym format"""
@@ -135,8 +151,8 @@ class TextEffect(KicadSymbolBase):
     is_bold: bool = False
     is_hidden: bool = False
     is_mirrored: bool = False
-    h_justify: str = None
-    v_justify: str = None
+    h_justify: str = "center"
+    v_justify: str = "center"
     color: Color = None
     font: str = None
 
@@ -169,8 +185,8 @@ class TextEffect(KicadSymbolBase):
         is_hidden = 'hide' in sexpr
         is_mirrored = 'mirror' in sexpr
         justify = _get_array2(sexpr, 'justify')
-        h_justify = None
-        v_justify = None
+        h_justify = "center"
+        v_justify = "center"
         if justify:
             if 'top' in justify[0]: v_justify = 'top'
             if 'bottom' in justify[0]: v_justify = 'bottom'
@@ -370,13 +386,17 @@ class Polyline(KicadSymbolBase):
         # a closed triangle will have 4 points (A-B-C-A) stored in the list of points
         return len(s.pts) > 3 and s.pts[0].__eq__(s.pts[-1])
 
-    def get_center_of_boundingbox(s):
+    def get_boundingbox(s):
         (minx, maxx, miny, maxy) = (0, 0, 0, 0)
         for p in s.pts:
             minx = min(minx, p.x)
             maxx = max(maxx, p.x)
             miny = min(miny, p.y)
             maxy = max(maxy, p.y)
+        return(maxx, maxy, minx, miny)
+
+    def get_center_of_boundingbox(s):
+        (maxx, maxy, minx, miny) = s.get_boundingbox()
         return ((minx + maxx) / 2, ((miny + maxy) / 2))
 
     def is_rectangle(s):
@@ -520,7 +540,7 @@ class Property(KicadSymbolBase):
         idd = _get_value_of(sexpr, 'id')
         (posx, posy, rotation) = _parse_at(sexpr)
         effects = TextEffect.from_sexpr(_get_array(sexpr, 'effects')[0])
-        return Property(name, value, idd, posy, posy, rotation, effects)
+        return Property(name, value, idd, posx, posy, rotation, effects)
 
 @dataclass
 class KicadSymbol(KicadSymbolBase):
@@ -609,14 +629,13 @@ class KicadSymbol(KicadSymbolBase):
                 return pin
         return None
 
-    def filterPins(self, name=None, direction=None, electrical_type=None):
+    def filter_pins(self, name=None, direction=None, electrical_type=None):
         pins = []
-        rot = {'U': 0, 'D': 180}
         for pin in self.pins:
-            if ((name and pin['name'] == name)
-                    or (direction and pin['rotation'] == rot[direction])
+            if ((name and pin.name == name)
+                    or (direction and pin.rotation == self.dir_to_rotation(direction))
                     or (electrical_type
-                        and pin['electrical_type'] == electrical_type)):
+                        and pin.etype == electrical_type)):
                 pins.append(pin)
         return pins
 
