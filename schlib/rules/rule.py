@@ -25,12 +25,13 @@ def pinString(pin, loc=True, unit=None, convert=None):
 
 
 def positionFormater(element):
-    if type(element) != type({}):
-        raise Exception("input type: ", type(element), "expected dictionary, ", element)
-    if(not {"posx", "posy"}.issubset(element.keys())):
-        raise Exception("missing keys 'posx' and 'posy' in"+str(element))
-    return "@ ({0}, {1})".format(element['posx'], element['posy'])
-    # return "pos [{0},{1}]".format(element['posx'],element['posy'])
+    if type(element) == type({}):
+        if(not {"posx", "posy"}.issubset(element.keys())):
+            raise Exception("missing keys 'posx' and 'posy' in"+str(element))
+        return "@ ({0}, {1})".format(mm_to_mil(element['posx']), mm_to_mil(element['posy']))
+    if 'posx' in element.__dict__ and 'posy' in element.__dict__:
+        return "@ ({0}, {1})".format(mm_to_mil(element.posx), mm_to_mil(element.posy))
+    raise Exception("input type: ", type(element), "not supported, ", element)
 
 
 class KLCRule(KLCRuleBase):
