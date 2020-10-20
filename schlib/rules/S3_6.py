@@ -12,9 +12,11 @@ class Rule(KLCRule):
         super(Rule, self).__init__(component, 'Pin name position offset')
 
     def check(self):
+        # no need to check this for an alias
+        if self.component.extends != None:
+            return False
 
         offset = mm_to_mil(self.component.pin_names_offset)
-
         if self.component.hide_pin_names == True:
             # If the pin names aren't drawn, the offset doesn't matter.
             return False

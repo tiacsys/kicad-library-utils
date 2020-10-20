@@ -27,6 +27,10 @@ class Rule(KLCRule):
         return n
 
     def check(self):
+        # no need to check this for an alias
+        if self.component.extends != None:
+            return False
+
         possible_power_pin_stacks = []
 
         # iterate over pinstacks

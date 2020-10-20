@@ -604,8 +604,7 @@ class KicadSymbol(KicadSymbolBase):
             return []
 
     def is_graphic_symbol(self):
-        # TODO this will also return false for a extended symbols
-        return len(self.pins) == 0
+        return self.extends == None and len(self.pins) == 0
 
     def is_power_symbol(self):
         return self.is_power

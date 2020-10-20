@@ -18,10 +18,14 @@ class Rule(KLCRule):
         """
         Proceeds the checking of the rule.
         """
+        # no need to check this for an alias
+        if self.component.extends != None:
+            return False
+
 
         fail = False
         if self.component.is_graphic_symbol():
-            # no pins in raphical symbol
+            # no pins in graphical symbol
             if (len(self.component.pins) != 0):
                 self.error("Graphical symbols have no pins")
                 fail = True
@@ -29,7 +33,7 @@ class Rule(KLCRule):
             # footprint field must be empty
             fp_prop = self.component.get_property("Footprint")
             if fp_prop and fp_prop.value != '':
-                self.error("Graphical symbols have no footprint association (footprint was set to '"+self.component.fields[2]['name']+"')")
+                self.error("Graphical symbols have no footprint association (footprint was set to '"+fp_prop.value+"')")
                 fail = True
                 self.fixNoFootprint = True
             # FPFilters must be empty

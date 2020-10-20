@@ -19,8 +19,8 @@ class Rule(KLCRule):
             * center_rect_polyline
         """
 
-        # no checks for power-symbols or graphical symbols:
-        if self.component.is_power_symbol() or self.component.is_graphic_symbol():
+        # no checks for power-symbols, graphical symbols or aliases
+        if self.component.is_power_symbol() or self.component.is_graphic_symbol() or self.component.extends != None:
             return False
 
         # check if component has just one rectangle, if not, skip checking

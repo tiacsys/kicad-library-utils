@@ -17,6 +17,9 @@ class Rule(KLCRule):
         Calculate the 'bounds' of the symbol based on rectangle (if only a
         single filled rectangle is present) or on pin positions.
         """
+        # no need to check this for an
+        if self.component.extends != None:
+            return False
 
         # Check units separately
         unit_locked = self.component.is_locked()

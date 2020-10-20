@@ -45,6 +45,10 @@ class Rule(KLCRule):
                         self.warningExtra(pinString(pin))
 
     def check(self):
+        # no need to check pins on an alias
+        if self.component.extends != None:
+            return False
+
         self.checkGroundPins()
         self.checkPowerPins()
 

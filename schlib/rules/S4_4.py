@@ -105,6 +105,10 @@ class Rule(KLCRule):
         return len(self.inversion_errors) > 0
 
     def check(self):
+        # no need to check this for an alias
+        if self.component.extends != None:
+            return False
+
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:

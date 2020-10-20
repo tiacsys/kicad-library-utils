@@ -87,6 +87,10 @@ class Rule(KLCRule):
         return len(self.violating_pins) > 0
 
     def check(self):
+        # no need to check pins on an alias
+        if self.component.extends != None:
+            return False
+
         # determine pin-grid:
         #  - standard components should use 100mil
         #  - "small" symbols (resistors, diodes, ...) should use 50mil

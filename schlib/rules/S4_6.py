@@ -65,6 +65,10 @@ class Rule(KLCRule):
             * probably_wrong_pin_types
             * double_inverted_pins
         """
+        # no need to check this for an alias
+        if self.component.extends != None:
+            return False
+
 
         fail = False
 
