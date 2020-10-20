@@ -11,6 +11,19 @@ class Rule(KLCRule):
     def __init__(self, component):
         super(Rule, self).__init__(component, 'Pin requirements')
 
+    def checkMissingPins(self):
+        int_pins = []
+        for pin in self.component.pins:
+            try:
+                int_pins.append(pin.number)
+            except:
+                pass
+
+        for i in range(1, max(int_pins) + 1):
+            if i not in int_pins:
+                self.warning("Pin {n} is missing".format(n=i))
+        return False
+
     def checkPinOrigin(self, gridspacing=100):
         self.violating_pins = []
         err = False
@@ -21,7 +34,7 @@ class Rule(KLCRule):
                 self.violating_pins.append(pin)
                 if not err:
                     self.error("Pins not located on {0}mil (={1:.3}mm) grid:".format(gridspacing, gridspacing*0.0254))
-                self.error(' - Pin {0} ({1}), {2}mil'.format(pin['name'], pin['num'], positionFormater(pin)))
+                self.error(' - {0} '.format(pinString(pin, loc = True)))
                 err = True
 
         return len(self.violating_pins) > 0
@@ -86,12 +99,11 @@ class Rule(KLCRule):
             warningPinLength = 49
 
         return any([
+            self.checkMissingPins(),
             self.checkPinOrigin(pingrid),
             self.checkPinLength(errorPinLength, warningPinLength),
             self.checkDuplicatePins()
             ])
-
-        return True if len(self.violating_pins) > 0 else False
 
     def fix(self):
         """
