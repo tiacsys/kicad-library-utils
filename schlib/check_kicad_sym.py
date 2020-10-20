@@ -19,6 +19,9 @@ from rulebase import logError
 def do_unittest(symbol, rules, metrics):
     error_count = 0
     m = re.match(r'(\w+)__(.+)__(.+)', symbol.name)
+    if not m:
+        printer.red("Test '{sym}' could not be parsed".format(sym=symbol.name))
+        return (1, 0)
     unittest_result = m.group(1)
     unittest_rule = m.group(2)
     unittest_descrp = m.group(3)
