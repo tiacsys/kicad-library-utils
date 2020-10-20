@@ -100,12 +100,12 @@ def _get_value_ofRecursively(data, path, item_to_get=False):
         if type(i) == type([]) and i[0] == path[0]:
             return _get_value_ofRecursively(i, path[1:], item_to_get)
 
-def _get_value_of(data, lookup):
+def _get_value_of(data, lookup, default=None):
     """find the array which has lookup as first element, return its 2nd element"""
     for i in data:
         if type(i) == type([]) and i[0] == lookup:
             return i[1]
-    return None
+    return default
 
 def _has_value(data, lookup):
     """return true if the lookup item exists"""
@@ -164,10 +164,10 @@ class TextEffect(KicadSymbolBase):
             return None
         font = _get_array(sexpr, 'font')[0]
         (sizex, sizey) = _get_xy(font, 'size')
-        is_italic = 'italic' in font
-        is_bold = 'bold' in font
-        is_hidden = 'hide' in font 
-        is_mirrored = 'mirror' in font
+        is_italic = 'italic' in sexpr
+        is_bold = 'bold' in sexpr
+        is_hidden = 'hide' in sexpr
+        is_mirrored = 'mirror' in sexpr
         justify = _get_array2(sexpr, 'justify')
         h_justify = None
         v_justify = None
@@ -533,7 +533,7 @@ class KicadSymbol(KicadSymbolBase):
     arcs: List[Arc] = field(default_factory=list)
     polylines: List[Polyline] = field(default_factory=list)
     texts: List[Text] = field(default_factory=list)
-    pin_names_offset: float = 0
+    pin_names_offset: float = 0.508
     hide_pin_names: bool = False
     hide_pin_numbers: bool = False
     is_power: bool = False
@@ -573,8 +573,15 @@ class KicadSymbol(KicadSymbolBase):
     def get_property(self, pname):
         for p in self.properties:
             if p.name == pname:
-                return p.value
+                return p
         return None
+
+    def get_fp_filters(self):
+        filters = self.get_property('ki_fp_filters')
+        if filters:
+            return filters.value.split(" ")
+        else:
+            return []
 
     def is_graphic_symbol(self):
         # TODO this will also return false for a extended symbols
@@ -693,7 +700,8 @@ class KicadLibrary(KicadSymbolBase):
                 if pin_names_info:
                     if 'hide' in pin_names_info[0]:
                         symbol.hide_pin_names = True
-                    symbol.pin_names_offset = _get_value_of(pin_names_info[0], 'offset')
+                    # sometimes the pin_name_offset value does not exist, then use 20mil as default
+                    symbol.pin_names_offset = _get_value_of(pin_names_info[0], 'offset', 0.508)
              
                 # add it to the list of symbols
                 library.symbols.append(symbol)

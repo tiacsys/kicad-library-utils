@@ -23,6 +23,7 @@ def do_unittest(symbol, rules, metrics):
     unittest_rule = m.group(2)
     unittest_descrp = m.group(3)
     for rule in rules:
+        rule.footprints_dir = args.footprints if args.footprints else None
         rule = rule(symbol)
         if unittest_rule == rule.name and rule.v6 == True:
             rule.check()
@@ -49,6 +50,7 @@ def do_rulecheck(symbol, rules, metrics):
     symbol_warning_count = 0
     first = True
     for rule in rules:
+        rule.footprints_dir = args.footprints if args.footprints else None
         rule = rule(symbol)
 
         # check if this rule already is v6 compatible
