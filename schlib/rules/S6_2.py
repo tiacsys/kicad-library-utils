@@ -7,33 +7,25 @@ class Rule(KLCRule):
     """
     Create the methods check and fix to use with the kicad lib files.
     """
+    v6 = True
     def __init__(self, component):
         super(Rule, self).__init__(component, 'Component fields contain the correct information')
 
-    def checkVisibility(self, field):
-        return field['visibility'] == 'V'
-
-    # return True if a field is empty else false
-    def checkEmpty(self, field):
-        if 'name' in field.keys():
-            name = field['name']
-            if name and name not in ['""', "''"] and len(name) > 0:
-                return False
-        return True
-
     def checkReference(self):
-
         fail = False
+        ref = self.component.get_property("Reference")
+        if not ref:
+            self.error("Component is missing Reference field")
+            # can not do other checks, return
+            return True
 
-        ref = self.component.fields[0]
-
-        if (not self.component.isGraphicSymbol()) and (not self.component.isPowerSymbol()):
-            if not self.checkVisibility(ref):
-                self.error("Ref(erence) field must be VISIBLE")
+        if (not self.component.is_graphic_symbol()) and (not self.component.is_power_symbol()):
+            if ref.effects.is_hidden:
+                self.error("Reference field must be VISIBLE")
                 fail = True
         else:
-            if self.checkVisibility(ref):
-                self.error("Ref(erence) field must be INVISIBLE in graphic symbols or power-symbols")
+            if not ref.effects.is_hidden:
+                self.error("Reference field must be INVISIBLE in graphic symbols or power-symbols")
                 fail = True
 
         return fail
@@ -41,19 +33,22 @@ class Rule(KLCRule):
     def checkValue(self):
         fail = False
 
-        value = self.component.fields[1]
-
-        name = value['name']
+        prop = self.component.get_property("Value")
+        if not prop:
+            self.error("Component is missing Value field")
+            # can not do other checks, return
+            return True
+        name = prop.value
 
         if name.startswith('"') and name.endswith('"'):
             name = name[1:-1]
 
-        if (not self.component.isGraphicSymbol()) and (not self.component.isPowerSymbol()):
+        if (not self.component.is_graphic_symbol()) and (not self.component.is_power_symbol()):
             if not name == self.component.name:
                 self.error("Value {val} does not match component name.".format(val=name))
                 fail = True
             # name field must be visible!
-            if not self.checkVisibility(value):
+            if prop.effects.is_hidden:
                 self.error("Value field must be VISIBLE")
                 fail = True
         else:
@@ -61,7 +56,7 @@ class Rule(KLCRule):
                 self.error("Value {val} does not match component name.".format(val=name))
                 fail = True
 
-        if not isValidName(self.component.name, self.component.isGraphicSymbol(), self.component.isPowerSymbol()):
+        if not isValidName(self.component.name, self.component.is_graphic_symbol(), self.component.is_power_symbol()):
             self.error("Symbol name '{val}' contains invalid characters as per KLC 1.7".format(
                 val=self.component.name))
             fail = True
@@ -72,65 +67,92 @@ class Rule(KLCRule):
         # Footprint field must be invisible
         fail = False
 
-        fp = self.component.fields[2]
+        prop = self.component.get_property("Footprint")
+        if not prop:
+            self.error("Component is missing Footprint field")
+            # can not do other checks, return
+            return True
 
-        if self.checkVisibility(fp):
+        if not prop.effects.is_hidden:
             self.error("Footprint field must be INVISIBLE")
             fail = True
 
         return fail
 
     def checkDatasheet(self):
-
         # Datasheet field must be invisible
         fail = False
 
-        ds = self.component.fields[3]
+        ds = self.component.get_property("Datasheet")
+        if not ds:
+            self.error("Component is missing Datasheet field")
+            # can not do other checks, return
+            return True
 
-        if self.checkVisibility(ds):
+        if not ds.effects.is_hidden:
             self.error("Datasheet field must be INVISIBLE")
             fail = True
 
-        # Datasheet field must be empty
-        if not self.checkEmpty(ds):
-            self.error("Datasheet field must be EMPTY")
-            fail = True
+        # more checks for non power or non graphics symbol
+        if (not self.component.is_graphic_symbol()) and (not self.component.is_power_symbol()):
+            # Datasheet field must not be empty
+            if ds.value == "":
+                self.error("Datasheet field must not be EMPTY")
+                fail = True
+            if ds.value and len(ds.value) > 2:
+                link = False
+                links = ['http', 'www', 'ftp']
+                if any([ds.value.startswith(i) for i in links]):
+                    link = True
+                elif ds.value.endswith('.pdf') or '.htm' in ds:
+                     link = True
+
+                if not link:
+                    warnings.append("Datasheet entry '{ds}' does not look like a URL".format(ds=ds.value))
+                    fail = True
 
         return fail
 
+    def checkDescription(self):
+        dsc = self.component.get_property("ki_description")
+        if not dsc:
+            # can not do other checks, return
+            if self.component.is_power_symbol():
+                return True
+            else:
+                self.error("Missing Description field on 'Properties' tab")
+                return True
+
+        # Symbol name should not appear in the description
+        desc = dsc.value
+        if self.component.name.lower() in desc.lower():
+            self.warning("Symbol name should not be included in description")
+
+        return False
+
+    def checkKeywords(self):
+        dsc = self.component.get_property("ki_keywords")
+        if not dsc:
+            # can not do other checks, return
+            if self.component.is_power_symbol():
+                return True
+            else:
+                self.error("Missing Keywords field on 'Properties' tab")
+                return True
+
+        return False
+
     def check(self):
-
-        # Check for required fields
-        n = len(self.component.fields)
-        if n < 4:
-            self.error("Component does not have minimum required fields!")
-
-            if n < 1:
-                self.errorExtra(" - Missing REFERENCE field")
-
-            if n < 2:
-                self.errorExtra(" - Missing VALUE field")
-
-            if n < 3:
-                self.errorExtra(" - Missing FOOTPRINT field")
-
-            if n < 4:
-                self.errorExtra(" - Missing DATASHEET field")
-
-            return True
-
-        # Check for extra fields!
+        # Check for extra fields. How? TODO
         extraFields = False
-
-        if n > 4:
-            extraFields = True
-            self.error("Component contains extra fields after DATASHEET field")
 
         return any([
             self.checkReference(),
             self.checkValue(),
             self.checkFootprint(),
             self.checkDatasheet(),
+            self.checkDescription(),
+            self.checkKeywords(),
             extraFields
             ])
 
@@ -138,22 +160,5 @@ class Rule(KLCRule):
         """
         Proceeds the fixing of the rule, if possible.
         """
-        self.info("Fixing VALUE-field...")
-        self.component.fields[1]['name'] = self.component.name
-        # store datasheet field contents for later reuse
-        if ((not self.component.documentation['datasheet']) or len(self.component.documentation['datasheet']) == 0) and (len(self.component.fields[3]['name']) > 2):
-            ds = self.component.fields[3]['name']
-            if ds[0] == '"' and ds[len(ds)-1] == '"':
-                ds = ds[1:(len(ds)-1)]
-            self.component.documentation['datasheet'] = ds
-            self.info("Copying DATASHEET '{ds}' to DCM-file ...".format(ds=ds))
-
-        self.info("Emptying DATASHEET-field ...")
-        self.component.fields[3]['name'] = ""
-
-        self.info("Setting default field visibilities ...")
-        self.component.fields[0]['visibility'] = "V"
-        self.component.fields[1]['visibility'] = "V"
-        self.component.fields[2]['visibility'] = "I"
-        self.component.fields[3]['visibility'] = "I"
+        self.info("not supported")
         self.recheck()

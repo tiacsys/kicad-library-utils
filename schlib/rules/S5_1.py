@@ -8,6 +8,7 @@ class Rule(KLCRule):
     """
     Create the methods check and fix to use with the kicad lib files.
     """
+    v6 = True
     def __init__(self, component):
         super(Rule, self).__init__(component, 'For components with a single default footprint, footprint field is filled with valid footprint filename')
 
@@ -15,26 +16,24 @@ class Rule(KLCRule):
         """
         Proceeds the checking of the rule.
         """
-
         fail = False
 
-        # Footprint field is index [2]
-        if len(self.component.fields) >= 3:
-            fp = self.component.fields[2]
-            fp_name = fp['name']
-
+        # get footprint from properties
+        fp = self.component.get_property("Footprint")
+        if fp != None:
+            fp_name = fp.value
             # Strip the quote characters
             if fp_name.startswith('"') and fp_name.endswith('"'):
                 fp_name = fp_name[1:-1]
 
             fp_desc = "Footprint field '{fp}' ".format(fp=fp_name)
 
-            filters = self.component.fplist
+            filters = self.component.get_fp_filters()
 
             # Only check if there is text in the name
             if len(fp_name) > 0:
                 # footprint field should be set to invisible (if it has any text in it)
-                if fp['visibility'] == 'V':
+                if fp.effects.is_hidden == False:
                     fail = True
                     self.error(fp_desc + "must be set to invisible.")
 

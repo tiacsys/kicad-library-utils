@@ -8,6 +8,7 @@ class Rule(KLCRule):
     """
     Create the methods check and fix to use with the kicad lib files.
     """
+    v6 = True
     def __init__(self, component):
         super(Rule, self).__init__(component, 'Footprint filters should match all appropriate footprints')
 
@@ -47,9 +48,9 @@ class Rule(KLCRule):
         Proceeds the checking of the rule.
         """
 
-        filters = self.component.fplist
+        filters = self.component.get_fp_filters()
 
-        if (not self.component.isGraphicSymbol() and not self.component.isPowerSymbol()) and len(filters) == 0:
+        if (not self.component.is_graphic_symbol() and not self.component.is_power_symbol()) and len(filters) == 0:
             self.warning("No footprint filters defined")
 
         self.checkFilters(filters)
