@@ -692,12 +692,12 @@ class KicadLibrary(KicadSymbolBase):
               print ('unexpected token in file')
               continue
             name = item.pop(0)
-            m0 = re.match(r'(.*?):(.*)', name)
-            m1 = re.match(r'.*?_(\d+)_(\d+)', name)
+            m0 = re.match(r'^(.*?):(.*)$', name)
+            m1 = re.match(r'^.*_(\d+?)_(\d+?)$', name)
             if (m0 is not None):
                 # we found a new part, split symbol and libname
                 (libname, partname) = (m0.group(1), m0.group(2))
-                symbol = KicadSymbol(partname, libname, filename)
+                symbol = KicadSymbol(str(partname), str(libname), filename)
 
                 # extract extends property
                 extends = _get_array2(item, 'extends')
