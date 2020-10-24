@@ -144,8 +144,8 @@ parser = argparse.ArgumentParser(description='Checks KiCad library files (.kicad
 parser.add_argument('kicad_sym_files', nargs='+')
 parser.add_argument('-c', '--component', help='check only a specific component (implicitly verbose)', action='store')
 parser.add_argument('-p', '--pattern', help='Check multiple components by matching a regular expression', action='store')
-parser.add_argument('-r','--rule',help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r 3.1,EC02"')
-parser.add_argument('-e','--exclude',help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e 3.1,EC02"')
+parser.add_argument('-r','--rule',help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r S3.1,EC02"')
+parser.add_argument('-e','--exclude',help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"')
 #parser.add_argument('--fix', help='fix the violations if possible', action='store_true') # currently there is no write support for a kicad symbol
 parser.add_argument('--nocolor', help='does not use colors to show the output', action='store_true')
 parser.add_argument('-v', '--verbose', help='Enable verbose output. -v shows brief information, -vv shows complete information', action='count')
@@ -174,12 +174,20 @@ if args.rule:
 else:
     selected_rules = None
 
+if args.exclude:
+    excluded_rules = args.exclude.split(",")
+else:
+    excluded_rules = None
+
 rules = []
 
 for r in all_rules:
     r_name = r.replace('_', '.')
     if selected_rules == None or r_name in selected_rules:
-        rules.append(globals()[r].Rule)
+        if excluded_rules != None and r_name in excluded_rules:
+            pass
+        else:
+            rules.append(globals()[r].Rule)
 
 files = []
 
