@@ -16,6 +16,7 @@ class Rule(KLCRule):
         self.different_types = []
         self.visible_pin_not_lowest = []
         self.NC_stacked = []
+        self.non_numeric = []
         self.more_then_one_visible = False
 
 
@@ -26,6 +27,13 @@ class Rule(KLCRule):
                n += 1
         return n
 
+    def get_smallest_pin_number(self, pins):
+        min_pin_number = sys.maxsize
+        for p in pins:
+            if p.number_int != None:
+                min_pin_number = min(p.number_int, min_pin_number)
+        return min_pin_number
+
     def check(self):
         # no need to check this for an alias
         if self.component.extends != None:
@@ -35,16 +43,20 @@ class Rule(KLCRule):
 
         # iterate over pinstacks
         for (pos, pins) in self.component.get_pinstacks().items():
+            # skip stacks with only one pin
+            if len(pins) == 1:
+                continue
+
             common_pin_name = pins[0].name
             visible_pin = None
             common_etype = pins[0].etype
-
-            # find the smallest pin number
-            min_pin_number = pins[0].number
-            for p in pins:
-                min_pin_number = min(p.number, min_pin_number)
+            min_pin_number = self.get_smallest_pin_number(pins)
 
             for pin in pins:
+                if pin.number_int == None and not pos in self.non_numeric:
+                    self.warning("Found non-numeric pin in a pinstack: {0}".format(pinString(pin)))
+                    self.non_numeric.append(pos)
+
                 # Check1: If a single pin in a stack is of type NC, we consider this an error
                 if pin.etype == 'unconnected':
                     self.error("NC {pin} is stacked on other pins".format(
@@ -72,7 +84,7 @@ class Rule(KLCRule):
                         visible_pin = pin
 
                     # the visible pin should have the lowest pin_number
-                    if pin.number != min_pin_number and not pos in self.visible_pin_not_lowest:
+                    if pin.number_int != None and pin.number_int != min_pin_number and not pos in self.visible_pin_not_lowest:
                         self.warning("The pin with the lowest number in a pinstack should be visible")
                         self.warningExtra("Pin {0} is visible, the lowest number in this stack is {1}".format(pinString(pin), min_pin_number))
                         self.visible_pin_not_lowest.append(pos)
@@ -95,16 +107,12 @@ class Rule(KLCRule):
         special_stack_err = False
         for pos in possible_power_pin_stacks:
             pins = self.component.get_pinstacks()[pos]
+            min_pin_number = self.get_smallest_pin_number(pins)
 
             # 1. consists only of output and passive pins
             # 2. consists only of power-output and passive pins
             # 3. consists only of power-input and passive pins
             # 4. consists only of power-output/output pins
-
-            # find the smallest pin number
-            min_pin_number = pins[0].number
-            for p in pins:
-                min_pin_number = min(p.number, min_pin_number)
 
             # count types of pins
             n_power_in  = self.count_pin_etypes(pins, 'power_in')
@@ -135,7 +143,7 @@ class Rule(KLCRule):
                             special_stack_err = True
                             self.errorExtra("{0} is of type {1} and invisible".format(pinString(pin), pin.etype))
 
-                        if pin.number != min_pin_number and not pos in self.visible_pin_not_lowest:
+                        if pin.number_int != None and pin.number_int != min_pin_number and not pos in self.visible_pin_not_lowest:
                             self.warning("The pin with the lowest number in a pinstack should be visible")
                             self.warningExtra("Pin {0} is visible, the lowest number in this stack is {1}".format(pinString(pin), min_pin_number))
                             self.visible_pin_not_lowest.append(pos)
@@ -150,7 +158,7 @@ class Rule(KLCRule):
                         if visible_pin == None:
                             # this is the first time we found a visible pin in this stack
                             visible_pin = pin
-                            if pin.number != min_pin_number and not pos in self.visible_pin_not_lowest:
+                            if pin.number_int != None and pin.number_int != min_pin_number and not pos in self.visible_pin_not_lowest:
                                 self.warning("The pin with the lowest number in a pinstack should be visible")
                                 self.warningExtra("Pin {0} is visible, the lowest number in this stack is {1}".format(pinString(pin), min_pin_number))
                                 self.visible_pin_not_lowest.append(pos)

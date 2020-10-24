@@ -198,7 +198,8 @@ class TextEffect(KicadSymbolBase):
 class Pin(KicadSymbolBase):
     name: str
     name_effect: TextEffect
-    number: int
+    number: str
+    number_int: int
     number_effect: TextEffect
     posx: float
     posy: float
@@ -261,10 +262,18 @@ class Pin(KicadSymbolBase):
         (posx, posy, rotation) = _parse_at(sexpr)
         (name, name_effect) = cls._parse_name_or_number(sexpr)
         (number, number_effect) = cls._parse_name_or_number(sexpr, typ='number')
+        # we also need the pin-number as integer, try to convert it.
+        # Some pins won't work since they are called 'MP' or similar
+        number_int = None
+        try:
+            number_int = int(number)
+        except ValueError:
+            pass
         # create and return a pin with the just extraced values
         return Pin(name,
                    name_effect,
-                   int(number),
+                   number,
+                   number_int,
                    number_effect,
                    posx,
                    posy,

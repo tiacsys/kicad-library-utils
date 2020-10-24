@@ -15,9 +15,12 @@ class Rule(KLCRule):
         int_pins = []
         for pin in self.component.pins:
             try:
-                int_pins.append(pin.number)
+                int_pins.append(int(pin.number))
             except:
                 pass
+
+        if len(int_pins) == 0:
+            return False
 
         for i in range(1, max(int_pins) + 1):
             if i not in int_pins:
