@@ -104,11 +104,11 @@ class Rule(KLCRule):
                 links = ['http', 'www', 'ftp']
                 if any([ds.value.startswith(i) for i in links]):
                     link = True
-                elif ds.value.endswith('.pdf') or '.htm' in ds:
+                elif ds.value.endswith('.pdf') or '.htm' in ds.value:
                      link = True
 
                 if not link:
-                    warnings.append("Datasheet entry '{ds}' does not look like a URL".format(ds=ds.value))
+                    self.warning("Datasheet entry '{ds}' does not look like a URL".format(ds=ds.value))
                     fail = True
 
         return fail
