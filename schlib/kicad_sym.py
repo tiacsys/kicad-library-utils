@@ -592,11 +592,24 @@ class KicadSymbol(KicadSymbolBase):
     def get_pinstacks(s):
         stacks = {}
         for pin in s.pins:
-            loc = "{0}_{1}".format(pin.posx, pin.posy)
-            if loc in stacks:
-                stacks[loc].append(pin)
-            else:
-                stacks[loc] = [pin]
+            # if the unit is 0 that means this pin is common to all units
+            unit_list = [pin.unit]
+            if pin.unit == 0:
+                unit_list = list(range(1, s.unit_count + 1))
+
+            # if the unit is 0 that means this pin is common to all units
+            demorgan_list = [pin.demorgan]
+            if pin.demorgan == 0:
+                demorgan_list = list(range(1, s.demorgan_count + 1))
+
+            # add the pin to the correct stack
+            for demorgan in demorgan_list:
+                for unit in unit_list:
+                    loc = "x{0}_y{1}_u{2}_d{3}".format(pin.posx, pin.posy, unit, demorgan)
+                    if loc in stacks:
+                        stacks[loc].append(pin)
+                    else:
+                        stacks[loc] = [pin]
         return stacks
 
     def get_property(self, pname):
