@@ -4,28 +4,7 @@ from rules.rule import *
 
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    v6 = True
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Pin requirements')
-
-    def checkMissingPins(self):
-        int_pins = []
-        for pin in self.component.pins:
-            try:
-                int_pins.append(int(pin.number))
-            except:
-                pass
-
-        if len(int_pins) == 0:
-            return False
-
-        for i in range(1, max(int_pins) + 1):
-            if i not in int_pins:
-                self.warning("Pin {n} is missing".format(n=i))
-        return False
+    """General pin requirements"""
 
     def checkPinOrigin(self, gridspacing=100):
         self.violating_pins = []
@@ -106,7 +85,6 @@ class Rule(KLCRule):
             warningPinLength = 49
 
         return any([
-            self.checkMissingPins(),
             self.checkPinOrigin(pingrid),
             self.checkPinLength(errorPinLength, warningPinLength),
             self.checkDuplicatePins()

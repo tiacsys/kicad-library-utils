@@ -5,11 +5,7 @@ from __future__ import division
 from rules.rule import *
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad_mod files.
-    """
-    def __init__(self, module, args):
-        super(Rule, self).__init__(module, args, 'For surface-mount devices, placement type must be set to "Surface Mount"')
+    """For surface-mount devices, placement type must be set to "Surface Mount" """
 
     def check(self):
         """

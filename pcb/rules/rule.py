@@ -100,9 +100,9 @@ class KLCRule(KLCRuleBase):
     """
     A base class to represent a KLC rule
     """
-    def __init__(self, module, args, description):
+    def __init__(self, module, args):
 
-        KLCRuleBase.__init__(self, description)
+        KLCRuleBase.__init__(self)
     
         self.module = module
         self.args = args

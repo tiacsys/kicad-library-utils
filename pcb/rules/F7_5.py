@@ -5,11 +5,7 @@ from __future__ import division
 from rules.rule import *
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad_mod files.
-    """
-    def __init__(self, module, args):
-        super(Rule, self).__init__(module, args, 'Annular ring must be at least 0.15mm')
+    """Minimum annular ring width"""
 
     def checkPad(self, pad):
         if not 'size' in pad['drill']:

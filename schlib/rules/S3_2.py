@@ -4,12 +4,7 @@ from rules.rule import *
 
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    v6 = True
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Text properties should use common size of 50mils, but labels and numbers may use text size as low as 20mil if required')
+    """Text fields should use a common text size of 50mils"""
 
     def check(self):
         """

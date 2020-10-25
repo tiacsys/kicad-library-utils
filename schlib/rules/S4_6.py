@@ -5,7 +5,7 @@ import re
 
 
 class Rule(KLCRule):
-    v6 = True
+    """Hidden pins"""
 
     # No-connect pins should be "N"
     NC_PINS = ['^nc$', '^dnc$', '^n\.c\.$']
@@ -17,12 +17,6 @@ class Rule(KLCRule):
                 return True
 
         return False
-
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Unused pins should be set as NOT CONNECTED and should be INVISIBLE')
 
     def checkNCPins(self, pins):
         self.invisible_errors = []

@@ -3,14 +3,10 @@
 from rules.rule import *
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad_mod files.
-    """
-    def __init__(self, module, args):
-        super(Rule, self).__init__(module, args, 'Pad 1 should be denoted by rectangular pad')
+    """Pad 1 should be denoted by rectangular pad"""
 
-        self.names = ['1', 'A', 'A1', 'P1', 'PAD1']
-        self.pad_1_shapes = ['rect', 'roundrect']
+    names = ['1', 'A', 'A1', 'P1', 'PAD1']
+    pad_1_shapes = ['rect', 'roundrect']
 
     def check(self):
 

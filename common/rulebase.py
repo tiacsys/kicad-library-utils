@@ -108,8 +108,8 @@ class KLCRuleBase(object):
         path = "".join(path.split(".")[:-1])
         return path.replace('_', '.')
 
-    def __init__(self, description):
-        self.description = description
+    def __init__(self):
+        self.description = self.__doc__.strip().splitlines()[0].strip()
         self.messageBuffer=[]
         self.resetErrorCount()
         self.resetWarningCount()

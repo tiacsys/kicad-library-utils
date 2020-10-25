@@ -7,11 +7,7 @@ from rules.klc_constants import *
 import cmath
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad_mod files.
-    """
-    def __init__(self, module, args):
-        super(Rule, self).__init__(module, args, "Silkscreen layer requirements")
+    """Silkscreen layer requirements"""
 
     def checkReference(self):
         """

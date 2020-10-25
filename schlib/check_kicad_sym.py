@@ -28,7 +28,7 @@ def do_unittest(symbol, rules, metrics):
     for rule in rules:
         rule.footprints_dir = args.footprints if args.footprints else None
         rule = rule(symbol)
-        if unittest_rule == rule.name and rule.v6 == True:
+        if unittest_rule == rule.name:
             rule.check()
             if unittest_result == 'Fail' and rule.errorCount == 0:
                 printer.red("Test '{sym}' failed".format(sym=symbol.name))
@@ -56,14 +56,9 @@ def do_rulecheck(symbol, rules, metrics):
         rule.footprints_dir = args.footprints if args.footprints else None
         rule = rule(symbol)
 
-        # check if this rule already is v6 compatible
-        if rule.v6 == True:
-          if verbosity > 2:
-            printer.white("Checking rule " + rule.name)
-          rule.check()
-        else:
-            continue
-
+        if verbosity > 2:
+          printer.white("Checking rule " + rule.name)
+        rule.check()
 
         if args.nowarnings and not rule.hasErrors():
             continue

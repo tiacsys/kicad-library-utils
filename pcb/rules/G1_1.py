@@ -4,15 +4,12 @@ from rules.rule import *
 import re
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    def __init__(self, module, args):
-        super(Rule, self).__init__(module, args, 'Illegal characters in footprint name')
-        # Set of allowed chars. Some characters need to be escaped.
-        allowed_chars = "a-zA-Z0-9_\-\.,\+"
-        self.pattern = re.compile('^['+allowed_chars+']+$')
-        self.forbidden = re.compile('([^'+allowed_chars+'])+')
+    """Only standard characters are used for naming libraries and components"""
+
+    # Set of allowed chars. Some characters need to be escaped.
+    allowed_chars = "a-zA-Z0-9_\-\.,\+"
+    pattern = re.compile('^['+allowed_chars+']+$')
+    forbidden = re.compile('([^'+allowed_chars+'])+')
 
     def check(self):
         name = str(self.module.name).lower()

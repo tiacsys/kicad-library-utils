@@ -4,11 +4,7 @@ from rules.rule import *
 import os
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad_mod files.
-    """
-    def __init__(self, module, args):
-        super(Rule, self).__init__(module, args, 'Footprint metadata must be filled as appropriate')
+    """Footprint meta-data is filled in as appropriate"""
 
     def checkDocs(self):
         mod = self.module

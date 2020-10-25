@@ -4,12 +4,7 @@ from rules.rule import *
 
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    v6 = True
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Component fields contain the correct information')
+    """Symbol and alias fields and metadata filled out as required"""
 
     def checkReference(self):
         fail = False

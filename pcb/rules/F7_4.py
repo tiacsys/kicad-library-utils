@@ -15,15 +15,9 @@
 from rules.rule import *
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad_mod files.
-    """
-    def __init__(self, module, args):
-        super(Rule, self).__init__(module, args, 'Pad requirements for THT footprints')
+    """Pad requirements for THT footprints"""
 
-        self.required_layers = ["*.Cu","*.Mask"]
-
-
+    required_layers = ["*.Cu","*.Mask"]
 
     def checkPads(self, pads):
 

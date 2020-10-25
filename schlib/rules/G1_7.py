@@ -4,13 +4,8 @@ from rules.rule import *
 import platform
 
 class Rule(KLCRule):
-    v6 = True
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Library files must use Unix-style line endings (LF)')
-        self.lib_error = False
+    """Library files must use Unix-style line endings (LF)"""
+    lib_error = False
 
     def check(self):
         # Only perform this check on linux systems (i.e. Travis)

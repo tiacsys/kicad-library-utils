@@ -5,12 +5,7 @@ import string
 
 
 class Rule(KLCRule):
-    v6 = True
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Illegal characters in symbol name')
+    """Only standard characters are used for naming libraries and components"""
 
     def check(self):
 

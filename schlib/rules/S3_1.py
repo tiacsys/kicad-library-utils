@@ -5,12 +5,7 @@ import math
 
 
 class Rule(KLCRule):
-    v6 = True
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Origin is centered on the middle of the symbol')
+    """Origin is centered on the middle of the symbol"""
 
     def check(self):
         """

@@ -5,19 +5,11 @@ import re
 
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    v6 = True
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Graphical symbols follow some special rules/KLC-exceptions')
-        self.fixTooManyPins = False
-        self.fixNoFootprint = False
+    """Graphical symbols follow some special rules/KLC-exceptions"""
+    fixTooManyPins = False
+    fixNoFootprint = False
 
     def check(self):
-        """
-        Proceeds the checking of the rule.
-        """
         # no need to check this for an alias
         if self.component.extends != None:
             return False

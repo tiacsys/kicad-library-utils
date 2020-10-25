@@ -5,7 +5,8 @@ import re
 
 
 class Rule(KLCRule):
-    v6 = True
+    """Pin electrical type should match pin function"""
+
     # Power Input Pins should be 'W'
     POWER_INPUTS = ['^[ad]*g(rou)*nd(a)*$', '^[ad]*v(aa|cc|dd|ss|bat|in)$']
 
@@ -38,11 +39,6 @@ class Rule(KLCRule):
                 return True
         return False
 
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Pin electrical type should match pin function')
 
     # These pin types must be satisfied
     def checkPowerPins(self):

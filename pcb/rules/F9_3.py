@@ -7,9 +7,7 @@ import re
 SYSMOD_PREFIX = "${KISYS3DMOD}/"
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad_mod files.
-    """
+    """Footprint 3D model requirements"""
 
     # Regular expression for suffixes that shouldn't be in the model file
     suffix_re = (
@@ -20,9 +18,6 @@ class Rule(KLCRule):
         '|_CircularHoles'
         ')'
     )
-
-    def __init__(self, module, args):
-        super(Rule, self).__init__(module, args, '3D model settings')
 
     def checkModel(self, model):
 

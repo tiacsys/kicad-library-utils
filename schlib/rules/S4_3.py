@@ -4,21 +4,15 @@ from rules.rule import *
 
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
+    """Rules for pin stacking"""
+
     special_power_pins = ['power_in', 'power_out', 'output']
-    v6 = True
-
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Rules for pin stacking')
-        self.different_names = []
-        self.different_types = []
-        self.visible_pin_not_lowest = []
-        self.NC_stacked = []
-        self.non_numeric = []
-        self.more_then_one_visible = False
-
+    different_names = []
+    different_types = []
+    visible_pin_not_lowest = []
+    NC_stacked = []
+    non_numeric = []
+    more_then_one_visible = False
 
     def count_pin_etypes(self, pins, etyp):
         n = 0

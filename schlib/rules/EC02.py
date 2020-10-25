@@ -4,12 +4,7 @@ from rules.rule import *
 
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    v6 = True
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Check part reference, name and footprint position and alignment')
+    """Check part reference, name and footprint position and alignment"""
 
     def check(self):
         """

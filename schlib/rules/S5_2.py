@@ -5,12 +5,7 @@ import re
 
 
 class Rule(KLCRule):
-    """
-    Create the methods check and fix to use with the kicad lib files.
-    """
-    v6 = True
-    def __init__(self, component):
-        super(Rule, self).__init__(component, 'Footprint filters should match all appropriate footprints')
+    """Footprint filters should match all appropriate footprints"""
 
     def checkFilters(self, filters):
 
