@@ -25,7 +25,7 @@ class Rule(KLCRule):
         num = ''
 
         # check if module is through-hole
-        if module.attribute == 'pth':
+        if module.attribute == 'through_hole':
 
             for name in names:
                 pads = module.getPadsByNumber(name)

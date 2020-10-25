@@ -65,7 +65,7 @@ class KicadMod(object):
         self.name = self.sexpr_data[1]
 
         # module layer
-        self.layer = self._getValue('layer', 'pth', 2)
+        self.layer = self._getValue('layer', 'through_hole', 2)
 
         # locked flag
         self.locked = self._getValue('locked', False, 2)
@@ -87,7 +87,7 @@ class KicadMod(object):
         self.solder_paste_ratio = self._getValue('solder_paste_ratio', 0, 2)
 
         # attribute
-        self.attribute =  self._getValue('attr', 'pth', 2)
+        self.attribute =  self._getValue('attr', 'virtual', 2)
 
         # reference
         self.reference = self._getText('reference')[0]
@@ -1045,9 +1045,9 @@ class KicadMod(object):
         se.addOptItem('solder_paste_ratio', self.solder_paste_ratio)
         se.addOptItem('clearance', self.clearance)
 
-        # 'pth' type is assumed
+        # Set attribute, the default is 'virtual' and not written to the file
         attr = self.attribute.lower()
-        if attr in ['smd', 'virtual']:
+        if attr in ['smd', 'through_hole']:
             se.addItems({'attr': attr})
 
         # Add text items

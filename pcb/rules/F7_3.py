@@ -11,7 +11,7 @@ class Rule(KLCRule):
     def check(self):
 
         # Skip checks for non THT parts
-        if not self.module.attribute == 'pth':
+        if not self.module.attribute == 'through_hole':
             return False
 
         pad_1_rectangular = True
