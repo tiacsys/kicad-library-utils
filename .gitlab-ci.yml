@@ -15,3 +15,17 @@ symbol_rulechecker:
   artifacts:
     reports:
       metrics: metrics.txt
+
+footprint_rulechecker:
+  only:
+    refs:
+      - merge_requests
+    changes:
+      - "pcb/*"
+      - "pcb/rules/*"
+      - "pcb/test.pretty/*"
+  script:
+    - python pcb/check_kicad_mod.py -u pcb/test.pretty/*
+  artifacts:
+    reports:
+      metrics: metrics.txt
