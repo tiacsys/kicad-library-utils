@@ -6,7 +6,9 @@ from typing import List
 
 import re, math
 import sys, os
-sys.path.append(os.path.join('..', 'common'))
+common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
+if not common in sys.path:
+    sys.path.append(common)
 
 import sexpr
 import pprint
