@@ -33,6 +33,25 @@ class Rule(KLCRule):
                 self.error("Graphical symbols have no footprint filters")
                 fail = True
                 self.fixNoFootprint = True
+            # Ref is set to '#SYM' and is invisible
+            ref_prop = self.component.get_property("Reference")
+            if not ref_prop:
+                self.error("Graphical symbols have a Reference property")
+            else:
+                if ref_prop.value != '#SYM':
+                    self.error("Graphical symbols have Reference set to '#SYM' ")
+                    fail = True
+                if ref_prop.effects.is_hidden != True:
+                    self.error("Graphical symbols have a hidden Reference")
+                    fail = True
+            # Value is invisible
+            value_prop = self.component.get_property("Value")
+            if not value_prop:
+                self.error("Graphical symbols have a Value property")
+            else:
+                if value_prop.effects.is_hidden != True:
+                    self.error("Graphical symbols have a hidden Value")
+                    fail = True
 
         return fail
 

@@ -11,6 +11,7 @@ class Rule(KLCRule):
     fixTooManyPins = False
     fixPinSignalName = False
     fixNoFootprint = False
+    fixWrongRef = False
 
     def check(self):
         fail = False
@@ -36,9 +37,14 @@ class Rule(KLCRule):
                 # footprint field must be empty
                 fp_prop = self.component.get_property("Footprint")
                 if fp_prop and fp_prop.value != '':
-                    self.error("Graphical symbols have no footprint association (footprint was set to '"+fp_prop.value+"')")
+                    self.error("Power symbols have no footprint association (footprint is set to '"+fp_prop.value+"')")
                     fail = True
                     self.fixNoFootprint = True
+                ref_prop = self.component.get_property("Reference")
+                if not ref_prop or ref_prop.value != '#PWR':
+                    self.error("Power symbols have Reference set to '#PWR' ")
+                    fail = True
+                    self.fixWrongRef = True
                 # FPFilters must be empty
                 if len(self.component.get_fp_filters()) > 0:
                     self.error("Graphical symbols have no footprint filters")

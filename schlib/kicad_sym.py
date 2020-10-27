@@ -628,7 +628,7 @@ class KicadSymbol(KicadSymbolBase):
             return []
 
     def is_graphic_symbol(self):
-        return self.extends == None and len(self.pins) == 0
+        return self.extends == None and (len(self.pins) == 0 or self.get_property('Reference').value == '#SYM')
 
     def is_power_symbol(self):
         return self.is_power
