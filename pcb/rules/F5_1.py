@@ -29,8 +29,8 @@ class Rule(KLCRule):
                 v = ref['reference']))
 
         # Check correct layer for reference
-        if ref['layer'] not in ['F.SilkS', 'B.SilkS']:
-            errors.append("Reference label is on layer '{0}', but should be on layer F.SilkS or B.SilkS!".format(ref['layer']))
+        if ref['layer'] not in ['F.SilkS']:
+            errors.append("Reference label is on layer '{0}', but should be on layer F.SilkS!".format(ref['layer']))
 
         # Check that reference is not hidden
         if ref['hide']:
