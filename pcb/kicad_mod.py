@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import division
-
+import copy
 import time
-import re, math
-import sys, os
-sys.path.append(os.path.join('..','common'))
+import re
+import math
+import os
+import sys
 
+sys.path.append(os.path.join('..','common'))
 import sexpr
 from boundingbox import BoundingBox
 
@@ -100,6 +101,9 @@ class KicadMod(object):
 
         # lines
         self.lines = self._getLines()
+
+        # rects
+        self.rects = self._getRects()
 
         # circles
         self.circles = self._getCircles()
@@ -251,6 +255,33 @@ class KicadMod(object):
                 lines.append(line_dict)
 
         return lines
+
+    def _getRects(self, layer=None):
+        rects = []
+        for rect in self._getArray(self.sexpr_data, 'fp_rect'):
+            rect_dict = {}
+            if self._hasValue(rect, layer) or layer == None:
+                a = self._getArray(rect, 'start')[0]
+                rect_dict['start'] = {'x':a[1], 'y':a[2]}
+
+                a = self._getArray(rect, 'end')[0]
+                rect_dict['end'] = {'x':a[1], 'y':a[2]}
+
+                try:
+                    a = self._getArray(rect, 'layer')[0]
+                    rect_dict['layer'] = a[1]
+                except:
+                    rect_dict['layer'] = ''
+
+                try:
+                    a = self._getArray(rect, 'width')[0]
+                    rect_dict['width'] = a[1]
+                except:
+                    rect_dict['width'] = 0
+
+                rects.append(rect_dict)
+
+        return rects
 
     def _getCircles(self, layer=None):
         circles = []
@@ -615,6 +646,31 @@ class KicadMod(object):
 
         return lines
 
+    def filterRectsAsLines(self, layer):
+        lines = []
+        for rect in self.rects:
+            if rect['layer'] == layer:
+                # convert the rect to 4 lines
+                l0 = copy.deepcopy(rect)
+                l1 = copy.deepcopy(rect)
+                l2 = copy.deepcopy(rect)
+                l3 = copy.deepcopy(rect)
+                l0['end']['x'] = rect['start']['x']
+                l1['end']['y'] = rect['start']['y']
+                l2['start']['x'] = rect['end']['x']
+                l3['start']['y'] = rect['end']['y']
+                lines.extend([l0, l1, l2, l3])
+
+        return lines
+
+    def filterRects(self, layer):
+        rects = []
+        for rect in self.rects:
+            if rect['layer'] == layer:
+                rects.append(rect)
+
+        return rects
+
     def filterCircles(self, layer):
         circles = []
         for circle in self.circles:
@@ -632,7 +688,7 @@ class KicadMod(object):
         return arcs
 
     # Return the geometric bounds for a given layer
-    # Includes lines, arcs, circles
+    # Includes lines, arcs, circles, rects
     def geometricBoundingBox(self, layer):
 
         bb = BoundingBox()
@@ -642,6 +698,12 @@ class KicadMod(object):
         for l in lines:
             bb.addPoint(l['start']['x'], l['start']['y'])
             bb.addPoint(l['end']['x'], l['end']['y'])
+
+        # Add all rects
+        rects = self.filterRects(layer)
+        for r in rects:
+            bb.addPoint(r['start']['x'], l['start']['y'])
+            bb.addPoint(r['end']['x'], l['end']['y'])
 
         # Add all circles
         circles=self.filterCircles(layer)
@@ -696,6 +758,7 @@ class KicadMod(object):
 
     def filterGraphs(self, layer):
         return (self.filterLines(layer) +
+                self.filterRectsAsLines(layer) +
                 self.filterCircles(layer) +
                 self.filterArcs(layer))
 
@@ -841,6 +904,22 @@ class KicadMod(object):
 
     def _formatLine(self, line, se):
         se.startGroup('fp_line', newline=True, indent=False)
+
+        start = line['start']
+        end = line['end']
+
+        fp_line = [
+            {'start': [start['x'], start['y']]},
+            {'end': [end['x'], end['y']]},
+            {'layer': line['layer']},
+            {'width': line['width']}
+            ]
+
+        se.addItems(fp_line, newline=False)
+        se.endGroup(newline=False)
+
+    def _formatRect(self, line, se):
+        se.startGroup('fp_rect', newline=True, indent=False)
 
         start = line['start']
         end = line['end']
@@ -1060,6 +1139,10 @@ class KicadMod(object):
         # Add Line Data
         for line in self.lines:
             self._formatLine(line, se)
+
+        # Add Rect Data
+        for rect in self.rectss:
+            self._formatRect(rect, se)
 
         # Add Circle Data
         for circle in self.circles:
