@@ -63,32 +63,32 @@ def check_library(filename, rules, metrics, args):
     return (ec, wc)
 
 
-def do_unittest(symbol, rules, metrics):
+def do_unittest(footprint, rules, metrics):
     error_count = 0
-    m = re.match(r'(\w+)__(.+)__(.+)', symbol.name)
+    m = re.match(r'(\w+)__(.+)__(.+)', footprint.name)
     if not m:
-        printer.red("Test '{sym}' could not be parsed".format(sym=symbol.name))
+        printer.red("Test '{foot}' could not be parsed".format(foot=footprint.name))
         return (1, 0)
     unittest_result = m.group(1)
     unittest_rule = m.group(2)
     unittest_descrp = m.group(3)
     for rule in rules:
-        rule = rule(symbol, args)
+        rule = rule(footprint, args)
         if unittest_rule == rule.name:
             rule.check()
             if unittest_result == 'Fail' and rule.errorCount == 0:
-                printer.red("Test '{sym}' failed".format(sym=symbol.name))
+                printer.red("Test '{foot}' failed".format(foot=footprint.name))
                 error_count += 1
                 continue
             if unittest_result == 'Warn' and rule.warningCount() == 0:
-                printer.red("Test '{sym}' failed".format(sym=symbol.name))
+                printer.red("Test '{foot}' failed".format(foot=footprint.name))
                 error_count += 1
                 continue
             if unittest_result == 'Pass' and (rule.warningCount() != 0 or rule.errorCount != 0):
-                printer.red("Test '{sym}' failed".format(sym=symbol.name))
+                printer.red("Test '{foot}' failed".format(foot=footprint.name))
                 error_count += 1
                 continue
-            printer.green("Test '{sym}' passed".format(sym=symbol.name))
+            printer.green("Test '{foot}' passed".format(foot=footprint.name))
 
         else:
            continue
@@ -149,15 +149,15 @@ parser = argparse.ArgumentParser(description='Checks KiCad footprint files (.kic
 parser.add_argument('kicad_mod_files', nargs='+')
 parser.add_argument('--fix', help='fix the violations if possible', action='store_true')
 parser.add_argument('--fixmore', help='fix additional violations, not covered by --fix (e.g. rectangular courtyards), implies --fix!', action='store_true')
-parser.add_argument('--rotate', help='rotate the whole symbol clockwise by the given number of degrees', action='store', default=0)
+parser.add_argument('--rotate', help='rotate the whole footprint clockwise by the given number of degrees', action='store', default=0)
 parser.add_argument('-r', '--rule', help='specify single rule to check (default = check all rules)', action='store')
 parser.add_argument('--nocolor', help='does not use colors to show the output', action='store_true')
 parser.add_argument('-v', '--verbose', help='Enable verbose output. -v shows brief information, -vv shows complete information', action='count')
-parser.add_argument('-s', '--silent', help='skip output for symbols passing all checks', action='store_true')
+parser.add_argument('-s', '--silent', help='skip output for footprints passing all checks', action='store_true')
 parser.add_argument('-e', '--errors', help='Do not suppress fatal parsing errors', action='store_true')
 parser.add_argument('-l', '--log', help="Path to JSON file to log error information")
 parser.add_argument('-w', '--nowarnings', help='Hide warnings (only show errors)', action='store_true')
-parser.add_argument('-u', '--unittest', help='unit test mode (to be used with test-symbols)', action='store_true')
+parser.add_argument('-u', '--unittest', help='unit test mode (to be used with test-footprints)', action='store_true')
 parser.add_argument('-m', '--metrics', help='generate a metrics.txt file', action='store_true')
 
 args = parser.parse_args()
