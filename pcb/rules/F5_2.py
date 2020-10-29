@@ -74,7 +74,7 @@ class Rule(KLCRule):
         count = 0
 
         for text in texts:
-            if text['user'] == '%R':
+            if text['user'] == '${REFERENCE}':
                 ref = text
                 count += 1
 
@@ -82,7 +82,7 @@ class Rule(KLCRule):
 
         return ref
 
-    # Check that there is a second ref '%R' on the fab layer
+    # Check that there is a second ref '${REFERENCE}' on the fab layer
     def checkSecondRef(self):
 
         ref = self.getSecondRef()
@@ -91,7 +91,7 @@ class Rule(KLCRule):
         if not ref:
             if self.module.attribute != 'virtual':
                 self.error("Second Reference Designator missing")
-                self.errorExtra("Add RefDes to F.Fab layer with '%R'")
+                self.errorExtra("Add RefDes to F.Fab layer with '${REFERENCE}'")
                 return True
             else:
                 return False
@@ -205,7 +205,7 @@ class Rule(KLCRule):
         self.missing_second_ref = self.checkSecondRef()
 
         if self.multiple_second_ref:
-            self.error("Mutliple RefDes markers found with text '%R'")
+            self.error("Mutliple RefDes markers found with text '${REFERENCE}'")
 
         return any([
                     self.missing_value,
@@ -278,7 +278,7 @@ class Rule(KLCRule):
 
             font = {'thickness': text_line, 'height': text_size, 'width': text_size}
 
-            module.addUserText('%R',
+            module.addUserText('${REFERENCE}',
                 {'pos': pos,
                  'font': font,
                  'layer': 'F.Fab'
