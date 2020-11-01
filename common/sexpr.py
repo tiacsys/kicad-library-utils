@@ -5,7 +5,6 @@ from __future__ import print_function
 import re
 
 dbg = False
-float_render = "%.2f"
 
 term_regex = r'''(?mx)
     \s*(?:
@@ -65,8 +64,6 @@ def SexprItem(val, key=None):
         val = str(round(val,10)).rstrip('0').rstrip('.')
     elif t == int:
         val = str(val)
-    #elif t == float:
-    #    val = float_render % val
     elif t == str and re.search(r'[\s()\"]', val):
         val = '"%s"' % repr(val)[1:-1].replace('"', '\"') 
     
@@ -155,10 +152,15 @@ def build_sexp(exp, key=None):
     if type(exp) == type([]):
         out += '('+ ' '.join(build_sexp(x) for x in exp) + ')'
         return out
-    elif type(exp) == type('') and re.search(r'[\s()]', exp):
-        out += '"%s"' % repr(exp)[1:-1].replace('"', r'\"')
-    elif type(exp) in [int,float]:
-        out += float_render % exp
+    #elif type(exp) == type('') and re.search(r'[\s()]', exp):
+    #    out += '"%s"' % repr(exp)[1:-1].replace('"', r'\"')
+    #    print(exp, '"%s"' % repr(exp)[1:-1].replace('"', r'\"'))
+    elif type(exp) == float:
+        out += str(exp)
+    elif type(exp) == int:
+        out += str(exp)
+    elif type(exp) == str:
+        out += exp
     else:
         if exp == '':
             out += '""'
@@ -211,3 +213,4 @@ if __name__ == '__main__':
     print("\nParsed to Python:", parsed)
 
     print("\nThen back to: '%s'" % build_sexp(parsed))
+    print("\nThen back to: '%s'" % format_sexp(build_sexp(parsed)))
