@@ -1,17 +1,9 @@
 kicad-library-utils
 ===============
 
-## / directory
-
-**check_lib_table.py**: Checks the validity of a library table against given libraries
-
-**download_pretty_libs.py**: Download or update KiCad version 4 footprint libraries
-
-## schlib directory
+## klc-check directory
 
 **test_schlib.sh**: A shell script used to validate the generation of files of the schlib module.
-
-## pcb directory
 
 **check_kicad_mod.py**: Script for checking [KLC][] compliance of footprint files.
 
@@ -20,6 +12,16 @@ kicad-library-utils
 **check_3d_coverage.py**: Script for checking which KiCad footprints in a `.pretty` library have 3D models. It also shows unused 3D model files.
 
 [KLC]: http://kicad-pcb.org/libraries/klc/
+
+## common directory
+
+Contains various python librarys used by the check scrips and the generators.
+
+## gitlabci directory
+
+Contains helper scripts to run the CI for the following repos
+* kicad-symbols
+* kicad-footprints
 
 How to use
 ==========
