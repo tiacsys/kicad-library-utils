@@ -134,6 +134,13 @@ class Rule(KLCRule):
             else:
                 self.error("Missing Keywords field on 'Properties' tab")
                 return True
+        else:
+            # find special chars.
+            # a dot followed by a non-word char is also considered a violation. This allows 3.3V but prevents 'foobar. buzz'
+            forbidden_matches = re.findall('\.\W|\.$|[,:;?!<>]', keywords)
+            if forbidden_matches:
+                errors.append("Symbol keywords contain forbidden symbols: {}".format(forbidden_matches))
+                return True
 
         return False
 
