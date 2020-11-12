@@ -11,7 +11,7 @@ if common not in sys.path:
 from rulebase import *
 
 def mil_to_mm(mil):
-    return mil * 0.0254
+    return round(mil * 0.0254, 6)
 
 def mm_to_mil(mm):
     return round(mm / 0.0254)

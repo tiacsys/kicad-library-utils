@@ -122,7 +122,7 @@ class KicadSymbolBase(object):
 
     def compare_pos(s, x, y):
         if 'posx' in s.__dict__ and 'posy' in s.__dict__:
-            return s.posx == x and s.posy == y
+            return round(s.posx, 6) == round(x, 6) and round(s.posy, 6) == round(y, 6)
         return False
 
     @classmethod
