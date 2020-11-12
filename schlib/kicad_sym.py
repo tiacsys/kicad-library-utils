@@ -623,7 +623,7 @@ class KicadSymbol(KicadSymbolBase):
     def get_fp_filters(self):
         filters = self.get_property('ki_fp_filters')
         if filters:
-            return filters.value.split("\\n")
+            return filters.value.split(" ")
         else:
             return []
 
