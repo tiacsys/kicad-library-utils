@@ -1,23 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from __future__ import print_function
 
 import os
+import sys
 import argparse
 
-from kicad_mod import *
-from print_color import *
-
-common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
+common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
 if not common in sys.path:
     sys.path.append(common)
 
-
-# For Python 2 compatibility
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = OSError
+from kicad_mod import *
+from print_color import *
 
 
 class Config:
