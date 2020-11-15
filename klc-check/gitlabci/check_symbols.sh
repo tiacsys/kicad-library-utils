@@ -28,12 +28,12 @@ for LIBNAME in $LIBS_OLD; do
 done
 
 # now run comparelibs
-$CI_BUILDS_DIR/kicad-library-utils/schlib/comparelibs.py -v --old $CI_BUILDS_DIR/kicad-symbols-prev/* --new $LIBS_NEW --check --check-aliases --footprints $CI_BUILDS_DIR/kicad-footprints -m
+$CI_BUILDS_DIR/kicad-library-utils/klc-check/comparelibs.py -v --old $CI_BUILDS_DIR/kicad-symbols-prev/* --new $LIBS_NEW --check --check-aliases --footprints $CI_BUILDS_DIR/kicad-footprints -m
 SYM_ERROR_CNT=$?
 echo "SymbolErrorCount $SYM_ERROR_CNT" >> metrics.txt
 
 # check lib table
-$CI_BUILDS_DIR/kicad-library-utils/check_lib_table.py $CI_PROJECT_DIR/*.kicad_sym --table $CI_PROJECT_DIR/sym-lib-table
+$CI_BUILDS_DIR/kicad-library-utils/klc-check/check_lib_table.py $CI_PROJECT_DIR/*.kicad_sym --table $CI_PROJECT_DIR/sym-lib-table
 TAB_ERROR_CNT=$?
 echo "LibTableErrorCount $TAB_ERROR_CNT" >> metrics.txt
 

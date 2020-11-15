@@ -134,13 +134,13 @@ for lib_name in new_libs:
                     lib=lib_name, name=symname, alias_info=alias_info))
 
             if args.check:
-                if not KLCCheck(lib_path, symname) == 0:
+                (ec, wc) = sym_check.check_library(lib_path)
+                if ec != 0:
                     errors += 1
 
             continue
 
-        if new_sym[symname].extends != old_sym[
-                symname].extends and args.verbose:
+        if new_sym[symname].extends != old_sym[symname].extends and args.verbose:
             printer.white("Changed alias state of '{lib}:{name}'".format(
                 lib=lib_name, name=symname))
 
@@ -184,7 +184,8 @@ for lib_name in new_libs:
                                 alias_info=alias_info))
 
             if args.check:
-                if not KLCCheck(lib_path, symname) == 0:
+                (ec, wc) = sym_check.do_rulecheck(new_sym[symname])
+                if ec != 0:
                     errors += 1
 
     for symname in old_sym:

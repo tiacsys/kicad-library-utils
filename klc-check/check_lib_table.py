@@ -14,6 +14,10 @@ It is important that the official libraries match the entries in these tables.
 import argparse
 import os
 import sys
+common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
+if not common in sys.path:
+    sys.path.append(common)
+
 from lib_table import LibTable
 
 parser = argparse.ArgumentParser(description='Compare a sym-lib-table file against a list of .lib library files')
