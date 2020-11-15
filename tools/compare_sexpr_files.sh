@@ -35,6 +35,10 @@ args=("$@")
 normalize_sexpr ${args[0]} $o1
 normalize_sexpr ${args[1]} $o2
 
-git diff --no-index --color-words $o1 $o2
+# use git compare since it does a nice colorful output
+git --no-pager diff --no-index --color-words $o1 $o2
+R=$?
 
+# remove temp files, forward exit code
 rm $o1 $o2
+exit $R
