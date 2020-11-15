@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-import traceback
-import sys,os
+import sys
+import os
+import time
+from multiprocessing import Queue, Process, JoinableQueue, Lock
 from glob import glob # enable windows wildcards
 
 common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
@@ -15,7 +17,6 @@ from print_color import *
 from rules_symbol import __all__ as all_rules
 from rules_symbol import *
 from rules_symbol.rule import KLCRule
-from rulebase import logError
 
 class SymbolCheck():
     def __init__(self, selected_rules = None, excluded_rules = None, verbosity = 0, footprints = None, use_color = True, no_warnings = False, silent = False, log = False):
@@ -26,6 +27,8 @@ class SymbolCheck():
         self.no_warnings = no_warnings
         self.log = log
         self.silent = silent
+        self.error_count = 0
+        self.warning_count = 0
 
         # build a list of rules to work with
         self.rules = []
@@ -67,7 +70,7 @@ class SymbolCheck():
                         
             else:
                continue
-        return (error_count, warning_count)
+        return (error_count, 0)
 
     def do_rulecheck(self, symbol):
         symbol_error_count = 0
@@ -86,7 +89,7 @@ class SymbolCheck():
 
             if rule.hasOutput():
                 if first:
-                    self.printer.green("Checking symbol '{sym}':".format(sym=symbol.name))
+                    self.printer.green("Checking symbol '{lib}:{sym}':".format(lib=symbol.libname, sym=symbol.name))
                     first = False
 
                 self.printer.yellow("Violating " + rule.name, indentation=2)
@@ -103,7 +106,7 @@ class SymbolCheck():
         # No messages?
         if first:
             if not args.silent:
-                self.printer.green("Checking symbol '{sym}' - No errors".format(sym=symbol.name))
+                self.printer.green("Checking symbol '{lib}:{sym}':".format(lib=symbol.libname, sym=symbol.name))
 
         # done checking the symbol
         # count errors and update metrics
@@ -154,6 +157,8 @@ class SymbolCheck():
         # done checking the lib
         self.metrics.append('{lib}.total_errors {n}'.format(lib=libname, n=error_count))
         self.metrics.append('{lib}.total_warnings {n}'.format(lib=libname, n=warning_count))
+        self.error_count += error_count
+        self.warning_count += warning_count
         return (error_count, warning_count)
 
 if __name__ == '__main__':
@@ -171,6 +176,7 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--nowarnings', help='Hide warnings (only show errors)', action='store_true')
     parser.add_argument('-m', '--metrics', help='generate a metrics.txt file', action='store_true')
     parser.add_argument('-u', '--unittest', help='unit test mode (to be used with test-symbols)', action='store_true')
+    parser.add_argument('-j', '--multiprocess', help='use parallel processing')
     parser.add_argument('--footprints', help='Path to footprint libraries (.pretty dirs). Specify with e.g. "~/kicad/footprints/"')
     args = parser.parse_args()
    
@@ -194,32 +200,70 @@ if __name__ == '__main__':
     # check if a footprints dir was passed
     footprints = args.footprints if args.footprints else None
 
-    #
+    # populate list of files
     files = []
     for f in args.kicad_sym_files:
         files += glob(f)
 
     if len(files) == 0:
-        printer.red("File argument invalid: {f}".format(f=args.kicad_mod_files))
+        print("File argument invalid: {f}".format(f=args.kicad_sym_files))
         sys.exit(1)
 
-    # now iterate over all files and check them
-    c = SymbolCheck(selected_rules, excluded_rules, verbosity, footprints, use_color = not args.nocolor, no_warnings = args.nowarnings, silent = args.silent, log = args.log)
-    error_count = 0
-    warning_count = 0
-    for filename in files:
-        (ec, wc) = c.check_library(filename, args.component, args.pattern, args.unittest)
-        error_count += ec
-        warning_count += wc
+    # re work files list to include size
+    for i in range(len(files)):
+        files[i] = (files[i], os.path.getsize(files[i]))
+    # Sort list by file size, largest on top
+    # the idea is to further speed up multiprocessing by working on the bigger items first
+    if args.unittest == False:
+        files.sort(key=lambda filename: filename[1], reverse=True)
+
+    # Create queues for multiprocessing
+    task_queue = JoinableQueue()
+    out_queue = Queue()
+
+    def worker(inp, outp, lock, i=0):
+        # have one instance of SymbolCheck per worker
+        c = SymbolCheck(selected_rules, excluded_rules, verbosity, footprints, use_color = not args.nocolor, no_warnings = args.nowarnings, silent = args.silent, log = args.log)
+        c.printer.buffered = True
+        for fn in iter(inp.get, 'STOP'):
+            # run the check on this file
+            c.check_library(fn, args.component, args.pattern, args.unittest)
+            # print the console output, all at once while we have the lock
+            lock.acquire()
+            c.printer.flush()
+            lock.release()
+            # signal that we are done with this item
+            inp.task_done()
+        # output all the metrics at one
+        outp.put(c)
+        # exit the worker
+        inp.task_done()
+        return
+
+    for (filename, size) in files:
+        task_queue.put(filename)
+
+    # create the workers
+    lock = Lock()
+    for i in range(int(args.multiprocess) if args.multiprocess else 1):
+        Process(target=worker, args=(task_queue, out_queue, lock, i)).start()
+        # add a stop sign to each
+        task_queue.put('STOP')
+
+    # wait for all workers to finish
+    task_queue.join()
+    out_queue.put('STOP')
 
     # done checking all files
+    error_count = 0
     if args.metrics or args.unittest:
       metrics_file = open(r"metrics.txt","a+")
-      for line in c.metrics:
-        metrics_file.write(line + "\n")
+      for itm in iter(out_queue.get, 'STOP'):
+        for line in itm.metrics:
+          metrics_file.write(line + "\n")
+        error_count += itm.error_count
       metrics_file.close()
+
+    out_queue.close()
     sys.exit(0 if error_count == 0 else -1)
-
-
-
 
