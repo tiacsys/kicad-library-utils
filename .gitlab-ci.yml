@@ -8,10 +8,11 @@ symbol_rulechecker:
     refs:
       - merge_requests
     changes:
-      - "schlib/*"
-      - "schlib/test/*"
+      - "common/*"
+      - "klc-check/*"
+      - "klc-check/*symbol/*"
   script:
-    - python schlib/check_kicad_sym.py -u schlib/test/*
+    - python klc-check/check_symbol.py -u klc-check/test_symbol/*
   artifacts:
     reports:
       metrics: metrics.txt
@@ -21,11 +22,11 @@ footprint_rulechecker:
     refs:
       - merge_requests
     changes:
-      - "pcb/*"
-      - "pcb/rules/*"
-      - "pcb/test.pretty/*"
+      - "common/*"
+      - "klc-check/*"
+      - "klc-check/*footprint/*"
   script:
-    - python pcb/check_kicad_mod.py -u pcb/test.pretty/*
+    - python klc-check/check_footprint.py -u klc-check/test_footprint.pretty/*
   artifacts:
     reports:
       metrics: metrics.txt
