@@ -9,12 +9,7 @@ if common not in sys.path:
     sys.path.append(common)
 
 from rulebase import *
-
-def mil_to_mm(mil):
-    return round(mil * 0.0254, 6)
-
-def mm_to_mil(mm):
-    return round(mm / 0.0254)
+from kicad_sym import mm_to_mil, mil_to_mm
 
 def pinString(pin, loc=True, unit=None, convert=None):
     return "Pin {name} ({num}){loc}{unit}".format(

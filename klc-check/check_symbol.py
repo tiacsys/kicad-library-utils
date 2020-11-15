@@ -214,7 +214,7 @@ if __name__ == '__main__':
 
     # done checking all files
     if args.metrics or args.unittest:
-      metrics_file = file2 = open(r"metrics.txt","a+")
+      metrics_file = open(r"metrics.txt","a+")
       for line in c.metrics:
         metrics_file.write(line + "\n")
       metrics_file.close()
