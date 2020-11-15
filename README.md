@@ -3,25 +3,40 @@ kicad-library-utils
 
 ## klc-check directory
 
-**test_schlib.sh**: A shell script used to validate the generation of files of the schlib module.
+**check_symbol.py**: Script for checking [KLC][] compliance of symbol files.
 
-**check_kicad_mod.py**: Script for checking [KLC][] compliance of footprint files.
-
-**kicad_mod.py**: A Python module for loading, editing, and saving KiCad footprint files.
+**check_footprint.py**: Script for checking [KLC][] compliance of footprint files.
 
 **check_3d_coverage.py**: Script for checking which KiCad footprints in a `.pretty` library have 3D models. It also shows unused 3D model files.
 
+**comparelibs.sh**: Script to compare to versions of the same library. Used as part of the `kicad-symbols` CI.
+
 [KLC]: http://kicad-pcb.org/libraries/klc/
 
-## common directory
-
-Contains various python librarys used by the check scrips and the generators.
-
-## gitlabci directory
+### gitlabci directory
 
 Contains helper scripts to run the CI for the following repos
 * kicad-symbols
 * kicad-footprints
+
+## common directory
+
+Contains various python librarys used by the check scrips and the generators.
+**kicad_mod.py**: A Python module for loading, editing, and saving KiCad footprint files.
+
+## symbol-generators
+
+**example-generator.py**: An example on how to create symbols using python
+
+## tools directoy
+
+**compare_sexpr_files.sh**: Normalizes and compares two sexpr files. Those can be `kicad_sym` or `kicad_mod` files.
+
+## test directory
+
+**read_write_kicad_sym.sh** Opens `.kicad_sym` files, parses them and writes them to a temp-file. Then the temp-file and original file are normalized and compared. If the reader and writer implementation are correct there should be no differences.
+
+In the future it is planned to run this over the whole library to check if the scripts are working properly.
 
 How to use
 ==========
@@ -29,36 +44,36 @@ How to use
 ## Schematic Library Checker
 
     # first get into schlib directory
-    cd kicad-library-utils/schlib
+    cd kicad-library-utils/klc-check
 
     # run the script passing the files to be checked
-    ./check_kicad_sym.py path_to_lib1 path_to_lib2
+    ./check_symbol.py path_to_lib1 path_to_lib2
 
     # to check a specific component you can use the -c flag
-    ./check_kicad_sym.py -c component_name path_to_lib1
+    ./check_symbol.py -c component_name path_to_lib1
 
     # run the following 'h'elp command to see other options
-    ./check_kicad_sym.py -h
+    ./check_symbol.py -h
 
 ## Footprint Checker
 
     # first get into pcb directory
-    cd kicad-library-utils/pcb
+    cd kicad-library-utils/klc-check
 
     # run the script passing the files to be checked
-    ./check_kicad_mod.py path_to_fp1.kicad_mod path_to_fp2.kicad_mod
+    ./check_footprint.py path_to_fp1.kicad_mod path_to_fp2.kicad_mod
     
     # Add `-v`, `-vv`, or `-vvv` for extra verbose output. The most useful is `-vv`, which explains in details the violations. Ex: 
-    ./check_kicad_mod.py path_to_fp1.kicad_mod path_to_fp2.kicad_mod -vv
+    ./check_footprint.py path_to_fp1.kicad_mod path_to_fp2.kicad_mod -vv
 
     # run the following 'h'elp command to see other options
-    ./check_kicad_mod.py -h
+    ./check_footprint.py -h
 
 
-## 3D Coverage Checker
+## 3D Coverage Checker (not yet ported to v6!)
 
     # first get into pcb directory
-    cd kicad-library-utils/pcb
+    cd kicad-library-utils/klc-check
 
     # run the script to check all footprints
     ./check_3d_coverage.py
