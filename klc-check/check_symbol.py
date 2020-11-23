@@ -105,7 +105,7 @@ class SymbolCheck():
 
         # No messages?
         if first:
-            if not args.silent:
+            if not self.silent:
                 self.printer.green("Checking symbol '{lib}:{sym}':".format(lib=symbol.libname, sym=symbol.name))
 
         # done checking the symbol
