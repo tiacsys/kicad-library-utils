@@ -702,8 +702,8 @@ class KicadMod(object):
         # Add all rects
         rects = self.filterRects(layer)
         for r in rects:
-            bb.addPoint(r['start']['x'], l['start']['y'])
-            bb.addPoint(r['end']['x'], l['end']['y'])
+            bb.addPoint(r['start']['x'], r['start']['y'])
+            bb.addPoint(r['end']['x'], r['end']['y'])
 
         # Add all circles
         circles=self.filterCircles(layer)
