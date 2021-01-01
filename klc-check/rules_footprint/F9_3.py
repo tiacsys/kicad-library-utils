@@ -4,7 +4,7 @@ from rules_footprint.rule import *
 import os
 import re
 
-SYSMOD_PREFIX = "${KISYS3DMOD}/"
+SYSMOD_PREFIX = "${KICAD6_3DMODEL_DIR}/"
 
 class Rule(KLCRule):
     """Footprint 3D model requirements"""
