@@ -17,14 +17,21 @@
 # Library format description
 # https://www.compuphase.com/electronics/LibraryFileFormats.pdf
 
+import os, sys
 from enum import Enum
-from KiCadSymbolGenerator.Point import Point
+from Point import Point
 from copy import deepcopy
 
+common = os.path.abspath(os.path.join(sys.path[0], '..', '..', 'common'))
+if not common in sys.path:
+    sys.path.append(common)
+
+import kicad_sym
+
 class ElementFill(Enum):
-    NO_FILL = 'N'
-    FILL_BACKGROUND = 'f'
-    FILL_FOREGROUND = 'F'
+    NO_FILL = 'none'
+    FILL_BACKGROUND = 'background'
+    FILL_FOREGROUND = 'outline'
 
     def __str__(self):
         return self.value
@@ -40,35 +47,38 @@ class DrawingPin:
         def __str__(self):
             return self.value
 
+        def __repr__(self):
+            return self.value
+
     class PinElectricalType(Enum):
-        EL_TYPE_INPUT = 'I'
-        EL_TYPE_OUTPUT = 'O'
-        EL_TYPE_BIDIR = 'B'
-        EL_TYPE_TRISTATE = 'T'
-        EL_TYPE_PASSIVE = 'P'
-        EL_TYPE_OPEN_COLECTOR = 'C'
-        EL_TYPE_OPEN_EMITTER = 'E'
-        EL_TYPE_NC = 'N'
-        EL_TYPE_UNSPECIFIED = 'U'
-        EL_TYPE_POWER_INPUT = 'W'
-        EL_TYPE_POWER_OUTPUT = 'w'
+        EL_TYPE_INPUT = 'input'
+        EL_TYPE_OUTPUT = 'output'
+        EL_TYPE_BIDIR = 'bidirectional'
+        EL_TYPE_TRISTATE = 'tri_state'
+        EL_TYPE_PASSIVE = 'passive'
+        EL_TYPE_OPEN_COLECTOR = 'open_collector'
+        EL_TYPE_OPEN_EMITTER = 'open_emitter'
+        EL_TYPE_NC = 'unconnected'
+        EL_TYPE_UNSPECIFIED = 'unspecified'
+        EL_TYPE_POWER_INPUT = 'power_in'
+        EL_TYPE_POWER_OUTPUT = 'power_out'
 
         def __str__(self):
             return self.value
 
     class PinVisibility(Enum):
-        INVISIBLE = 'N'
-        VISIBLE = ''
+        INVISIBLE = 0
+        VISIBLE = 1
 
         def __str__(self):
             return self.value
 
     class PinStyle(Enum):
-        SHAPE_LINE = ''
-        SHAPE_INVERTED = 'I'
-        SHAPE_CLOCK = 'C'
-        SHAPE_INPUT_LOW = 'L'
-        SHAPE_OUTPUT_LOW = 'V'
+        SHAPE_LINE = 'line'
+        SHAPE_INVERTED = 'inverted'
+        SHAPE_CLOCK = 'clock'
+        SHAPE_INPUT_LOW = 'input_low'
+        SHAPE_OUTPUT_LOW = 'output_low'
         # There are more, not all are implemented yet.
 
         def __str__(self):
@@ -657,6 +667,89 @@ class Drawing:
             pinname_update_function = lambda old_name, new_number: new_number):
         for pin in self.pins:
             pin.updatePinNumber(pinnumber_update_function, pinname_update_function)
+
+    def appendToSymbol (self, symbol):
+        """
+        Convert the drawing elements to equivalent objects and append them to a KicadSymbol object
+        """
+
+        for r in self.rectangle:
+            rect = kicad_sym.Rectangle.new_mil (r.start.x, r.start.y, r.end.x, r.end.y)
+            rect.stroke_width = kicad_sym.mil_to_mm (r.line_width)
+            rect.fill_type =  r.fill
+            rect.unit = r.unit_idx
+            rect.demorgan = r.deMorgan_idx
+            symbol.rectangles.append (rect)
+
+        for p in self.pins:
+            pin = kicad_sym.Pin (p.name, str(p.num), str(p.el_type), kicad_sym.mil_to_mm(p.at.x), kicad_sym.mil_to_mm(p.at.y), kicad_sym.Pin.dir_to_rotation(str(p.orientation)), str(p.style), kicad_sym.mil_to_mm(p.pin_length))
+            pin.is_hidden = p.visibility == DrawingPin.PinVisibility.INVISIBLE
+            pin.name_effect.sizex = kicad_sym.mil_to_mm (p.fontsize_pinname)
+            pin.name_effect.sizey = pin.name_effect.sizex
+            pin.number_effect.sizex = kicad_sym.mil_to_mm (p.fontsize_pinnumber)
+            pin.number_effect.sizey = pin.number_effect.sizex
+            pin.unit = p.unit_idx
+            pin.demorgan = p.deMorgan_idx
+            symbol.pins.append (pin)
+        
+        for a in self.arc:
+            start = Point(distance = a.radius, angle = a.angle_start/10).translate(a.at)
+            end = Point(distance = a.radius, angle = a.angle_end/10).translate(a.at)
+
+            arc = kicad_sym.Arc(kicad_sym.mil_to_mm(start.x), kicad_sym.mil_to_mm(start.y),
+                                kicad_sym.mil_to_mm(end.x), kicad_sym.mil_to_mm(end.y),
+                                kicad_sym.mil_to_mm(a.at.x), kicad_sym.mil_to_mm(a.at.y), 
+                                kicad_sym.mil_to_mm(a.radius), a.angle_start/10, a.angle_end/10)
+
+            arc.stroke_width = kicad_sym.mil_to_mm (a.line_width)
+            arc.fill_type = a.fill
+            arc.unit = a.unit_idx
+            arc.demorgan = a.deMorgan_idx
+            symbol.arcs.append (arc)
+
+        for c in self.circle:
+            circle = kicad_sym.Circle(kicad_sym.mil_to_mm(c.at.x), kicad_sym.mil_to_mm(c.at.y), kicad_sym.mil_to_mm(c.radius), kicad_sym.mil_to_mm (c.line_width) )
+            circle.fill_type = c.fill
+            circle.unit = c.unit_idx
+            circle.demorgan = c.deMorgan_idx
+            symbol.circles.append (circle)
+
+        for t in self.text:
+            text = kicad_sym.Text(t.text, kicad_sym.mil_to_mm(t.at.x), kicad_sym.mil_to_mm(t.at.y), t.angle, kicad_sym.TextEffect(kicad_sym.mil_to_mm (t.size), kicad_sym.mil_to_mm (t.size)))
+            text.effects.is_italic = t.font_type == DrawingText.FontType.ITALIC
+            text.effects.is_bold = t.font_weight == DrawingText.FontWeight.BOLD
+            text.effects.is_hidden = t.hidden == 1
+            if t.halign == DrawingText.HorizontalAlignment.CENTER: 
+                text.effects.h_justify = "center"
+            elif t.halign == DrawingText.HorizontalAlignment.LEFT: 
+                text.effects.h_justify = "left"
+            if t.halign == DrawingText.HorizontalAlignment.RIGHT: 
+                text.effects.h_justify = "right"
+            if t.valign == DrawingText.VerticalAlignment.CENTER: 
+                text.effects.v_justify = "center"
+            elif t.valign == DrawingText.VerticalAlignment.TOP: 
+                text.effects.v_justify = "top"
+            elif t.valign == DrawingText.VerticalAlignment.BOTTOM: 
+                text.effects.v_justify = "bottom"
+            text.unit = t.unit_idx
+            text.demorgan = t.deMorgan_idx
+            symbol.texts.append (text)
+
+        for p in self.polyline:
+            pts = []
+            for pt in p.points:
+                pts.append (kicad_sym.Point.new_mil (pt.x, pt.y))
+
+            poly = kicad_sym.Polyline(pts)
+            poly.unit = p.unit_idx
+            poly.demorgan = p.deMorgan_idx
+            poly.stroke_width = kicad_sym.mil_to_mm(p.line_width)
+            poly.fill_type = p.fill
+            symbol.polylines.append (poly)
+
+        symbol.unit_count = 1
+        symbol.demorgan_count = 1
+
 
 
 class DrawingArray(Drawing):

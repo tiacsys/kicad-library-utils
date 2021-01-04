@@ -19,5 +19,5 @@ all the necessary XML files, and `pdfdir` is a directory containing all the PDF
 files (e.g. `./stm32_datasheets/`).  Make sure the XML files have the correct
 format as there is no error checking.
 
-Mining data from the pdf filestakes time, expect about 1-2 minutes per
+Mining data from the pdf files takes time, expect about 1-2 minutes per
 datasheet and CPU core.

@@ -4,11 +4,21 @@ import math
 import os
 import sys
 
-sys.path.append(os.path.join(sys.path[0], '..'))
+common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
+if not common in sys.path:
+    sys.path.append(common)
 
-from KiCadSymbolGenerator import *
+common = os.path.abspath(os.path.join(sys.path[0], '..', '..', 'common'))
+if not common in sys.path:
+    sys.path.append(common)
 
-generator = SymbolGenerator('SW_DIP')
+import kicad_sym
+
+from Point import *
+from DrawingElements import *
+
+libname = 'SW_DIP'
+library = kicad_sym.KicadLibrary(libname + '.kicad_sym')
 
 def generateDIPSwitch(count):
     name = 'SW_DIP_x{:02d}'.format(count)
@@ -34,25 +44,18 @@ def generateDIPSwitch(count):
     body_height = height + grid_size
     body_y = top - grid_size
 
-    symbol = generator.addSymbol(name,
-        dcm_options = {
-            'description': description,
-            'keywords': keywords,
-            'datasheet': datasheet
-        },
-        footprint_filter = footprintFilter,
-        offset = 0,
-        pin_name_visibility = Symbol.PinMarkerVisibility.INVISIBLE
-    )
-    symbol.setReference(refdes,
-        at = Point(0, -(body_y - 50))
-    )
-    symbol.setValue(
-        at = Point(0, -(body_y + body_height + 50))
-    )
+    symbol = kicad_sym.KicadSymbol.new(name, libname, refdes, '', datasheet, keywords, description, footprintFilter)
+    library.symbols.append(symbol)
+
+    symbol.hide_pin_names = True
+
+    symbol.get_property('Reference').set_pos_mil(0, -(body_y - 50), 0)
+    symbol.get_property('Value').set_pos_mil(0, -(body_y + body_height + 50), 0)
+
+    drawing = Drawing()
 
     # Symbol body
-    symbol.drawing.append(DrawingRectangle(
+    drawing.append(DrawingRectangle(
         end = Point(body_x + body_width, -(body_y + body_height)),
         fill = ElementFill.FILL_BACKGROUND,
         start = Point(body_x, -body_y),
@@ -63,9 +66,10 @@ def generateDIPSwitch(count):
     pin_right = 2 * count
     pin_y = top
 
+
     for s in range(1, count + 1):
         # Left pins
-        symbol.drawing.append(DrawingPin(
+        drawing.append(DrawingPin(
             at = Point(left, -pin_y),
             name = '~',
             number = pin_left,
@@ -73,7 +77,7 @@ def generateDIPSwitch(count):
             pin_length = pin_length
         ))
         # Right pins
-        symbol.drawing.append(DrawingPin(
+        drawing.append(DrawingPin(
             at = Point(left + width, -pin_y),
             name = '~',
             number = pin_right,
@@ -81,21 +85,21 @@ def generateDIPSwitch(count):
             pin_length = pin_length
         ))
         # Left circles
-        symbol.drawing.append(DrawingCircle(
+        drawing.append(DrawingCircle(
             at = Point(-(switch_length / 2 - circle_radius), -pin_y),
             line_width = 0,
             radius = circle_radius,
             unit_idx = 0
         ))
         # Right circles
-        symbol.drawing.append(DrawingCircle(
+        drawing.append(DrawingCircle(
             at = Point(switch_length / 2 - circle_radius, -pin_y),
             line_width = 0,
             radius = circle_radius,
             unit_idx = 0
         ))
         # Levers
-        symbol.drawing.append(DrawingPolyline(
+        drawing.append(DrawingPolyline(
             line_width = 0,
             points = [
                 Point(-(switch_length / 2 - circle_radius) + circle_radius * math.cos(lever_angle / 180 * math.pi), -(pin_y - circle_radius * math.sin(lever_angle / 180 * math.pi))),
@@ -108,8 +112,10 @@ def generateDIPSwitch(count):
         pin_right = pin_right - 1
         pin_y = pin_y + grid_size
 
+    drawing.appendToSymbol (symbol)
+
 if __name__ == '__main__':
     for i in range(1, 13):
         generateDIPSwitch(i)
 
-    generator.writeFiles()
+    library.write()

@@ -11,8 +11,18 @@ from itertools import repeat
 
 from lxml import etree
 
-sys.path.append(os.path.join(sys.path[0],'..'))
-from KiCadSymbolGenerator import *
+common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
+if not common in sys.path:
+    sys.path.append(common)
+
+common = os.path.abspath(os.path.join(sys.path[0], '..', '..', 'common'))
+if not common in sys.path:
+    sys.path.append(common)
+
+import kicad_sym
+
+from Point import *
+from DrawingElements import *
 
 
 class DataPin:
@@ -337,7 +347,7 @@ class Device:
         # Merge any duplicated pins
         self.merge_duplicate_pins()
 
-    def create_symbol(self, gen):
+    def create_symbol(self, lib):
         # Make strings for DCM entries
         freqstr = f"{self.freq}MHz, " if self.freq else ""
         voltstr = f"{self.voltage[0]}-{self.voltage[1]}V, " if self.voltage else ""
@@ -349,32 +359,57 @@ class Device:
         datasheet = "" if self.pdf is None else (f"https://www.st.com/"
                 f"resource/en/datasheet/{self.pdf}")
 
-        # Make the symbol
-        self.symbol = gen.addSymbol(self.name, dcm_options={
-                'description': desc_fmt.format(flash=self.flash[0],
-                    ram=self.ram[0]),
-                'keywords': keywords,
-                'datasheet': datasheet},
-                offset=20)
-
-        # Add aliases
-        for i, alias in enumerate(self.aliases):
-            f = 0 if len(self.flash) == 1 else i+1
-            r = 0 if len(self.ram) == 1 else i+1
-            self.symbol.addAlias(alias, dcm_options={
-                'description': desc_fmt.format(flash=self.flash[f],
-                    ram=self.ram[r]), 'keywords': keywords, 'datasheet':
-                datasheet})
-
-        # Add footprint filters
+        # Get footprint filters
         try:
-            self.symbol.addFootprintFilter(Device._FPFILTER_MAPPING[self.package])
+            footprint_filters = Device._FPFILTER_MAPPING[self.package]
         except KeyError:
+            footprint_filters = ''
             logging.warning(f"No footprint filters found for device "
                     f"{self.name}, package {self.package}")
 
+        libname = os.path.basename(lib.filename)
+        libname = os.path.splitext(libname)[0]
+
+        # Make the symbol
+        self.symbol = kicad_sym.KicadSymbol.new (self.name, libname, 'U', self.footprint, datasheet, keywords, 
+            desc_fmt.format(flash=self.flash[0], ram=self.ram[0]), footprint_filters)
+
+        lib.symbols.append (self.symbol)
+
         # Draw the symbol
         self.draw_symbol()
+
+        # Add derived symbols (fka aliases)
+        for i, alias in enumerate(self.aliases):
+            f = 0 if len(self.flash) == 1 else i+1
+            r = 0 if len(self.ram) == 1 else i+1
+
+            description = desc_fmt.format(flash=self.flash[f], ram=self.ram[r])
+
+            derived_symbol = kicad_sym.KicadSymbol.new (alias, libname, 'U', self.footprint, datasheet, keywords, 
+                description, footprint_filters)
+
+            derived_symbol.extends = self.symbol.name
+
+            parent_property = self.symbol.get_property('Reference')
+            derived_symbol.get_property('Reference').posx = parent_property.posx
+            derived_symbol.get_property('Reference').posy = parent_property.posy
+            derived_symbol.get_property('Reference').effects.h_justify = parent_property.effects.h_justify
+
+            parent_property = self.symbol.get_property('Value')
+            derived_symbol.get_property('Value').posx = parent_property.posx
+            derived_symbol.get_property('Value').posy = parent_property.posy
+            derived_symbol.get_property('Value').effects.h_justify = parent_property.effects.h_justify
+
+            parent_property = self.symbol.get_property('Footprint')
+            derived_symbol.get_property('Footprint').posx = parent_property.posx
+            derived_symbol.get_property('Footprint').posy = parent_property.posy
+            derived_symbol.get_property('Footprint').effects.h_justify = parent_property.effects.h_justify
+            derived_symbol.get_property('Footprint').effects.is_hidden = parent_property.effects.is_hidden
+
+            lib.symbols.append (derived_symbol)
+
+
 
     def xcompare(self, x, y):
         for a, b in zip(x, y):
@@ -389,7 +424,7 @@ class Device:
             break
 
         for pdf in files:
-            p = open(os.path.join(pdfdir, pdf), "r")
+            p = open(os.path.join(pdfdir, pdf), "r", encoding="utf-8")
             for line in p:
                 line = line.strip()
                 if line.find("STM32") >= 0:
@@ -468,8 +503,6 @@ class Device:
         bottomPins = []
 
         # Get pin length
-        # NOTE: there is a typo in the library making it so we have to call
-        # this "pin_lenght" when making the drawing pin.  Whoops!
         pin_length = 100 if all(len(pin.num) < 3 for pin in self.pins) else 200
 
         # Classify pins
@@ -590,8 +623,10 @@ class Device:
         middle_width = 100 + max(top_width, bottom_width)
         box_width = left_width + middle_width + right_width
 
+        drawing = Drawing()
+
         # Add the body rectangle
-        self.symbol.drawing.append(DrawingRectangle(Point(0, 0),
+        drawing.append(DrawingRectangle(Point(0, 0),
                 Point(box_width, box_height), unit_idx=0,
                 fill=ElementFill.FILL_BACKGROUND))
 
@@ -601,7 +636,7 @@ class Device:
             for pin in reversed(group):
                 pin.at = Point(-pin_length, y)
                 pin.orientation = DrawingPin.PinOrientation.RIGHT
-                self.symbol.drawing.append(pin)
+                drawing.append(pin)
                 y += 100
             y += 100
 
@@ -611,7 +646,7 @@ class Device:
             for pin in group:
                 pin.at = Point(-pin_length, y)
                 pin.orientation = DrawingPin.PinOrientation.RIGHT
-                self.symbol.drawing.append(pin)
+                drawing.append(pin)
                 y -= 100
             y -= 100
 
@@ -621,7 +656,7 @@ class Device:
             for pin in reversed(group):
                 pin.at = Point(box_width + pin_length, y)
                 pin.orientation = DrawingPin.PinOrientation.LEFT
-                self.symbol.drawing.append(pin)
+                drawing.append(pin)
                 y += 100
             y += 100
 
@@ -630,7 +665,7 @@ class Device:
         for pin in sorted(topPins, key=lambda p: p.name):
             pin.at = Point(x, box_height + pin_length)
             pin.orientation = DrawingPin.PinOrientation.DOWN
-            self.symbol.drawing.append(pin)
+            drawing.append(pin)
             x += 100
         last_top_x = x
 
@@ -639,7 +674,7 @@ class Device:
         for pin in sorted(bottomPins, key=lambda p: p.name):
             pin.at = Point(x, -pin_length)
             pin.orientation = DrawingPin.PinOrientation.UP
-            self.symbol.drawing.append(pin)
+            drawing.append(pin)
             x += 100
 
         # Add the NC pins
@@ -647,29 +682,32 @@ class Device:
         for pin in ncPins:
             pin.at = Point(0, y)
             pin.orientation = DrawingPin.PinOrientation.RIGHT
-            self.symbol.drawing.append(pin)
+            drawing.append(pin)
             y += 100
         y += 100
 
         # Center the symbol
         translate_center = Point(-box_width//2//100*100,
                 -box_height//2//100*100)
-        self.symbol.drawing.translate(translate_center)
+        drawing.translate(translate_center)
 
-        # when creating the string, vertical and horizontal alignment get
-        # switched, so we switch them here to make the result correct
-        self.symbol.setReference('U',
-                at=Point(0, box_height + 50).translate(translate_center),
-                alignment_vertical=SymbolField.FieldAlignment.LEFT)
-        self.symbol.setValue(value=self.name,
-                at=Point(last_top_x,
-                box_height + 50).translate(translate_center),
-                alignment_vertical=SymbolField.FieldAlignment.LEFT)
-        self.symbol.setDefaultFootprint(value=self.footprint,
-                at=translate_center,
-                alignment_vertical=SymbolField.FieldAlignment.RIGHT,
-                visibility=SymbolField.FieldVisibility.INVISIBLE)
+        property = self.symbol.get_property('Reference')
+        pos = Point(0, box_height + 50).translate(translate_center)
+        property.set_pos_mil(pos.x, pos.y, 0)
+        property.effects.h_justify = "left"
 
+        property = self.symbol.get_property('Value')
+        pos = Point(last_top_x, box_height + 50).translate(translate_center)
+        property.set_pos_mil(pos.x, pos.y, 0)
+        property.effects.h_justify = "left"
+
+        property = self.symbol.get_property('Footprint')
+        pos = translate_center
+        property.set_pos_mil(pos.x, pos.y, 0)
+        property.effects.h_justify = "right"
+        property.effects.is_hidden = True
+
+        drawing.appendToSymbol(self.symbol)
 
 def run_pdf2txt(pdffile, pdfdir):
     pdffile = os.path.join(pdfdir, pdffile)
@@ -718,8 +756,7 @@ def main():
                 mcu = Device(os.path.join(args.xmldir, xmlfile), args.pdfdir)
                 # If there isn't a SymbolGenerator for this family yet, make one
                 if mcu.family not in libraries:
-                    libraries[mcu.family] = SymbolGenerator(
-                            lib_name=f"MCU_ST_{mcu.family}")
+                    libraries[mcu.family] = kicad_sym.KicadLibrary(f"MCU_ST_{mcu.family}.kicad_sym")
                 # If the part has a datasheet PDF, make a symbol for it
                 if mcu.pdf is not None:
                     mcu.create_symbol(libraries[mcu.family])
@@ -727,7 +764,7 @@ def main():
 
     # Write libraries
     for gen in libraries.values():
-        gen.writeFiles()
+        gen.write()
 
 if __name__ == "__main__":
     main()

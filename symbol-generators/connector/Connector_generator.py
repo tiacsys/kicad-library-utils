@@ -1,10 +1,19 @@
 #!/usr/bin/python3
 
-# sys.path.append(os.path.join(sys.path[0],'..')) # load KiCadSymbolGenerator path
-# add KiCadSymbolGenerator to searchpath using export PYTHONPATH="${PYTHONPATH}<absolute path>/autogen/"
 import sys, os
-sys.path.append(os.path.join(sys.path[0],'..'))
-from KiCadSymbolGenerator import *
+
+common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
+if not common in sys.path:
+    sys.path.append(common)
+
+common = os.path.abspath(os.path.join(sys.path[0], '..', '..', 'common'))
+if not common in sys.path:
+    sys.path.append(common)
+
+import kicad_sym
+
+from Point import *
+from DrawingElements import *
 
 from collections import namedtuple
 from math import sqrt
@@ -578,7 +587,7 @@ def innerArtwork(type=0):
     return artwork
 
 
-def generateSingleSymbol(generator, series_params, num_pins_per_row, lib_params):
+def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
     pincount = series_params.num_rows * num_pins_per_row + (1 if series_params.odd_count else 0)
     symbol_name = series_params.symbol_name_format.format(
         num_pins_per_row=num_pins_per_row, suffix=lib_params.get('suffix',""),
@@ -587,20 +596,18 @@ def generateSingleSymbol(generator, series_params, num_pins_per_row, lib_params)
     fp_filter = [filter.format(pn_modifier=lib_params.get("pn_modifier",''))
             for filter in series_params.footprint_filter]
 
-    current_symbol = generator.addSymbol(
-        symbol_name, footprint_filter = fp_filter,
-        pin_name_visibility = Symbol.PinMarkerVisibility.INVISIBLE,
-        dcm_options = {
-        'description':series_params.description.format(
+    libname = os.path.basename(library.filename)
+    libname = os.path.splitext (libname)[0]
+
+    current_symbol = kicad_sym.KicadSymbol.new(symbol_name, libname, reference_designator, '', series_params.datasheet, series_params.keywords, series_params.description.format(
             num_pins_per_row = num_pins_per_row,
             num_pins=pincount,
             extra_pin = lib_params.get('extra_pin_descr','')
-            ) + ', script generated (kicad-library-utils/schlib/autogen/connector/)',
-        'keywords':series_params.keywords,
-        'datasheet':series_params.datasheet
-        })
+            ) + ', script generated (kicad-library-utils/symbol-generators/connector/)', fp_filter)
+    library.symbols.append(current_symbol)
 
-
+    current_symbol.hide_pin_names = True
+    current_symbol.pin_names_offset = kicad_sym.mil_to_mm(40)
 
     ########################## reference points ################################
     num_pins_left_side = num_pins_per_row + (1 if series_params.odd_count else 0)
@@ -648,19 +655,27 @@ def generateSingleSymbol(generator, series_params, num_pins_per_row, lib_params)
 
     ############################ symbol fields #################################
     ref_pos = body_top_left_corner.translate({'x': body_width/2, 'y':ref_fontsize}, apply_on_copy = True)
-    current_symbol.setReference(ref_des = reference_designator,
-        at = ref_pos, fontsize = ref_fontsize)
+
+    reference = current_symbol.get_property('Reference')
+    reference.set_pos_mil(ref_pos.x, ref_pos.y, 0)
+    reference.effects.sizex = kicad_sym.mil_to_mm(ref_fontsize)
+    reference.effects.sizey = reference.effects.sizex
 
     value_pos = body_bottom_right_corner.translate(
         {'x': -body_width/2 + (50 if extra_pin else 0),
         'y':-ref_fontsize},
         apply_on_copy = True)
 
-    current_symbol.setValue(at = value_pos, fontsize = ref_fontsize,
-        alignment_vertical = SymbolField.FieldAlignment.LEFT if extra_pin else SymbolField.FieldAlignment.CENTER)
+    value = current_symbol.get_property('Value')
+    value.set_pos_mil(value_pos.x, value_pos.y, 0)
+    value.effects.sizex = kicad_sym.mil_to_mm(ref_fontsize)
+    value.effects.sizey = value.effects.sizex
+    value.effects.v_justify = "left" if extra_pin else "center"
+
 
     ############################ artwork #################################
-    drawing = current_symbol.drawing
+    drawing = Drawing()
+
     if series_params.enclosing_rectangle:
         drawing.append(DrawingRectangle(
             start=body_top_left_corner, end=body_bottom_right_corner,
@@ -729,6 +744,8 @@ def generateSingleSymbol(generator, series_params, num_pins_per_row, lib_params)
     if series_params.mirror:
         drawing.mirrorHorizontal()
 
+    drawing.appendToSymbol (current_symbol)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generator for Generic{extra_pin:s} connector symbols')
     parser.add_argument('--filter', type=str, nargs='?', help='what symbols should be generated', default='*')
@@ -748,10 +765,10 @@ if __name__ == '__main__':
     model_filter_regobj=re.compile(fnmatch.translate(modelfilter))
 
     for lib in all_symbols:
-        generator = SymbolGenerator(lib['lib_name'])
+        library = kicad_sym.KicadLibrary(lib['lib_name'] + '.kicad_sym')
         print(lib['lib_name'])
         for series_name, series_params in lib['symbol_def'].items():
             if model_filter_regobj.match(series_name):
                 for num_pins_per_row in series_params.pin_per_row_range:
-                    generateSingleSymbol(generator, series_params, num_pins_per_row, lib)
-        generator.writeFiles()
+                    generateSingleSymbol(library, series_params, num_pins_per_row, lib)
+        library.write()
