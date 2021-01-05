@@ -131,7 +131,7 @@ class SymbolCheck():
         except Exception as e:
             self.printer.red('could not parse library: %s' % filename)
             if self.verbosity:
-                printer.red("Error: " + str(e))
+                self.printer.red("Error: " + str(e))
                 traceback.print_exc()
             return (1,0)
 
@@ -164,7 +164,7 @@ class SymbolCheck():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Checks KiCad library files (.kicad_sym) against KiCad Library Convention (KLC) rules. You can find the KLC at http://kicad-pcb.org/libraries/klc/')
     parser.add_argument('kicad_sym_files', nargs='+')
-    parser.add_argument('-c', '--component', help='check only a specific component (implicitly verbose)', action='store')
+    parser.add_argument('-c', '--component', help='check only a specific component', action='store')
     parser.add_argument('-p', '--pattern', help='Check multiple components by matching a regular expression', action='store')
     parser.add_argument('-r','--rule',help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r S3.1,EC02"')
     parser.add_argument('-e','--exclude',help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"')
