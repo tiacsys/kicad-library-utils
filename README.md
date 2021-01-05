@@ -9,7 +9,7 @@ kicad-library-utils
 
 **check_3d_coverage.py**: Script for checking which KiCad footprints in a `.pretty` library have 3D models. It also shows unused 3D model files.
 
-**comparelibs.sh**: Script to compare to versions of the same library. Used as part of the `kicad-symbols` CI.
+**comparelibs.py**: Script to compare two versions of the same library. Used as part of the `kicad-symbols` CI.
 
 [KLC]: http://kicad-pcb.org/libraries/klc/
 
@@ -21,8 +21,9 @@ Contains helper scripts to run the CI for the following repos
 
 ## common directory
 
-Contains various python librarys used by the check scrips and the generators.
-**kicad_mod.py**: A Python module for loading, editing, and saving KiCad footprint files.
+Contains various python libraries used by the check scripts and the generators.
+* **kicad_mod.py**: A Python module for loading, editing, and saving KiCad footprint files.
+* **kicad_sym.py**: A Python module for loading, editing, and saving KiCad symbol libraries.
 
 ## symbol-generators
 
@@ -41,9 +42,9 @@ In the future it is planned to run this over the whole library to check if the s
 How to use
 ==========
 
-## Schematic Library Checker
+## Symbol Library Checker
 
-    # first get into schlib directory
+    # first get into klc-check directory
     cd kicad-library-utils/klc-check
 
     # run the script passing the files to be checked
@@ -57,7 +58,7 @@ How to use
 
 ## Footprint Checker
 
-    # first get into pcb directory
+    # first get into klc-check directory
     cd kicad-library-utils/klc-check
 
     # run the script passing the files to be checked
@@ -72,18 +73,31 @@ How to use
 
 ## 3D Coverage Checker (not yet ported to v6!)
 
-    # first get into pcb directory
+    # first get into klc-check directory
     cd kicad-library-utils/klc-check
 
     # run the script to check all footprints
     ./check_3d_coverage.py
 
     # run the script to check only the specified .pretty folder
-    ./check_3d_coverage.py --prettty Housings_SOIC
+    ./check_3d_coverage.py --pretty Housings_SOIC
 
     # run the following 'h'elp command to see other options
     ./check_3d_coverage.py -h
 
+## Compare Symbol Libraries
+
+    # first get into klc-check directory
+    cd kicad-library-utils/klc-check
+
+    # run the script passing the libraries to be compared
+    ./comparelibs.py --new path_to_new_lib --old path_to_old_lib
+
+    # to also do a KLC check for each new or changed symbol use the --check flag
+    ./comparelibs.py --new path_to_new_lib --old path_to_old_lib --check
+
+    # run the following 'h'elp command to see other options
+    ./comparelibs.py -h
 
 Notice
 ======
