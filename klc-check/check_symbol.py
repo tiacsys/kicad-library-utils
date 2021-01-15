@@ -23,7 +23,7 @@ from rules_symbol.rule import KLCRule
 class SymbolCheck():
     def __init__(self, selected_rules = None, excluded_rules = None, verbosity = 0, footprints = None, use_color = True, no_warnings = False, silent = False, log = False):
         self.footprints = footprints
-        self.printer = PrintColor(use_color)
+        self.printer = PrintColor(use_color=use_color)
         self.verbosity = verbosity
         self.metrics = []
         self.no_warnings = no_warnings
@@ -166,7 +166,7 @@ class SymbolCheck():
 
 def worker(inp, outp, lock, selected_rules, excluded_rules, verbosity, footprints, args, i=0):
     # have one instance of SymbolCheck per worker
-    c = SymbolCheck(selected_rules, excluded_rules, verbosity, footprints, use_color = not args.nocolor, no_warnings = args.nowarnings, silent = args.silent, log = args.log)
+    c = SymbolCheck(selected_rules, excluded_rules, verbosity, footprints, not args.nocolor, no_warnings = args.nowarnings, silent = args.silent, log = args.log)
     c.printer.buffered = True
 
     while True:
@@ -184,9 +184,8 @@ def worker(inp, outp, lock, selected_rules, excluded_rules, verbosity, footprint
             break
 
     # output all the metrics at once
-    outp.put(str(c.error_count))
     for line in c.metrics:
-        outp.put(line)
+        outp.put("{},{}".format (i, line))
     return
 
 if __name__ == '__main__':
@@ -252,32 +251,45 @@ if __name__ == '__main__':
     for (filename, size) in files:
         task_queue.put(filename)
 
-    processes = []
+    jobs = []
+    job_output = {}
 
     # create the workers
     lock = Lock()
     for i in range(int(args.multiprocess) if args.multiprocess else 1):
         p = Process(target=worker, args=(task_queue, out_queue, lock, selected_rules, excluded_rules, verbosity, footprints, args, i))
-        processes.append (p)
+        jobs.append (p)
         p.start()
+        job_output[str(i)] = []
 
     # wait for all workers to finish
-    for p in processes:
-        p.join()
+    while jobs:
+        for p in jobs:
+            while True:
+                try:
+                    id,line = out_queue.get(block=False).split(',')
+                    job_output [id].append (line)
+                except queue.Empty:
+                    break
+            if not p.is_alive():
+                jobs.remove (p)
 
     out_queue.put('STOP')
 
+    time.sleep(1)
+
     # done checking all files
     error_count = 0
-    if True:
-        if args.metrics or args.unittest:
-          metrics_file = open(r"metrics.txt","a+")
-          for line in iter(out_queue.get, 'STOP'):
-            metrics_file.write(line + "\n")
+    if args.metrics or args.unittest:
+        metrics_file = open(r"metrics.txt","a+")
+
+        for key in job_output:
+            for line in job_output[key]:
+                metrics_file.write(line + "\n")
             if '.total_errors' in line:
                 error_count += int(line.split()[-1])
-          metrics_file.close()
 
+        metrics_file.close()
     out_queue.close()
     sys.exit(0 if error_count == 0 else -1)
 
