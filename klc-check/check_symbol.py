@@ -286,8 +286,8 @@ if __name__ == '__main__':
         for key in job_output:
             for line in job_output[key]:
                 metrics_file.write(line + "\n")
-            if '.total_errors' in line:
-                error_count += int(line.split()[-1])
+                if '.total_errors' in line:
+                    error_count += int(line.split()[-1])
 
         metrics_file.close()
     out_queue.close()
