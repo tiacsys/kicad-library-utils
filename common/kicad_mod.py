@@ -88,7 +88,7 @@ class KicadMod(object):
         self.solder_paste_ratio = self._getValue('solder_paste_ratio', 0, 2)
 
         # attribute
-        self.attribute =  self._getValue('attr', 'virtual', 2)
+        self._getAttributes()
 
         # reference
         self.reference = self._getText('reference')[0]
@@ -594,6 +594,27 @@ class KicadMod(object):
             models.append(model_dict)
 
         return models
+
+    def _getAttributes(self):
+        attribs = self._getArray(self.sexpr_data, 'attr')
+
+        self.exclude_from_pos_files = False
+        self.exclude_from_bom = False
+
+        if attribs:
+            self.attribute = 'virtual'
+            for tok in attribs[0][1:]:
+                if tok in ['smd', 'through_hole']:
+                    self.attribute = tok
+                elif tok == 'virtual':
+                    self.exclude_from_pos_files = True
+                    self.exclude_from_bom = True
+                elif tok == 'exclude_from_pos_files':
+                    self.exclude_from_pos_files = True
+                elif tok == 'exclude_from_bom':
+                    self.exclude_from_bom = True
+        else:
+            self.attribute = 'through_hole'
 
     # Add a 3D model
     def addModel(self, filename, pos=[0,0,0], scale=[1,1,1], rotate=[0,0,0]):
@@ -1237,10 +1258,17 @@ class KicadMod(object):
         se.addOptItem('solder_paste_ratio', self.solder_paste_ratio)
         se.addOptItem('clearance', self.clearance)
 
-        # Set attribute, the default is 'virtual' and not written to the file
+        # Set attribute
         attr = self.attribute.lower()
-        if attr in ['smd', 'through_hole']:
-            se.addItems({'attr': attr})
+        if attr in ['smd', 'through_hole'] or self.exclude_from_bom or self.exclude_from_pos_files:
+            params = []
+            if attr in ['smd', 'through_hole']:
+                params.append (attr)
+            if self.exclude_from_bom:
+                params.append ('exclude_from_bom')
+            if self.exclude_from_pos_files:
+                params.append ('exclude_from_pos_files')
+            se.addItems({'attr': params})
 
         # Add text items
         self._formatText('reference', self.reference, se)
