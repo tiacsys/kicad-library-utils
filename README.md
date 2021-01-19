@@ -71,7 +71,7 @@ How to use
     ./check_footprint.py -h
 
 
-## 3D Coverage Checker (not yet ported to v6!)
+## 3D Coverage Checker
 
     # first get into klc-check directory
     cd kicad-library-utils/klc-check
@@ -80,7 +80,7 @@ How to use
     ./check_3d_coverage.py
 
     # run the script to check only the specified .pretty folder
-    ./check_3d_coverage.py --pretty Housings_SOIC
+    ./check_3d_coverage.py --pretty Package_SO
 
     # run the following 'h'elp command to see other options
     ./check_3d_coverage.py -h
