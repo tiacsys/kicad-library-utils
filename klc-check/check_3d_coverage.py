@@ -161,6 +161,15 @@ class LibraryChecker:
             self.invalid_model_path += 1
             return None
 
+    def find_name_in_list (self, _list, name, case_sensitive = True):
+        if case_sensitive:
+            return name in _list
+        else:
+            name_lower = name.lower()
+            for n in _list:
+                if name_lower == n.lower():
+                    return True
+            return False
 
     def check_footprint_library(self,library_name):
 
@@ -183,14 +192,17 @@ class LibraryChecker:
             model_ref = self.parse_footprint(os.path.join(config.footprint_dir_path(library_name), footprint))
             if model_ref:
                 if models:
-                    if model_ref in models:
+                    if self.find_name_in_list(models, model_ref, True):
                         self.model_found += 1
                         logger.info('Found 3D model {model:s}'.format(model=model_ref))
                         if model_ref in unused:
                             unused.remove(model_ref)
                     else:
                         self.model_not_found += 1
-                        logger.warning('- 3D model not found {model:s} in {fp:s}'.format(model=model_ref, fp=footprint))
+                        if self.find_name_in_list(models, model_ref, False):
+                            logger.warning('- 3D model not found {model:s} in {fp:s} (wrong case)'.format(model=model_ref, fp=footprint))
+                        else:
+                            logger.warning('- 3D model not found {model:s} in {fp:s}'.format(model=model_ref, fp=footprint))
                 else:
                     self.model_not_found += 1
 
