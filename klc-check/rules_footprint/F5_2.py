@@ -14,9 +14,9 @@ class Rule(KLCRule):
         mod = self.module
 
         val = mod.value
-        
+
         errors = []
-        
+
         # Value is missing entirely
         if not val:
             self.error("Missing 'value' field")
