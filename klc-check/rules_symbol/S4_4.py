@@ -45,19 +45,30 @@ class Rule(KLCRule):
         self.power_errors = []
 
         for stack in self.component.get_pinstacks().values():
-          for pin in stack:
-            name = pin.name.lower()
-            etype = pin.etype
+            visible = [pin for pin in stack if pin.is_hidden == False]
+            invisible = [pin for pin in stack if pin.is_hidden == True]
+            # Due to the implementation of S4.3 it is possible to assume that at maximum one pin is visible
+            if visible:
+                checkpins = [visible[0]]
+            else:
+                checkpins = invisible
+            for pin in checkpins:
+                name = pin.name.lower()
+                etype = pin.etype
 
-            if self.test(name.lower(), self.POWER_INPUTS) and (not etype.lower() == 'power_in'):
-                if len(self.power_errors) == 0:
-                    self.error("Power pins should be of type POWER INPUT or POWER OUTPUT")
-                    if len(stack) > 1:
-                        self.errorExtra("NOTE: If power-pins have been stacked, you may ignore this error in some cases (Ensure to check rule S4.3 in addition to recognize such stacks).")
-                self.power_errors.append(pin)
-                self.errorExtra("{pin} is of type {t}".format(
-                    pin=pinString(pin),
-                    t=etype))
+                if self.test(name.lower(), self.POWER_INPUTS) and (not etype.lower() == 'power_in'):
+                    if len(self.power_errors) == 0:
+                        self.error("Power pins should be of type POWER INPUT or POWER OUTPUT")
+                    self.power_errors.append(pin)
+                    self.errorExtra("{pin} is of type {t}".format(
+                        pin=pinString(pin),
+                      t=etype))
+
+            if len(stack) > 1 and visible and visible[0].etype.lower() == 'power_in':
+                for pin in invisible:
+                    if pin.etype.lower() != 'passive':
+                        if len(self.power_errors) == 0:
+                            self.error("Invisible powerpins in stacks should be of type PASSIVE")
 
         return len(self.power_errors) > 0
 
