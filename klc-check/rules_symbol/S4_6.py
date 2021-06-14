@@ -27,9 +27,9 @@ class Rule(KLCRule):
             etype = pin.etype
 
             # Check NC pins
-            if self.test(name, self.NC_PINS) or etype == 'unconnected':
-                # NC pins should be of type unconnected
-                if not etype == 'unconnected':  # Not set to NC
+            if self.test(name, self.NC_PINS) or etype == 'no_connect':
+                # NC pins should be of type no_connect
+                if not etype == 'no_connect':  # Not set to NC
                     self.type_errors.append(pin)
 
                 # NC pins should be invisible
@@ -83,8 +83,8 @@ class Rule(KLCRule):
                 self.info("Setting pin {n} to INVISIBLE".format(n=pin.number))
 
         for pin in self.type_errors:
-            if not pin.etype == 'unconnected':
-                pin.etype = 'unconnected'
+            if not pin.etype == 'no_connect':
+                pin.etype = 'no_connect'
                 self.info("Changing pin {n} type to NO_CONNECT".format(n=pin.number))
 
         self.recheck()

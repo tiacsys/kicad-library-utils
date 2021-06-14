@@ -156,14 +156,14 @@ for lib_name in new_libs:
                 for pin_old in old_sym[sym].pins:
                     pin_new = new_sym[sym].get_pin_by_number(pin_old.num)
                     if pin_new is None:
-                        if pin_old.etype == 'unconnected':
+                        if pin_old.etype == 'no_connect':
                             nc_pins_missing += 1
                         else:
                             pins_missing += 1
                         continue
 
                     if pin_old.posx != pin_new.posx or pin_old.posy != pin_new.posy:
-                        if pin_old.etype == 'unconnected' and pin_new.etype == 'unconnected':
+                        if pin_old.etype == 'no_connect' and pin_new.etype == 'no_connect':
                             nc_pins_moved += 1
                         else:
                             pins_moved += 1

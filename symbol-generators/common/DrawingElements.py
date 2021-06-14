@@ -58,7 +58,7 @@ class DrawingPin:
         EL_TYPE_PASSIVE = 'passive'
         EL_TYPE_OPEN_COLECTOR = 'open_collector'
         EL_TYPE_OPEN_EMITTER = 'open_emitter'
-        EL_TYPE_NC = 'unconnected'
+        EL_TYPE_NC = 'no_connect'
         EL_TYPE_UNSPECIFIED = 'unspecified'
         EL_TYPE_POWER_INPUT = 'power_in'
         EL_TYPE_POWER_OUTPUT = 'power_out'
