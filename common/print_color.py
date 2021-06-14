@@ -49,6 +49,7 @@ class PrintColor(object):
     def flush(self):
         for l in self.buffer:
             print(l)
+        self.buffer.clear()
 
     def _replace_tabs(self, text):
         if self._tab_size == 0:
