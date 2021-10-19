@@ -189,7 +189,7 @@ def worker(inp, outp, lock, selected_rules, excluded_rules, verbosity, footprint
     return
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Checks KiCad library files (.kicad_sym) against KiCad Library Convention (KLC) rules. You can find the KLC at http://kicad-pcb.org/libraries/klc/')
+    parser = argparse.ArgumentParser(description='Checks KiCad library files (.kicad_sym) against KiCad Library Convention (KLC) rules. You can find the KLC at https://kicad.org/libraries/klc/')
     parser.add_argument('kicad_sym_files', nargs='+')
     parser.add_argument('-c', '--component', help='check only a specific component', action='store')
     parser.add_argument('-p', '--pattern', help='Check multiple components by matching a regular expression', action='store')
