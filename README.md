@@ -11,7 +11,7 @@ kicad-library-utils
 
 **comparelibs.py**: Script to compare two versions of the same library. Used as part of the `kicad-symbols` CI.
 
-[KLC]: http://kicad-pcb.org/libraries/klc/
+[KLC]: http://kicad.org/libraries/klc/
 
 ### gitlabci directory
 
