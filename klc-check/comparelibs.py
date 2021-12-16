@@ -134,7 +134,8 @@ for lib_name in new_libs:
                     lib=lib_name, name=symname, alias_info=alias_info))
 
             if args.check:
-                (ec, wc) = sym_check.check_library(lib_path)
+                # only check new components
+                (ec, wc) = sym_check.check_library(lib_path, component=symname)
                 if ec != 0:
                     errors += 1
 
