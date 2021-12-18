@@ -826,7 +826,7 @@ class KicadLibrary(KicadSymbolBase):
     filename: str
     symbols: List[KicadSymbol] = field(default_factory=list)
     generator: str = 'kicad-library-utils'
-    version: str = '20201113'
+    version: str = '20211218'
 
     def write(s):
         lib_file = open(s.filename,"w")
