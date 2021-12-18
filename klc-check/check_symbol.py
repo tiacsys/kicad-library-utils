@@ -6,6 +6,7 @@ import os
 import time
 from multiprocessing import Queue, Process, JoinableQueue, Lock
 import queue
+import traceback
 
 from glob import glob # enable windows wildcards
 
