@@ -359,17 +359,13 @@ class Circle(KicadSymbolBase):
 
 @dataclass
 class Arc(KicadSymbolBase):
-    # (arc (start 2.54 12.7) (end 12.7 5.08) (radius (at 3.81 3.81) (length 8.9803) (angles 98.1 8.1))
-    # TODO: Currently the arc is over-specified. Figure out how we can add a 'simple' arc
+    # (arc (start -5.08 -1.27) (mid 0 -6.35) (end 5.08 -1.27)
     startx: float
     starty: float
     endx: float
     endy: float
-    centerx: float
-    centery: float
-    length: float = 0
-    angle_start: float = 0
-    angle_stop: float = 0
+    midx: float
+    midy: float
     stroke_width: float = 0.254
     stroke_color: Color = None
     fill_type: str = 'none'
@@ -378,13 +374,7 @@ class Arc(KicadSymbolBase):
     demorgan: int = 0
 
     def get_sexpr(s):
-        sx = [ 'arc', ['start', s.startx, s.starty], ['end', s.endx, s.endy]]
-        r = ['radius', ['at', s.centerx, s.centery]]
-        if s.length:
-            r.append(['length', s.length])
-        if s.angle_start and s.angle_stop:
-            r.append(['angles', s.angle_start, s.angle_stop])
-        sx.append(r)
+        sx = [ 'arc', ['start', s.startx, s.starty], ['mid', s.midx, s.midy], ['end', s.endx, s.endy]]
         sx.append(['stroke', ['width', s.stroke_width]])
         sx.append(['fill', ['type', s.fill_type]])
         return sx
@@ -394,16 +384,12 @@ class Arc(KicadSymbolBase):
         sexpr_orig = sexpr.copy()
         if (sexpr.pop(0) != 'arc'):
             return None
-        # the 1st element
         (startx, starty) = _get_xy(sexpr, 'start')
         (endx, endy) = _get_xy(sexpr, 'end')
-        rad = _get_array(sexpr, 'radius')[0]
-        (centerx, centery) = _get_xy(rad, 'at')
-        length = _get_value_of(rad, 'length')
-        (angle_start, angle_stop) = _get_xy(rad, 'angles')
+        (midx, midy) = _get_xy(sexpr, 'mid')
         (stroke, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
-        return Arc(startx, starty, endx, endy, centerx, centery, length, angle_start, angle_stop, stroke, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
+        return Arc(startx, starty, endx, endy, midx, midy, stroke, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
 
 @dataclass
 class Point(KicadSymbolBase):
