@@ -323,8 +323,8 @@ class KicadMod(object):
                 a = self._getArray(arc, 'end')[0]
                 arc_dict['end'] = {'x':a[1], 'y':a[2]}
 
-                a = self._getArray(arc, 'angle')[0]
-                arc_dict['angle'] = a[1]
+                a = self._getArray(arc, 'mid')[0]
+                arc_dict['mid'] = {'x':a[1], 'y':a[2]}
 
                 try:
                     a = self._getArray(arc, 'layer')[0]
