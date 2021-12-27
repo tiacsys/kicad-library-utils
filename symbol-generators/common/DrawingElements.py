@@ -500,7 +500,7 @@ class DrawingText:
         else:
             raise TypeError('font_type needs to be of type DrawingText.FontType')
 
-        font_weight = kwargs.get('font_type', DrawingText.FontWeight.NORMAL)
+        font_weight = kwargs.get('font_weight', DrawingText.FontWeight.NORMAL)
         if isinstance(font_weight, DrawingText.FontWeight):
             self.font_weight = font_weight
         else:
