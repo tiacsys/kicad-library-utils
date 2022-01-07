@@ -36,6 +36,7 @@ parser.add_argument("--nocolor", help="Does not use colors to show the output", 
 parser.add_argument( "--design-breaking-changes", help= "Checks if there have been changes made that would break existing designs using a particular symbol.", action='store_true')
 parser.add_argument("--check-aliases", help="Do not only check symbols but also aliases.", action='store_true')
 parser.add_argument("--shownochanges", help="Show libraries that have not changed", action="store_true")
+parser.add_argument("--exclude", help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"')
 
 (args, extra) = parser.parse_known_args()
 printer = PrintColor(use_color=not args.nocolor)
@@ -78,7 +79,7 @@ if 'footprints' in extra:
     fp = extra['footprints']
 else:
     fp = None
-sym_check = check_symbol.SymbolCheck(None, None, 2, fp, False if args.nocolor else True, silent = True)
+sym_check = check_symbol.SymbolCheck(None, args.exclude, 2, fp, False if args.nocolor else True, silent = True)
 
 # iterate over all new libraries
 for lib_name in new_libs:
