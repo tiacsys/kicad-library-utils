@@ -108,6 +108,9 @@ class KicadMod(object):
         # circles
         self.circles = self._getCircles()
 
+        #polygons
+        self.polys = self._getPolys()
+
         # arcs
         self.arcs = self._getArcs()
 
@@ -310,6 +313,37 @@ class KicadMod(object):
                 circles.append(circle_dict)
 
         return circles
+
+    def _getPolys(self, layer=None):
+        polys = []
+        for poly in self._getArray(self.sexpr_data, 'fp_poly'):
+            poly_dict = {}
+            # filter layers, None = all layers
+            if self._hasValue(poly, layer) or layer == None:
+                points = []
+                pts = self._getArray(poly, 'pts')[0]
+                for point in self._getArray(pts, 'xy'):
+                    p = {}
+                    p['x'] = point[1]
+                    p['y'] = point[2]
+                    points.append(p)
+                poly_dict['points'] = points
+
+                try:
+                    a = self._getArray(poly, 'layer')[0]
+                    poly_dict['layer'] = a[1]
+                except:
+                    poly_dict['layer'] = ''
+
+                try:
+                    a = self._getArray(poly, 'width')[0]
+                    poly_dict['width'] = a[1]
+                except:
+                    poly_dict['width'] = ''
+
+                polys.append(poly_dict)
+        
+        return polys
 
     def _getArcs(self, layer=None):
         arcs = []
@@ -663,6 +697,19 @@ class KicadMod(object):
 
         return lines
 
+    def filterPolysAsLines(self, layer):
+        lines = []
+        for poly in self.polys:
+            if poly['layer'] == layer:
+                for i in range(len(poly['points'])):
+                    lines.append({
+                        'start' : copy.copy(poly['points'][i]),
+                        'end'   : copy.copy(poly['points'][i - 1]),
+                        'layer' : copy.copy(poly['layer']),
+                        'width' : copy.copy(poly['width'])
+                    })
+        return lines
+
     def filterRects(self, layer):
         rects = []
         for rect in self.rects:
@@ -678,6 +725,14 @@ class KicadMod(object):
                 circles.append(circle)
 
         return circles
+
+    def filterPolys(self, layer):
+        polys = []
+        for poly in self.polys:
+            if poly['layer'] == layer:
+                polys.append(poly)
+
+        return polys
 
     def filterArcs(self, layer):
         arcs = []
@@ -720,6 +775,11 @@ class KicadMod(object):
 
             bb.addPoint(cx, cy, radius=r)
 
+        polys = self.filterPolys(layer)
+        for p in polys:
+            for pt in polys['points']:
+                bb.addPoint(pt['x'], pt['y'])
+
         # Add all arcs
         arcs=self.filterArcs(layer)
         for c in arcs:
@@ -760,6 +820,7 @@ class KicadMod(object):
         return (self.filterLines(layer) +
                 self.filterRectsAsLines(layer) +
                 self.filterCircles(layer) +
+                self.filterPolysAsLines(layer) +
                 self.filterArcs(layer))
 
     def getPadsByNumber(self, pad_number):
@@ -948,6 +1009,25 @@ class KicadMod(object):
             ]
 
         se.addItems(fp_circle, newline=False)
+        se.endGroup(newline=False)
+
+    def _formatPoly(self, poly, se):
+        se.startGroup('fp_poly', newline=True, indent=False)
+
+        se.startGroup('pts', newline=False, indent=True)
+        pos = 0
+        for pt in poly['points']:
+            se.addItem([{'xy' : [pt['x'], pt['y']]}], newline = (pos != 0), indent = (pos == 1))
+            pos += 1
+        if pos > 1:
+            se.unIndent()
+        se.endGroup(newline=False)
+
+        fp_poly = [
+            {'layer' : poly['layer']},
+            {'width' : poly['width']}
+        ]
+        se.addItems(fp_poly, newline=False)
         se.endGroup(newline=False)
 
     def _formatArc(self, arc, se):
@@ -1141,12 +1221,16 @@ class KicadMod(object):
             self._formatLine(line, se)
 
         # Add Rect Data
-        for rect in self.rectss:
+        for rect in self.rects:
             self._formatRect(rect, se)
 
         # Add Circle Data
         for circle in self.circles:
             self._formatCircle(circle, se)
+
+        #Add Poly Data
+        for poly in self.polys:
+            self._formatPoly(poly, se)
 
         # Add Arc Data
         for arc in self.arcs:
