@@ -777,7 +777,7 @@ class KicadMod(object):
 
         polys = self.filterPolys(layer)
         for p in polys:
-            for pt in polys['points']:
+            for pt in p['points']:
                 bb.addPoint(pt['x'], pt['y'])
 
         # Add all arcs
