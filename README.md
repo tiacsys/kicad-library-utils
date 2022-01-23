@@ -63,7 +63,7 @@ How to use
 
     # run the script passing the files to be checked
     ./check_footprint.py path_to_fp1.kicad_mod path_to_fp2.kicad_mod
-    
+
     # Add `-v`, `-vv`, or `-vvv` for extra verbose output. The most useful is `-vv`, which explains in details the violations. Ex: 
     ./check_footprint.py path_to_fp1.kicad_mod path_to_fp2.kicad_mod -vv
 
@@ -98,6 +98,36 @@ How to use
 
     # run the following 'h'elp command to see other options
     ./comparelibs.py -h
+
+## Check before commiting
+
+Usually, you commit the footprint (or symbol) and let CI check your job.
+You can let git pass the check before actually commiting. If it's red,
+fix your footprint (or symbol) !
+
+To automate the call, place a hook file in the footprint git's hooks directory,
+**/somewhere/kicad/kicad-footprints/.git/hooks** named **pre-commit**
+with containt:
+```
+#!/bin/bash
+
+ERR=0
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+for F in $STAGED_FILES; do
+  if [[ "${F: -10}"  == ".kicad_mod" ]] ; then
+    x=$(python3  /somewhere/kicad-library-utils/klc-check/check_footprint.py  -vv "$F")
+    echo "$x"
+    echo "$x" | grep -q "Violating" &&  ERR=1
+  fi
+done
+exit $ERR
+```
+diff-filter=ACM stands for Added, Copied, Modified
+
+The script skips non footprint-files. Use **git commit --no-verify** to bypass the hook.
+
+Place the script in the footprint (or symbol) directory, not in the library-utils' git !
+
 
 Notice
 ======
