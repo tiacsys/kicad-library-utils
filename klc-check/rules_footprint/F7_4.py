@@ -47,8 +47,8 @@ class Rule(KLCRule):
                 if pad['type'] == 'smd' and 'F.Cu' in pad['layers']:
                     #print(pad['number'], pad['layers'])
                     try:
-                        if pad['number'] > padNoMax:
-                            padNoMax = pad['number']
+                        if int(pad['number']) > padNoMax:
+                            padNoMax = int(pad['number'])
                     except:
                         break
 
@@ -56,12 +56,14 @@ class Rule(KLCRule):
             for num in range(noExposedPads):
                 for pad in pads:
                     if pad['type'] == 'smd' and 'F.Cu' in pad['layers']:
-                        if pad['number'] == (padNoMax - num):
-                            p_x, p_y = pad['pos']['x'], pad['pos']['y'] #center pad coordinates
-                            pad_size = pad['size']
-                            size_x, size_y = pad_size['x'], pad_size['y'] # x-width and y-width
-                            EParray.append([p_x, p_y, size_x, size_y])
-
+                        try:
+                            if int(pad['number']) == (padNoMax - num):
+                                p_x, p_y = pad['pos']['x'], pad['pos']['y'] #center pad coordinates
+                                pad_size = pad['size']
+                                size_x, size_y = pad_size['x'], pad_size['y'] # x-width and y-width
+                                EParray.append([p_x, p_y, size_x, size_y])
+                        except:
+                            break
             # print("Exposed pad array: ", EParray) # Debug
 
         # testvar = 0 # debug
