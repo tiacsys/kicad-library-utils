@@ -342,7 +342,7 @@ class KicadMod(object):
                     poly_dict['width'] = ''
 
                 polys.append(poly_dict)
-        
+
         return polys
 
     def _getArcs(self, layer=None):
@@ -360,6 +360,39 @@ class KicadMod(object):
                 a = self._getArray(arc, 'mid')[0]
                 arc_dict['mid'] = {'x':a[1], 'y':a[2]}
 
+                # make readable names
+                p1x = arc_dict['start']['x']
+                p1y = arc_dict['start']['y']
+                p2x = arc_dict['mid']['x']
+                p2y = arc_dict['mid']['y']
+                p3x = arc_dict['end']['x']
+                p3y = arc_dict['end']['y']
+
+                # make square names
+                p1x_2 = p1x * p1x
+                p1y_2 = p1y * p1y
+                p2x_2 = p2x * p2x
+                p2y_2 = p2y * p2y
+                p3x_2 = p3x * p3x
+                p3y_2 = p3y * p3y
+
+                # Calculte coordinates of the Center (rx,ry) from the three points
+                # using formula found on http://ambrsoft.com/TrigoCalc/Circle3D.htm
+                A   = 2 * (p1x*(p2y-p3y) - p1y*(p2x-p3x) + p2x*p3y - p3x*p2y)
+                rx  = ( ((p1x_2+p1y_2)*(p2y-p3y)) + ((p2x_2+p2y_2)*(p3y-p1y)) + ((p3x_2+p3y_2) * (p1y-p2y) ) )  / A
+                ry  = ( ((p1x_2+p1y_2)*(p3x-p2x)) + ((p2x_2+p2y_2)*(p1x-p3x)) + ((p3x_2+p3y_2) * (p2x-p1x) ) )  / A
+
+                # Then get diff between  vectors End-Center, Start-Center
+                Diff = math.atan2(  p3y-ry, p3x-rx ) - math.atan2(  p1y-ry, p1x-rx )
+                #print ("\nangle =" , math.degrees( Diff ))
+
+                #  Diff is allways the shorter angle , ignoring Mid. Need to adjust
+                if Diff < 0.0:
+                    Diff = 2*math.pi + Diff
+
+                #print ("\n corrected angle =" , math.degrees( Diff ))
+
+                arc_dict['angle']  = Diff
                 try:
                     a = self._getArray(arc, 'layer')[0]
                     arc_dict['layer'] = a[1]
