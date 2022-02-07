@@ -216,6 +216,20 @@ class TextEffect(KicadSymbolBase):
         return cls(sizex, sizey, is_italic, is_bold, is_hidden, is_mirrored, h_justify, v_justify)
 
 @dataclass
+class AltFunction(KicadSymbolBase):
+    name: str
+    etype: str
+    shape: str = 'line'
+
+    def get_sexpr(s):
+        return ['alternate', s.quoted_string(s.name), s.etype, s.shape]
+
+    @classmethod
+    def from_sexpr(cls, sexpr):
+        (id, name, etype, shape) = sexpr
+        return AltFunction(name, etype, shape)
+
+@dataclass
 class Pin(KicadSymbolBase):
     name: str
     number: str
@@ -230,6 +244,7 @@ class Pin(KicadSymbolBase):
     number_int: int = None
     name_effect: TextEffect = None
     number_effect: TextEffect = None
+    altfuncs: List[AltFunction] = field(default_factory=list)
     unit: int = 0
     demorgan: int = 0
 
@@ -265,6 +280,9 @@ class Pin(KicadSymbolBase):
             sx.append('hide')
         sx.append(['name', s.quoted_string(s.name), s.name_effect.get_sexpr()])
         sx.append(['number', s.quoted_string(s.number), s.number_effect.get_sexpr()])
+        for altfn in s.altfuncs:
+            sx.append(altfn.get_sexpr())
+
         return sx
 
     def get_direction(s):
@@ -300,6 +318,11 @@ class Pin(KicadSymbolBase):
         (posx, posy, rotation) = _parse_at(sexpr)
         (name, name_effect) = cls._parse_name_or_number(sexpr)
         (number, number_effect) = cls._parse_name_or_number(sexpr, typ='number')
+
+        altfuncs = []
+        alt_n = _get_array(sexpr, "alternate")
+        for alt_sexpr in alt_n:
+            altfuncs.append(AltFunction.from_sexpr(alt_sexpr))
         # we also need the pin-number as integer, try to convert it.
         # Some pins won't work since they are called 'MP' or similar
         number_int = None
@@ -321,6 +344,7 @@ class Pin(KicadSymbolBase):
                    number_int,
                    name_effect,
                    number_effect,
+                   altfuncs = altfuncs,
                    unit = unit,
                    demorgan = demorgan)
 
@@ -748,7 +772,7 @@ class KicadSymbol(KicadSymbolBase):
 
     @classmethod
     def new(cls, name, libname, reference="U", footprint="", datasheet="", keywords="", description="", fp_filters=""):
-        sym = cls(name, libname)
+        sym = cls(name, libname, libname+".kicad_sym")
         sym.add_default_properties()
         sym.get_property('Reference').value = reference
         sym.get_property('Footprint').value = footprint

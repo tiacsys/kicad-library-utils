@@ -40,6 +40,7 @@ class DataPin:
         self.num = number
         self.name = name
         self.pintype = pintype
+        self.altfuncs = []
 
     def to_drawing_pin(self, **kwargs):
         # Get the el_type for the DrawingPin
@@ -51,7 +52,7 @@ class DataPin:
             visibility = DrawingPin.PinVisibility.VISIBLE
         # Make the DrawingPin
         return DrawingPin(Point(0, 0), self.num, name=self.name,
-                el_type=el_type, visibility=visibility, **kwargs)
+                el_type=el_type, visibility=visibility, altfuncs=self.altfuncs, **kwargs)
 
 
 class Device:
@@ -301,13 +302,14 @@ class Device:
             # Get alternate functions
             for signal in child.xpath("a:Signal", namespaces=self.ns):
                 altfunction = signal.get("Name")
+                if altfunction not in ["GPIO"]:
+                    newpin.altfuncs.append(kicad_sym.AltFunction(altfunction, "bidirectional", "line"))
                 # If the pin doesn't have a name, use the first alt function
                 if not newpin.name:
                     newpin.name = altfunction
                 # If an alt function corresponds to a pin type, set that
                 if altfunction in Device._SPECIAL_TYPES_MAPPING:
                     newpin.pintype = Device._SPECIAL_TYPES_MAPPING[altfunction]
-
             self.pins.append(newpin)
 
         # If this part has a power pad, we have to add it manually

@@ -93,6 +93,7 @@ class DrawingPin:
         self.pin_length = int(kwargs.get('pin_length', 100))
         self.fontsize_pinnumber = int(kwargs.get('sizenumber', 50))
         self.fontsize_pinname = int(kwargs.get('sizename', self.fontsize_pinnumber))
+        self.altfuncs = list(kwargs.get('altfuncs', []))
 
         el_type = kwargs.get('el_type', DrawingPin.PinElectricalType.EL_TYPE_PASSIVE)
         if isinstance(el_type, DrawingPin.PinElectricalType):
@@ -682,12 +683,14 @@ class Drawing:
             symbol.rectangles.append (rect)
 
         for p in self.pins:
-            pin = kicad_sym.Pin (p.name, str(p.num), str(p.el_type), kicad_sym.mil_to_mm(p.at.x), kicad_sym.mil_to_mm(p.at.y), kicad_sym.Pin.dir_to_rotation(str(p.orientation)), str(p.style), kicad_sym.mil_to_mm(p.pin_length))
+            pin = kicad_sym.Pin (p.name, str(p.num), str(p.el_type), kicad_sym.mil_to_mm(p.at.x), kicad_sym.mil_to_mm(p.at.y), 
+            kicad_sym.Pin.dir_to_rotation(str(p.orientation)), str(p.style), kicad_sym.mil_to_mm(p.pin_length))
             pin.is_hidden = p.visibility == DrawingPin.PinVisibility.INVISIBLE
             pin.name_effect.sizex = kicad_sym.mil_to_mm (p.fontsize_pinname)
             pin.name_effect.sizey = pin.name_effect.sizex
             pin.number_effect.sizex = kicad_sym.mil_to_mm (p.fontsize_pinnumber)
             pin.number_effect.sizey = pin.number_effect.sizex
+            pin.altfuncs = p.altfuncs
             pin.unit = p.unit_idx
             pin.demorgan = p.deMorgan_idx
             symbol.pins.append (pin)
