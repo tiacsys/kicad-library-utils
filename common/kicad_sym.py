@@ -874,10 +874,18 @@ class KicadLibrary(KicadSymbolBase):
         f_name = open(filename)
         lines = ''.join(f_name.readlines())
 
-        #i parse s-expr
+        # parse s-expr
         sexpr_data = sexpr.parse_sexp(lines)
         sym_list = _get_array(sexpr_data, 'symbol', max_level=2)
         f_name.close()
+
+        # Because of the various file format changes in the development of kicad v6 and v7, we want
+        # to ensure that this parser is only used with v6 files. Any other version will most likely
+        # not work as expected. So just don't load them at all.
+        version = _get_value_of(sexpr_data, 'version')
+        generator = _get_value_of(sexpr_data, 'generator')
+        if str(version) != "20211014":
+            raise ValueError('Version of symbol file is not "20211014"')
 
         # itertate over symbol
         for item in sym_list:

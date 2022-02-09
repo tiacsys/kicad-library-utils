@@ -41,7 +41,7 @@ def check_library(filename, rules, metrics, args):
         try:
             module = KicadMod(filename)
         except Exception as e:
-            printer.red('could not parse module: %s' % filename)
+            printer.red('Could not parse footprint: %s. (%s)' % (filename, e))
             if args.verbose:
                 #printer.red("Error: " + str(e))
                 traceback.print_exc()

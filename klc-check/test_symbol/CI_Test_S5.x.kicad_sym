@@ -1,4 +1,4 @@
-(kicad_symbol_lib (version 20201005) (generator kicad_symbol_editor)
+(kicad_symbol_lib (version 20211014) (generator kicad_symbol_editor)
   (symbol "Fail__S5.1__Filled_FT_Field_WithMoreThanOne_FT_Filter" (pin_numbers hide) (pin_names hide) (in_bom yes) (on_board yes)
     (property "Reference" "D" (id 0) (at 0 2.54 0)
       (effects (font (size 1.27 1.27)))
@@ -27,14 +27,16 @@
           (xy -1.27 -1.27)
           (xy -1.27 1.27)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy -1.27 0)
           (xy 1.27 0)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -43,7 +45,8 @@
           (xy -1.27 0)
           (xy 1.27 -1.27)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -53,7 +56,8 @@
           (xy -4.572 -2.286)
           (xy -4.572 -1.524)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -63,7 +67,8 @@
           (xy -3.302 -2.286)
           (xy -3.302 -1.524)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Fail__S5.1__Filled_FT_Field_WithMoreThanOne_FT_Filter_1_1"
@@ -101,7 +106,8 @@
     )
     (symbol "Fail__S5.2__ContainTwoSpecialCh_1_1"
       (rectangle (start -7.62 7.62) (end 7.62 -7.62)
-        (stroke (width 0.254)) (fill (type background))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
       (pin power_in line (at 0 -10.16 90) (length 2.54)
         (name "GND" (effects (font (size 1.27 1.27))))
@@ -157,7 +163,8 @@
     )
     (symbol "Fail__S5.2__FP_Filter_NotEndWithAsterisc_1_1"
       (rectangle (start -7.62 7.62) (end 7.62 -7.62)
-        (stroke (width 0.254)) (fill (type background))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
       (pin power_in line (at 0 -10.16 90) (length 2.54)
         (name "GND" (effects (font (size 1.27 1.27))))
@@ -217,14 +224,16 @@
           (xy -1.27 -1.27)
           (xy -1.27 1.27)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy -1.27 0)
           (xy 1.27 0)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -233,7 +242,8 @@
           (xy -1.27 0)
           (xy 1.27 -1.27)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -243,7 +253,8 @@
           (xy -4.572 -2.286)
           (xy -4.572 -1.524)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -253,7 +264,8 @@
           (xy -3.302 -2.286)
           (xy -3.302 -1.524)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Pass__S5.1__Empty_FT_Field_1_1"
@@ -291,7 +303,8 @@
     )
     (symbol "Pass__S5.2__Correct_FP_Filter_1_1"
       (rectangle (start -7.62 7.62) (end 7.62 -7.62)
-        (stroke (width 0.254)) (fill (type background))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
       (pin power_in line (at 0 -10.16 90) (length 2.54)
         (name "GND" (effects (font (size 1.27 1.27))))

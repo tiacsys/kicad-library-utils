@@ -1,9 +1,9 @@
-(kicad_symbol_lib (version 20201005) (generator kicad_symbol_editor)
+(kicad_symbol_lib (version 20211014) (generator kicad_symbol_editor)
   (symbol "Fail__S7.1__DifferentPinName" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
     (property "Reference" "#PWR" (id 0) (at 0 -3.81 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Value" "Fail__S7.1__DifferentPinName" (id 1) (at 0 3.556 0)
+    (property "Value" "Fail__S7.1__DifferentPinName" (id 1) (at 0 3.81 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Footprint" "" (id 2) (at 0 0 0)
@@ -24,21 +24,24 @@
           (xy -0.762 1.27)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 0)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 2.54)
           (xy 0.762 1.27)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Fail__S7.1__DifferentPinName_1_1"
@@ -73,21 +76,24 @@
           (xy -0.762 1.27)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 0)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 2.54)
           (xy 0.762 1.27)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Fail__S7.1__MisdefinedPWR_1_1"
@@ -122,21 +128,24 @@
           (xy -0.762 1.27)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 0)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 2.54)
           (xy 0.762 1.27)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Fail__S7.1__OnePin_Visible_1_1"
@@ -171,21 +180,24 @@
           (xy -0.762 1.27)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 0)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 2.54)
           (xy 0.762 1.27)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Fail__S7.1__PinPassive_1_1"
@@ -220,21 +232,24 @@
           (xy -0.762 1.27)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 0)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 2.54)
           (xy 0.762 1.27)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Fail__S7.1__PinPowerOutput_1_1"
@@ -269,31 +284,34 @@
           (xy -0.762 1.27)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 0)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 2.54)
           (xy 0.762 1.27)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Fail__S7.1__TwoPins_OneUnvisible_1_1"
-      (pin power_in line (at 0 0 90) (length 0)
-        (name "Fail__S7.1__TwoPins_OneUnvisible" (effects (font (size 1.27 1.27))))
-        (number "2" (effects (font (size 1.27 1.27))))
-      )
       (pin power_in line (at 0 0 90) (length 0) hide
         (name "Fail__S7.1__TwoPins_OneUnvisible" (effects (font (size 1.27 1.27))))
         (number "1" (effects (font (size 1.27 1.27))))
+      )
+      (pin power_in line (at 0 0 90) (length 0)
+        (name "Fail__S7.1__TwoPins_OneUnvisible" (effects (font (size 1.27 1.27))))
+        (number "2" (effects (font (size 1.27 1.27))))
       )
     )
   )
@@ -322,31 +340,34 @@
           (xy -0.762 1.27)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 0)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 2.54)
           (xy 0.762 1.27)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Fail__S7.1__TwoPins_TwoVisible_1_1"
       (pin power_in line (at 0 0 90) (length 0)
         (name "Fail__S7.1__TwoPins_TwoVisible" (effects (font (size 1.27 1.27))))
-        (number "2" (effects (font (size 1.27 1.27))))
+        (number "1" (effects (font (size 1.27 1.27))))
       )
       (pin power_in line (at 0 0 90) (length 0)
         (name "Fail__S7.1__TwoPins_TwoVisible" (effects (font (size 1.27 1.27))))
-        (number "1" (effects (font (size 1.27 1.27))))
+        (number "2" (effects (font (size 1.27 1.27))))
       )
     )
   )
@@ -375,7 +396,8 @@
           (xy -1.27 0.381)
           (xy 2.159 -1.016)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -384,7 +406,8 @@
           (xy 0 2.54)
           (xy -2.667 -1.905)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -565,7 +588,8 @@
           (xy 2.7432 -1.9304)
           (xy 2.7432 -1.905)
         )
-        (stroke (width 0.127)) (fill (type background))
+        (stroke (width 0.127) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
     )
   )
@@ -597,7 +621,8 @@
           (xy -1.27 0.381)
           (xy 2.159 -1.016)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -606,7 +631,8 @@
           (xy 0 2.54)
           (xy -2.667 -1.905)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -787,7 +813,8 @@
           (xy 2.7432 -1.9304)
           (xy 2.7432 -1.905)
         )
-        (stroke (width 0.127)) (fill (type background))
+        (stroke (width 0.127) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
     )
   )
@@ -816,7 +843,8 @@
           (xy -1.27 0.381)
           (xy 2.159 -1.016)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -825,7 +853,8 @@
           (xy 0 2.54)
           (xy -2.667 -1.905)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -1006,7 +1035,8 @@
           (xy 2.7432 -1.9304)
           (xy 2.7432 -1.905)
         )
-        (stroke (width 0.127)) (fill (type background))
+        (stroke (width 0.127) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
     )
     (symbol "Fail__S7.2__Pin_1_1"
@@ -1041,7 +1071,8 @@
           (xy -1.27 0.381)
           (xy 2.159 -1.016)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -1050,7 +1081,8 @@
           (xy 0 2.54)
           (xy -2.667 -1.905)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -1231,7 +1263,8 @@
           (xy 2.7432 -1.9304)
           (xy 2.7432 -1.905)
         )
-        (stroke (width 0.127)) (fill (type background))
+        (stroke (width 0.127) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
     )
   )
@@ -1260,7 +1293,8 @@
           (xy -1.27 0.381)
           (xy 2.159 -1.016)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -1269,7 +1303,8 @@
           (xy 0 2.54)
           (xy -2.667 -1.905)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -1450,7 +1485,8 @@
           (xy 2.7432 -1.9304)
           (xy 2.7432 -1.905)
         )
-        (stroke (width 0.127)) (fill (type background))
+        (stroke (width 0.127) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
     )
   )
@@ -1479,21 +1515,24 @@
           (xy -0.762 1.27)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 0)
           (xy 0 2.54)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
           (xy 0 2.54)
           (xy 0.762 1.27)
         )
-        (stroke (width 0)) (fill (type none))
+        (stroke (width 0) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
     )
     (symbol "Pass__S7.1__PowerSymbol_1_1"
@@ -1528,7 +1567,8 @@
           (xy -1.27 0.381)
           (xy 2.159 -1.016)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -1537,7 +1577,8 @@
           (xy 0 2.54)
           (xy -2.667 -1.905)
         )
-        (stroke (width 0.254)) (fill (type none))
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
+        (fill (type none))
       )
       (polyline
         (pts
@@ -1718,7 +1759,8 @@
           (xy 2.7432 -1.9304)
           (xy 2.7432 -1.905)
         )
-        (stroke (width 0.127)) (fill (type background))
+        (stroke (width 0.127) (type default) (color 0 0 0 0))
+        (fill (type background))
       )
     )
   )

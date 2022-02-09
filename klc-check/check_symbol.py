@@ -132,7 +132,7 @@ class SymbolCheck():
         try:
             library = KicadLibrary.from_file(filename)
         except Exception as e:
-            self.printer.red('could not parse library: %s' % filename)
+            self.printer.red('Could not parse library: %s. (%s)' % (filename, e))
             if self.verbosity:
                 self.printer.red("Error: " + str(e))
                 traceback.print_exc()
