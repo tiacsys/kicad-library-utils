@@ -25,14 +25,13 @@ class Rule(KLCRule):
         # look for duplicate pin numbers
         duplicate = False
         test_pins = list(self.component.pins)
-        for pin0 in test_pins:
-            for pin1 in test_pins:
+        for pin0 in test_pins[:]:
+            for pin1 in test_pins[:]:
                 if pin0 != pin1 and pin0.is_duplicate(pin1):
                     duplicate = True
                     self.error("Pin {n} is duplicated:".format(n=pin0.number))
                     self.errorExtra(pinString(pin0))
-                    test_pins.remove(pin0)
-                    test_pins.remove(pin1)
+                    break
 
         return duplicate
 
