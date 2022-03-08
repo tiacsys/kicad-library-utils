@@ -95,7 +95,7 @@ class SymbolCheck():
                     self.printer.green("Checking symbol '{lib}:{sym}':".format(lib=symbol.libname, sym=symbol.name))
                     first = False
 
-                self.printer.yellow("Violating " + rule.name, indentation=2)
+                self.printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
                 rule.processOutput(self.printer, self.verbosity, self.silent)
 
             if rule.hasErrors():

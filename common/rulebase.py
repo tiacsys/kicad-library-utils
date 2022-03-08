@@ -108,6 +108,22 @@ class KLCRuleBase(object):
         path = "".join(path.split(".")[:-1])
         return path.replace('_', '.')
 
+    @property
+    def url(self) -> str:
+        categories = {
+            'F': 'footprint',
+            'G': 'general',
+            'M': 'model',
+            'S': 'symbol'
+        }
+
+        category = categories[self.name[0]]
+        name = self.name.lower()
+        group = name.split('.')[0]
+        url = f'https://klc.kicad.org/{category}/{group}/{name}/'
+
+        return url
+
     def __init__(self):
         self.description = self.__doc__.strip().splitlines()[0].strip()
         self.messageBuffer=[]

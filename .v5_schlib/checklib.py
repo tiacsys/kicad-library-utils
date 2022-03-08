@@ -130,7 +130,7 @@ for libfile in libfiles:
                 rule.footprints_dir = None
 
             if verbosity > 2:
-                printer.white("checking rule" + rule.name)
+                printer.white("Checking rule" + rule.name)
 
             rule.check()
 
@@ -142,7 +142,7 @@ for libfile in libfiles:
                     printer.green("Checking symbol '{sym}':".format(sym=component.name))
                     first = False
 
-                printer.yellow("Violating " + rule.name, indentation=2)
+                printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
                 rule.processOutput(printer, verbosity, args.silent)
 
             # Specifically check for errors
