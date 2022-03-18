@@ -65,7 +65,7 @@ def SexprItem(val, key=None):
     elif t == int:
         val = str(val)
     elif t == str and re.search(r'[\s()\"]', val):
-        val = '"%s"' % repr(val)[1:-1].replace('"', '\"') 
+        val = '"%s"' % repr(val)[1:-1].replace('"', r'\"') 
     
     return fmt.format(val=val)
     
