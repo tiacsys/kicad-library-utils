@@ -7,6 +7,11 @@ import math
 class Rule(KLCRule):
     """Symbol outline and fill requirements"""
 
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.center_rect_polyline = None
+
     def check(self):
         """
         Proceeds the checking of the rule.

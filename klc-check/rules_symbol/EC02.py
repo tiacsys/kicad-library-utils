@@ -6,6 +6,16 @@ from rules_symbol.rule import *
 class Rule(KLCRule):
     """Check part reference, name and footprint position and alignment"""
 
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.recommended_ref_pos = {}
+        self.recommended_ref_alignment = ''
+        self.recommended_name_pos = {}
+        self.recommended_name_alignment = ''
+        self.recommended_fp_pos = {}
+        self.recommended_fp_alignment = ''
+
     def check(self):
         """
         Proceeds the checking of the rule.

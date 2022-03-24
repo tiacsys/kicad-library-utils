@@ -6,6 +6,12 @@ from rules_symbol.rule import *
 class Rule(KLCRule):
     """Text fields should use a common text size of 50mils"""
 
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.violating_pins = []
+        self.violating_properties = []
+
     def check(self):
         """
         Proceeds the checking of the rule.

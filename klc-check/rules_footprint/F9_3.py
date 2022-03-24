@@ -19,6 +19,26 @@ class Rule(KLCRule):
         ')'
     )
 
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.model3D_wrongOffset = False
+        self.model3D_wrongRotation = False
+        self.model3D_wrongScale = False
+
+        self.model3D_missingSYSMOD = False
+        self.model3D_wrongLib = False
+        self.model3D_wrongName = False
+        self.model3D_wrongFiletype = False
+        self.model3D_invalidName = False
+
+        self.module_dir = ''
+
+        self.no3DModel = False
+        self.model3D_expectedDir = ''
+        self.model3D_expectedName = ''
+        self.model3D_expectedFullPath = ''
+
     def checkModel(self, model):
 
         error = False

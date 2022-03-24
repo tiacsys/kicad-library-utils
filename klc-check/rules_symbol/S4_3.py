@@ -7,12 +7,16 @@ class Rule(KLCRule):
     """Rules for pin stacking"""
 
     special_power_pins = ['power_in', 'power_out', 'output']
-    different_names = []
-    different_types = []
-    visible_pin_not_lowest = []
-    NC_stacked = []
-    non_numeric = []
-    more_then_one_visible = False
+
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.different_names = []
+        self.different_types = []
+        self.visible_pin_not_lowest = []
+        self.NC_stacked = []
+        self.non_numeric = []
+        self.more_then_one_visible = False
 
     def count_pin_etypes(self, pins, etyp):
         n = 0

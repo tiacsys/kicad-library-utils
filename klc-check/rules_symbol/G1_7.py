@@ -7,6 +7,11 @@ class Rule(KLCRule):
     """Library files must use Unix-style line endings (LF)"""
     lib_error = False
 
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.lib_error = False
+
     def check(self):
         # Only perform this check on linux systems (i.e. Travis)
         # Windows automatically checks out with CR+LF line endings

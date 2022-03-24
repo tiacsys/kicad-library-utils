@@ -7,6 +7,11 @@ import re
 class Rule(KLCRule):
     """Footprint filters should match all appropriate footprints"""
 
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.bad_filters = []
+
     def checkFilters(self, filters):
 
         self.bad_filters = []

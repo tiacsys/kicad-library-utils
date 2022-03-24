@@ -9,12 +9,18 @@ from rules_footprint.rule import *
 class Rule(KLCRule):
     """Elements on the graphic layer should not overlap"""
 
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.overlaps = {}
+        self.errcnt = 0
+
     def getCirclesOverlap(self,circles):
       def is_same(c1, c2):
         if c1['end'] == c2['end'] and c1['center'] == c2['center']:
           return True
-        return False 
-       
+        return False
+
       overlap = []
       for c in circles:
         for c2 in circles:

@@ -19,6 +19,11 @@ class Rule(KLCRule):
 
     required_layers = ["*.Cu","*.Mask"]
 
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.wrong_layers = []
+
     def checkPads(self, pads):
 
         self.wrong_layers = []

@@ -6,6 +6,11 @@ from rules_symbol.rule import *
 class Rule(KLCRule):
     """General pin requirements"""
 
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.violating_pins = []
+
     def checkPinOrigin(self, gridspacing=100):
         self.violating_pins = []
         err = False

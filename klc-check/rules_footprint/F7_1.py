@@ -5,6 +5,12 @@ from rules_footprint.rule import *
 class Rule(KLCRule):
     """For through-hole devices, placement type must be set to "Through Hole" """
 
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.pth_count = 0
+        self.smd_count = 0
+
     def check(self):
         """
         Proceeds the checking of the rule.

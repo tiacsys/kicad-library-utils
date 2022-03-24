@@ -9,6 +9,24 @@ from rules_footprint.rule import *
 class Rule(KLCRule):
     """Fabrication layer requirements"""
 
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.bad_fabrication_width = []
+        self.non_nominal_width = []
+
+        self.missing_value = False
+        self.missing_lines = False
+        self.incorrect_width = False
+        self.multiple_second_ref = False
+        self.missing_second_ref = False
+
+        self.f_fabrication_all = []
+        self.b_fabrication_all = []
+
+        self.f_fabrication_lines = []
+        self.b_fabrication_lines = []
+
     # Check for presence of component value
     def checkMissingValue(self):
         mod = self.module

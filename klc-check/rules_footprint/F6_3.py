@@ -8,6 +8,11 @@ class Rule(KLCRule):
     required_layers = ["Cu", "Paste", "Mask"]
     sides = ["F.", "B."]
 
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.stencil_pads_with_number = []
+
     def checkPads(self, pads):
 
         self.stencil_pads_with_number = []

@@ -9,6 +9,20 @@ import cmath
 class Rule(KLCRule):
     """Silkscreen layer requirements"""
 
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.refDesError = False
+
+        # check the width
+        self.bad_width = []
+        self.non_nominal_width = []
+
+        self.intersections = []
+
+        self.f_silk = []
+        self.b_silk = []
+
     def checkReference(self):
         """
         Check that the RefDes is included on the silkscreen layer,

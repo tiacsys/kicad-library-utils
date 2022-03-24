@@ -14,6 +14,18 @@ from boundingbox import BoundingBox
 class Rule(KLCRule):
     """Courtyard layer requirements"""
 
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.module_dir = ''
+
+        self.bad_grid = []
+        self.bad_width = []
+        self.unconnected = []
+
+        self.fCourtyard = []
+        self.bCourtyard = []
+
     # Get the superposed boundary of pads and fab layer
     def getFootprintBounds(self):
         module = self.module

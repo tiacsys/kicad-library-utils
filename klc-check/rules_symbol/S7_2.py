@@ -6,8 +6,12 @@ import re
 
 class Rule(KLCRule):
     """Graphical symbols follow some special rules/KLC-exceptions"""
-    fixTooManyPins = False
-    fixNoFootprint = False
+
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.fixTooManyPins = False
+        self.fixNoFootprint = False
 
     def check(self):
         # no need to check this for an alias

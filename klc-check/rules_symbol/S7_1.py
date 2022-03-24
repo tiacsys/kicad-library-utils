@@ -6,12 +6,16 @@ import re
 
 class Rule(KLCRule):
     """Power flag symbols"""
-    makePinINVISIBLE = False
-    makePinPowerInput = False
-    fixTooManyPins = False
-    fixPinSignalName = False
-    fixNoFootprint = False
-    fixWrongRef = False
+
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.makePinINVISIBLE = False
+        self.makePinPowerInput = False
+        self.fixTooManyPins = False
+        self.fixPinSignalName = False
+        self.fixNoFootprint = False
+        self.fixWrongRef = False
 
     def check(self):
         fail = False

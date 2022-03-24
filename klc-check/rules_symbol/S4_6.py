@@ -10,6 +10,12 @@ class Rule(KLCRule):
     # No-connect pins should be "N"
     NC_PINS = ['^nc$', '^dnc$', '^n\.c\.$']
 
+    def __init__(self, component):
+        super().__init__(component)
+
+        self.invisible_errors = []
+        self.type_errors = []
+
     # check if a pin name fits within a list of possible pins (using regex testing)
     def test(self, pinName, nameList):
         for name in nameList:

@@ -5,8 +5,11 @@ from rules_footprint.rule import *
 class Rule(KLCRule):
     """For through-hole components, footprint anchor is set on pad 1"""
 
-    pin1_position = []
-    pin1_count = 0
+    def __init__(self, component, args):
+        super().__init__(component, args)
+
+        self.pin1_position = []
+        self.pin1_count = 0
 
     def check(self):
         """
