@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-
-import sys
-import os
-
-common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
-
-if common not in sys.path:
-    sys.path.append(common)
-
 from rulebase import *
 
 

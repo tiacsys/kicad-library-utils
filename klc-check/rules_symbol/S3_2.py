@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from typing import List
 
 from kicad_sym import KicadSymbol, Pin, Property, mil_to_mm, mm_to_mil

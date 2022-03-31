@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""
+Library for dealing with bounding boxes (2D areas defined by four points).
+"""
 
 from typing import Dict, Optional
 

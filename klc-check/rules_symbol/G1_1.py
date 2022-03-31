@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import string
 
 from rules_symbol.rule import KLCRule

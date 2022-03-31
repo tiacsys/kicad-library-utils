@@ -1,3 +1,6 @@
+"""
+Library for parsing a library table file (e.g. used for project-specific library settings files).
+"""
 import re
 
 from typing import Dict, List

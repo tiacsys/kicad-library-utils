@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import platform
 
 from kicad_sym import KicadSymbol

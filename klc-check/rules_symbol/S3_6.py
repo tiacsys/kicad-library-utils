@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from kicad_sym import KicadSymbol, mm_to_mil, mil_to_mm
 from rules_symbol.rule import KLCRule, positionFormater
 

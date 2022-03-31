@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Description:
 #       For THT parts, following layers required:
 #       *.Cu

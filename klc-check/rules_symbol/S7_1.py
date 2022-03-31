@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from kicad_sym import KicadSymbol
 from rules_symbol.rule import KLCRule
 

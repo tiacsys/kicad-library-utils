@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from kicad_mod import KicadMod
 from rules_footprint.rule import *
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import platform
 
 from rules_footprint.rule import *

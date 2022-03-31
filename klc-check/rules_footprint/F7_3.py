@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from rules_footprint.rule import KLCRule
 
 

@@ -1,23 +1,18 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""
+Library for processing KiCad's symbol files.
+"""
 
 from dataclasses import dataclass, field
 from optparse import Option
-from typing import List
+import math
 from pathlib import Path
-
-from typing import Any, Dict, List, Optional
-
-import re, math
-import sys, os
-common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
-if not common in sys.path:
-    sys.path.append(common)
+import re
+import sys
+from typing import Any, Dict, List, Optional, Tuple
 
 import sexpr
 import pprint
 
-from typing import Optional, Tuple
 
 def mil_to_mm(mil: float) -> float:
     return round(mil * 0.0254, 6)

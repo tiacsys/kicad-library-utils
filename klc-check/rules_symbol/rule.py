@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-
-import os
-import sys
-
-common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
-
-if common not in sys.path:
-    sys.path.append(common)
-
 from kicad_sym import KicadSymbol, Pin, mil_to_mm, mm_to_mil
 from rulebase import KLCRuleBase, Verbosity
 

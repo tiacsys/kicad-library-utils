@@ -17,14 +17,9 @@
 # Library format description
 # https://www.compuphase.com/electronics/LibraryFileFormats.pdf
 
-import os, sys
 from enum import Enum
 from Point import Point
 from copy import deepcopy
-
-common = os.path.abspath(os.path.join(sys.path[0], '..', '..', 'common'))
-if not common in sys.path:
-    sys.path.append(common)
 
 import kicad_sym
 

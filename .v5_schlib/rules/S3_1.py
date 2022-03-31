@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from rules.rule import *
 import math
 

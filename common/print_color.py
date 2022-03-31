@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-
-# -*- coding: utf-8 -*-
-
 import platform
 import sys
 from typing import Dict, List, Optional

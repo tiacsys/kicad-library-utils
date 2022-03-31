@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # File intented to demo some functions available in the Symbol Generator module.
 

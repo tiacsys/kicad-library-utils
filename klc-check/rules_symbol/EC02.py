@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from typing import Dict
 
 from kicad_sym import KicadSymbol, mil_to_mm

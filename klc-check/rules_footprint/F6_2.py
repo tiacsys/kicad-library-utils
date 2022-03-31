@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from math import sqrt
 
 from rules_footprint.rule import *

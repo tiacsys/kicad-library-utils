@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import cmath
 from copy import deepcopy
 from typing import Any, Dict, List

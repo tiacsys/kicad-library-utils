@@ -8,8 +8,6 @@ to ensure that the directory structure matches the
 
 """
 
-from __future__ import print_function
-
 import argparse
 import sys, os
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 This file compares two .lib files and generates a list of deleted / added / updated components.
 This is to be used to compare an updated library file with a previous version to determine which components have been changed.

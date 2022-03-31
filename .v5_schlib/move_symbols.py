@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
 
 """
 This script can be used to reorganize symbol libraries

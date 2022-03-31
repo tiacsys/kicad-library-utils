@@ -1,14 +1,12 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""
+Library for handling KiCad's footprint files (`*.kicad_mod`).
+"""
 
 import copy
 import math
-import os
-import sys
 import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
-sys.path.append(os.path.join('..','common'))
 import sexpr
 from boundingbox import BoundingBox
 
@@ -1329,7 +1327,3 @@ class KicadMod(object):
         with open(filename, 'w', newline='\n') as f:
             f.write(se.output)
             f.write('\n')
-
-
-if __name__ == '__main__':
-    pass

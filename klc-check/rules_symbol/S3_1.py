@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import math
 from rules_symbol.rule import *
 from kicad_sym import mm_to_mil

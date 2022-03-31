@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# code extracted from: http://rosettacode.org/wiki/S-Expressions
+"""
+code extracted from: http://rosettacode.org/wiki/S-Expressions
+"""
 
 import re
 from typing import Any, Optional

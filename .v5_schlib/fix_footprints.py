@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 This script fixes footprint errors where symbols are pointing to footprints
@@ -38,8 +37,6 @@ A replacement file can be supplied, in JSON format:
 Library replacements and footprint replacements can be defined therein.
 
 """
-
-from __future__ import print_function
 
 import argparse
 import sys, os

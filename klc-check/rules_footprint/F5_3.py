@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # math and comments from Michal script
 # https://github.com/michal777/KiCad_Lib_Check
 
