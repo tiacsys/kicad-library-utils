@@ -9,7 +9,8 @@ class Rule(KLCRule):
     def __init__(self, component):
         super(Rule, self).__init__(
             component,
-            "Text fields should use common size of 50mils, but labels and numbers may use text size as low as 20mil if required",
+            "Text fields should use common size of 50mils, but labels and numbers may"
+            " use text size as low as 20mil if required",
         )
 
     def check(self):
@@ -63,11 +64,13 @@ class Rule(KLCRule):
             else:
                 if name_text_size != 50:
                     self.warning(
-                        "Pin name text size should be 50mils (or 20...50mils if required by the symbol geometry)"
+                        "Pin name text size should be 50mils (or 20...50mils if"
+                        " required by the symbol geometry)"
                     )
                 if num_text_size != 50:
                     self.warning(
-                        "Pin number text size should be 50mils (or 20...50mils if required by the symbol geometry)"
+                        "Pin number text size should be 50mils (or 20...50mils if"
+                        " required by the symbol geometry)"
                     )
 
         if len(self.violating_fields) > 0 or len(self.violating_pins) > 0:

@@ -74,7 +74,9 @@ class Rule(KLCRule):
                     )
                     if Rule43NotExecuted:
                         self.errorExtra(
-                            "NOTE: If power-pins have been stacked, you may ignore this error in some cases (Ensure to check rule S4.3 in addition to recognize such stacks)."
+                            "NOTE: If power-pins have been stacked, you may ignore this"
+                            " error in some cases (Ensure to check rule S4.3 in"
+                            " addition to recognize such stacks)."
                         )
                 self.power_errors.append(pin)
                 self.errorExtra(
@@ -127,7 +129,8 @@ class Rule(KLCRule):
             if m and pin["pin_type"] == "I":
                 if len(self.inversion_errors) == 0:
                     self.error(
-                        "Pins should not be inverted twice (with inversion-symbol on pin and overline on label)"
+                        "Pins should not be inverted twice (with inversion-symbol on"
+                        " pin and overline on label)"
                     )
                 self.inversion_errors.append(pin)
                 self.errorExtra(

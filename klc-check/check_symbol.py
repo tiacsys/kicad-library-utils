@@ -249,7 +249,10 @@ def worker(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Checks KiCad library files (.kicad_sym) against KiCad Library Convention (KLC) rules. You can find the KLC at https://kicad.org/libraries/klc/"
+        description=(
+            "Checks KiCad library files (.kicad_sym) against KiCad Library Convention"
+            " (KLC) rules. You can find the KLC at https://kicad.org/libraries/klc/"
+        )
     )
     parser.add_argument("kicad_sym_files", nargs="+")
     parser.add_argument(
@@ -264,21 +267,32 @@ if __name__ == "__main__":
     parser.add_argument(
         "-r",
         "--rule",
-        help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r S3.1,EC02"',
+        help=(
+            "Select a particular rule (or rules) to check against (default = all"
+            ' rules). Use comma separated values to select multiple rules. e.g. "-r'
+            ' S3.1,EC02"'
+        ),
     )
     parser.add_argument(
         "-e",
         "--exclude",
-        help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"',
+        help=(
+            "Exclude a particular rule (or rules) to check against. Use comma separated"
+            ' values to select multiple rules. e.g. "-e S3.1,EC02"'
+        ),
     )
-    # parser.add_argument('--fix', help='fix the violations if possible', action='store_true') # currently there is no write support for a kicad symbol
+    # currently there is no write support for a kicad symbol
+    #    parser.add_argument('--fix', help='fix the violations if possible', action='store_true')
     parser.add_argument(
         "--nocolor", help="does not use colors to show the output", action="store_true"
     )
     parser.add_argument(
         "-v",
         "--verbose",
-        help="Enable verbose output. -v shows brief information, -vv shows complete information",
+        help=(
+            "Enable verbose output. -v shows brief information, -vv shows complete"
+            " information"
+        ),
         action="count",
     )
     parser.add_argument(
@@ -308,7 +322,10 @@ if __name__ == "__main__":
     parser.add_argument("-j", "--multiprocess", help="use parallel processing")
     parser.add_argument(
         "--footprints",
-        help='Path to footprint libraries (.pretty dirs). Specify with e.g. "~/kicad/footprints/"',
+        help=(
+            "Path to footprint libraries (.pretty dirs). Specify with e.g."
+            ' "~/kicad/footprints/"'
+        ),
     )
     args = parser.parse_args()
 

@@ -172,9 +172,8 @@ try:
                                 )
                             if args.interactive:
                                 newlib = raw_input(
-                                    "Enter library for footprint '{fp}' (leave blank to skip): ".format(
-                                        fp=footprint
-                                    )
+                                    "Enter library for footprint '{fp}' (leave blank to"
+                                    " skip): ".format(fp=footprint)
                                 )
 
                                 # Keep track of this for next time
@@ -216,9 +215,8 @@ try:
                             )
                         if args.interactive:
                             newlib = raw_input(
-                                "Enter new name for library '{lib}' (leave blank to skip): ".format(
-                                    lib=fplib
-                                )
+                                "Enter new name for library '{lib}' (leave blank to"
+                                " skip): ".format(lib=fplib)
                             )
 
                             replacements["library"][fplib] = newlib
@@ -260,9 +258,8 @@ try:
 
                             if args.interactive:
                                 newname = raw_input(
-                                    "Enter new name for footprint '{fp}' (leave blank to skip): ".format(
-                                        fp=fpname
-                                    )
+                                    "Enter new name for footprint '{fp}' (leave blank"
+                                    " to skip): ".format(fp=fpname)
                                 )
 
                                 replacements["footprint"][fpname] = newname

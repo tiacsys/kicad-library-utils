@@ -109,7 +109,8 @@ class Rule(KLCRule):
                         and (EP_x - EP_size_x - p_x) < 0
                         and (EP_y - EP_size_y - p_y) < 0
                     ):
-                        # print("Number: ", pad['number'], "Pad:", p_x, p_y, "Size:", pad['size']['x'], pad['size']['y'], "Layers:", pad['layers']) # debug
+                        # print("Number: ", pad['number'], "Pad:", p_x, p_y, "Size:",
+                        #     pad['size']['x'], pad['size']['y'], "Layers:", pad['layers']) # debug
                         # testvar = testvar + 1 # debug
                         skip = True
 

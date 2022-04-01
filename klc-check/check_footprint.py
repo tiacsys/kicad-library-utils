@@ -150,13 +150,19 @@ def do_rulecheck(module, rules, metrics) -> Tuple[int, int]:
 
 
 parser = argparse.ArgumentParser(
-    description="Checks KiCad footprint files (.kicad_mod) against KiCad Library Convention (KLC) rules. You can find the KLC at http://kicad.org/libraries/klc/"
+    description=(
+        "Checks KiCad footprint files (.kicad_mod) against KiCad Library Convention"
+        " (KLC) rules. You can find the KLC at http://kicad.org/libraries/klc/"
+    )
 )
 parser.add_argument("kicad_mod_files", nargs="+")
 parser.add_argument("--fix", help="fix the violations if possible", action="store_true")
 parser.add_argument(
     "--fixmore",
-    help="fix additional violations, not covered by --fix (e.g. rectangular courtyards), implies --fix!",
+    help=(
+        "fix additional violations, not covered by --fix (e.g. rectangular courtyards),"
+        " implies --fix!"
+    ),
     action="store_true",
 )
 parser.add_argument(
@@ -177,7 +183,10 @@ parser.add_argument(
 parser.add_argument(
     "-v",
     "--verbose",
-    help="Enable verbose output. -v shows brief information, -vv shows complete information",
+    help=(
+        "Enable verbose output. -v shows brief information, -vv shows complete"
+        " information"
+    ),
     action="count",
 )
 parser.add_argument(

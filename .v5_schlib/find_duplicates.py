@@ -96,9 +96,8 @@ for libfile in libfiles:
 
                 if alias in aliases:
                     printer.yellow(
-                        "Component '{cmp}' ALIAS '{alias}' exists as an alias of '{key}'".format(
-                            cmp=cmp.name, alias=alias, key=key
-                        )
+                        "Component '{cmp}' ALIAS '{alias}' exists as an alias of"
+                        " '{key}'".format(cmp=cmp.name, alias=alias, key=key)
                     )
                     errors += 1
 

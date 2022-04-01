@@ -38,7 +38,8 @@ class Rule(KLCRule):
 
         # reference checking
 
-        # if there is no pins in the top, the recommended position to ref is at top-center, horizontally centered
+        # If there is no pin in the top, the recommended position to ref is at top-center,
+        # horizontally centered.
         if len(self.component.filter_pins(direction="D")) == 0:
             self.recommended_ref_pos = {"posx": 0, "posy": (top + mil_to_mm(125))}
             self.recommended_ref_alignment = "center"
@@ -77,7 +78,8 @@ class Rule(KLCRule):
 
         # name checking
 
-        # if there is no pins in the top, the recommended position to name is at top-center, horizontally centered
+        # If there is no pin in the top, the recommended position to name is at top-center,
+        # horizontally centered.
         if len(self.component.filter_pins(direction="D")) == 0:
             self.recommended_name_pos = {"posx": 0, "posy": (top + mil_to_mm(50))}
             self.recommended_name_alignment = "center"
@@ -114,7 +116,8 @@ class Rule(KLCRule):
 
         # footprint checking
 
-        # if there is no pins in the bottom, the recommended position to footprint is at bottom-center, horizontally centered
+        # If there is no pin in the bottom, the recommended position to footprint is at
+        # bottom-center, horizontally centered.
         if len(self.component.filter_pins(direction="U")) == 0:
             self.recommended_fp_pos = {"posx": 0, "posy": (bottom - mil_to_mm(50))}
             self.recommended_fp_alignment = "center"
@@ -149,7 +152,8 @@ class Rule(KLCRule):
                 fp_need_fix = True
             fp_need_fix = True
 
-        # This entire rule only generates a WARNING (won't fail a component, only display a message)
+        # This entire rule only generates a WARNING (won't fail a component, only display a
+        # message).
         return False
 
     def fix(self) -> None:

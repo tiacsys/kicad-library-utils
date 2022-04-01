@@ -136,7 +136,8 @@ class Rule(KLCRule):
                 )
                 if (len(pin_etypes) > 1) or isSpecialSingleTypeStack:
                     # an exception is done for some special pin-stacks:
-                    # isSpecialXPassivePinStack are those pins stacks that fulfill one of the following conditions:
+                    # isSpecialXPassivePinStack are those pins stacks that fulfill one of the
+                    # following conditions:
                     #    1. consists only of output and passive pins
                     #    2. consists only of power-output and passive pins
                     #    3. consists only of power-input and passive pins
@@ -176,7 +177,8 @@ class Rule(KLCRule):
                             )
                             self.different_types = True
                     else:
-                        # in special pin stacks the power-input/power-output/output pin has to be visible and the passive pins need to be invisible
+                        # In special pin stacks the power-input/power-output/output pin has to be
+                        # visible and the passive pins need to be invisible.
                         specialpincount = 0
                         for pin in loc["pins"]:
                             self.component.padInSpecialPowerStack.add(pin["num"])
@@ -185,7 +187,8 @@ class Rule(KLCRule):
                                 not pin["pin_type"].startswith("N")
                             ):
                                 self.error(
-                                    "{pin} : {etype} should be invisible (power-pin stack)".format(
+                                    "{pin} : {etype} should be invisible (power-pin"
+                                    " stack)".format(
                                         pin=self.pinStr(pin),
                                         etype=pinElectricalTypeToStr(
                                             pin["electrical_type"]
@@ -202,7 +205,8 @@ class Rule(KLCRule):
                             ):
                                 if pin["pin_type"].startswith("N"):
                                     self.error(
-                                        "{pin} : {etype} should be visible in a power-in/power-out/output pin stack".format(
+                                        "{pin} : {etype} should be visible in a"
+                                        " power-in/power-out/output pin stack".format(
                                             pin=self.pinStr(pin),
                                             etype=pinElectricalTypeToStr(
                                                 pin["electrical_type"]
@@ -218,7 +222,8 @@ class Rule(KLCRule):
                                     specialpincount += 1
                             if specialpincount > 1:
                                 self.error(
-                                    "{pin} : {etype} should be an invisible PASSIVE pin power-in/power-out/output pin stack".format(
+                                    "{pin} : {etype} should be an invisible PASSIVE pin"
+                                    " power-in/power-out/output pin stack".format(
                                         pin=self.pinStr(pin),
                                         etype=pinElectricalTypeToStr(
                                             pin["electrical_type"]
@@ -228,7 +233,8 @@ class Rule(KLCRule):
                                 self.fix_make_invisible.add(pin["num"])
                                 self.fix_make_passive.add(pin["num"])
 
-                # Only one pin should be visible (checks have already been done, when isSpecialXPassivePinStack=true)
+                # Only one pin should be visible (checks have already been done, when
+                # isSpecialXPassivePinStack=true).
                 if (not isSpecialXPassivePinStack) and (not vis_pin_count == 1):
                     self.error(
                         self.stackStr(loc) + " must have exactly one (1) visible pin"
@@ -253,7 +259,8 @@ class Rule(KLCRule):
                     (pin["electrical_type"] == "w") or (pin["electrical_type"] == "W")
                 ) and pin["pin_type"].startswith("N"):
                     self.error(
-                        "{pin} : {etype} should be visible (power-in/power-out pins may never be invisible, unless in a power-net tag/symbol)".format(
+                        "{pin} : {etype} should be visible (power-in/power-out pins may"
+                        " never be invisible, unless in a power-net tag/symbol)".format(
                             pin=self.pinStr(pin),
                             etype=pinElectricalTypeToStr(pin["electrical_type"]),
                         )
@@ -337,15 +344,18 @@ class Rule(KLCRule):
 
         if self.different_names:
             self.info(
-                "FIX for 'different pin names' not supported (yet)! Please fix manually."
+                "FIX for 'different pin names' not supported (yet)! Please fix"
+                " manually."
             )
         if self.NC_stacked:
             self.info("FIX for 'NC pins stacked' not supported! Please fix manually.")
         if self.different_types:
             self.info(
-                "FIX for 'different pin types' not supported (yet)! Please fix manually."
+                "FIX for 'different pin types' not supported (yet)! Please fix"
+                " manually."
             )
         if self.only_one_visible:
             self.info(
-                "FIX for 'only one pin in a pin stack is visible' not supported (yet)! Please fix manually."
+                "FIX for 'only one pin in a pin stack is visible' not supported (yet)!"
+                " Please fix manually."
             )

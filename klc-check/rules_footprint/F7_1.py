@@ -29,7 +29,8 @@ class Rule(KLCRule):
         if self.pth_count > 0 and module.attribute != "through_hole":
             if module.attribute == "virtual":
                 self.warning(
-                    "Footprint placement type set to 'virtual' - ensure this is correct!"
+                    "Footprint placement type set to 'virtual' - ensure this is"
+                    " correct!"
                 )
             # Only THT pads
             elif self.smd_count == 0:

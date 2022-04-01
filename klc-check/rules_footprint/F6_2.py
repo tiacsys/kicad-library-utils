@@ -4,15 +4,19 @@ from rules_footprint.rule import *
 
 
 class Rule(KLCRule):
-    """For surface-mount devices, footprint anchor is placed in the middle of the footprint (IPC-7351)."""
+    """
+    For surface-mount devices, footprint anchor is placed in the middle of the footprint
+    (IPC-7351).
+    """
 
     def check(self) -> bool:
         """
         Proceeds the checking of the rule.
 
-        This test will generate false positives for parts that have a weird outline, are not symmetrical or do not have
-        the pick'n'place location in the geometrical center.
-        Most connectors will have at least one of those issues (e.g. a FPC-Connector) and fail this test.
+        This test will generate false positives for parts that have a weird outline, are not
+        symmetrical or do not have the pick'n'place location in the geometrical center.
+        Most connectors will have at least one of those issues (e.g. a FPC-Connector) and fail this
+        test.
         For most other components (LEDs, molded packages, ...) this test will yield usable results.
         """
         module = self.module

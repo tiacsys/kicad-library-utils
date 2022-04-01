@@ -99,7 +99,8 @@ class Rule(KLCRule):
                         and pos not in self.visible_pin_not_lowest
                     ):
                         self.warning(
-                            "The pin with the lowest number in a pinstack should be visible"
+                            "The pin with the lowest number in a pinstack should be"
+                            " visible"
                         )
                         self.warningExtra(
                             "Pin {0} is visible, the lowest number in this stack is {1}".format(
@@ -112,7 +113,8 @@ class Rule(KLCRule):
                 #         exceptions are power-pin-stacks
                 if pin.etype != common_etype:
                     # this could be one of the special cases
-                    # at least one of the two checked pins need to be 'special' type. if not, this is an error
+                    # At least one of the two checked pins needs to be 'special' type.
+                    # If not, this is an error.
                     if (
                         pin.etype in self.SPECIAL_POWER_PINS
                         or common_etype in self.SPECIAL_POWER_PINS
@@ -168,7 +170,8 @@ class Rule(KLCRule):
                                 )
                         break
 
-                # find the non-passive pin, it must be visible. Also, it should have the lowest pin-number of all
+                # Find the non-passive pin, it must be visible.
+                # Also, it should have the lowest pin-number of all.
                 for pin in pins:
                     if pin.etype != "passive":
                         # we found the non-passive pin
@@ -187,12 +190,12 @@ class Rule(KLCRule):
                             and pos not in self.visible_pin_not_lowest
                         ):
                             self.warning(
-                                "The pin with the lowest number in a pinstack should be visible"
+                                "The pin with the lowest number in a pinstack should be"
+                                " visible"
                             )
                             self.warningExtra(
-                                "Pin {0} is visible, the lowest number in this stack is {1}".format(
-                                    pinString(pin), min_pin_number
-                                )
+                                "Pin {0} is visible, the lowest number in this stack"
+                                " is {1}".format(pinString(pin), min_pin_number)
                             )
                             self.visible_pin_not_lowest.append(pos)
                         break
@@ -212,10 +215,12 @@ class Rule(KLCRule):
                                 and pos not in self.visible_pin_not_lowest
                             ):
                                 self.warning(
-                                    "The pin with the lowest number in a pinstack should be visible"
+                                    "The pin with the lowest number in a pinstack"
+                                    " should be visible"
                                 )
                                 self.warningExtra(
-                                    "Pin {0} is visible, the lowest number in this stack is {1}".format(
+                                    "Pin {0} is visible, the lowest number in this"
+                                    " stack is {1}".format(
                                         pinString(pin), min_pin_number
                                     )
                                 )

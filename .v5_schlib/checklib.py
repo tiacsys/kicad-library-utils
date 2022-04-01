@@ -22,7 +22,10 @@ from rules.rule import KLCRule
 from schlib import *
 
 parser = argparse.ArgumentParser(
-    description="Checks KiCad library files (.lib) against KiCad Library Convention (KLC) rules. You can find the KLC at https://kicad.org/libraries/klc/"
+    description=(
+        "Checks KiCad library files (.lib) against KiCad Library Convention (KLC)"
+        " rules. You can find the KLC at https://kicad.org/libraries/klc/"
+    )
 )
 parser.add_argument("libfiles", nargs="+")
 parser.add_argument(
@@ -40,12 +43,18 @@ parser.add_argument(
 parser.add_argument(
     "-r",
     "--rule",
-    help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r 3.1,EC02"',
+    help=(
+        "Select a particular rule (or rules) to check against (default = all rules)."
+        ' Use comma separated values to select multiple rules. e.g. "-r 3.1,EC02"'
+    ),
 )
 parser.add_argument(
     "-e",
     "--exclude",
-    help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e 3.1,EC02"',
+    help=(
+        "Exclude a particular rule (or rules) to check against. Use comma separated"
+        ' values to select multiple rules. e.g. "-e 3.1,EC02"'
+    ),
 )
 parser.add_argument("--fix", help="fix the violations if possible", action="store_true")
 parser.add_argument(
@@ -54,7 +63,10 @@ parser.add_argument(
 parser.add_argument(
     "-v",
     "--verbose",
-    help="Enable verbose output. -v shows brief information, -vv shows complete information",
+    help=(
+        "Enable verbose output. -v shows brief information, -vv shows complete"
+        " information"
+    ),
     action="count",
 )
 parser.add_argument(
@@ -69,7 +81,10 @@ parser.add_argument(
 )
 parser.add_argument(
     "--footprints",
-    help='Path to footprint libraries (.pretty dirs). Specify with e.g. "~/kicad/footprints/"',
+    help=(
+        "Path to footprint libraries (.pretty dirs). Specify with e.g."
+        ' "~/kicad/footprints/"'
+    ),
 )
 
 args = parser.parse_args()

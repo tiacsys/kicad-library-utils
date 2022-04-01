@@ -32,7 +32,8 @@ try:
     dst_lib = SchLib(args.destination, args.create)
 except FileNotFoundError:
     print(
-        "Destination library does not exist. Please, check if path is right or uses create flag to new library."
+        "Destination library does not exist. Please, check if path is right or uses"
+        " create flag to new library."
     )
     sys.exit(1)
 

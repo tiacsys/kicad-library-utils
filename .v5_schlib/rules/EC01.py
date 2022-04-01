@@ -22,9 +22,8 @@ class Rule(KLCRule):
                 if not any([num in pin["num"] for num in nums]):
                     self.wrong_pin_numbers.append(pin)
                     self.error(
-                        "pin: {0} number {1} is not valid, should contain at least 1 number".format(
-                            pin["name"], pin["num"]
-                        )
+                        "pin: {0} number {1} is not valid, should contain at least 1"
+                        " number".format(pin["name"], pin["num"])
                     )
 
         return len(self.wrong_pin_numbers) > 0

@@ -50,7 +50,8 @@ class PrintColor:
                 colorama.init()
             except:
                 print(
-                    'To print using colors you have to install colorama. Try to install it using: "pip install colorama"'
+                    "To print using colors you have to install colorama. Try to install"
+                    ' it using: "pip install colorama"'
                 )
                 print("[Continuing using no color mode]\n")
                 self._use_color = False
@@ -266,7 +267,19 @@ class PrintColor:
 
 
 if __name__ == "__main__":
-    msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent ullamcorper lectus sed metus condimentum viverra. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce ipsum lectus, tristique at turpis id, sagittis egestas leo. Sed vel ex nec libero laoreet hendrerit sed quis sem. Quisque laoreet enim sapien, id placerat eros venenatis sit amet. Mauris faucibus condimentum interdum. Vivamus nec bibendum arcu, at convallis metus. Integer feugiat ante id orci placerat, ut laoreet purus dapibus. Ut facilisis volutpat urna, vel condimentum enim tincidunt non. Vestibulum tempor tristique aliquet. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Quisque tortor tortor, semper at justo ac, elementum posuere nulla."
+    msg = (
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent ullamcorper"
+        " lectus sed metus condimentum viverra. Class aptent taciti sociosqu ad litora"
+        " torquent per conubia nostra, per inceptos himenaeos. Fusce ipsum lectus,"
+        " tristique at turpis id, sagittis egestas leo. Sed vel ex nec libero laoreet"
+        " hendrerit sed quis sem. Quisque laoreet enim sapien, id placerat eros"
+        " venenatis sit amet. Mauris faucibus condimentum interdum. Vivamus nec"
+        " bibendum arcu, at convallis metus. Integer feugiat ante id orci placerat, ut"
+        " laoreet purus dapibus. Ut facilisis volutpat urna, vel condimentum enim"
+        " tincidunt non. Vestibulum tempor tristique aliquet. Class aptent taciti"
+        " sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."
+        " Quisque tortor tortor, semper at justo ac, elementum posuere nulla."
+    )
     printer = PrintColor(max_width=100, indentation=4)
     printer.red(msg)
     printer.blue(msg, 50, 2)

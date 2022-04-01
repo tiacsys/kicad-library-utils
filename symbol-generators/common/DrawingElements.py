@@ -136,18 +136,21 @@ class DrawingPin:
 
     def __str__(self):
         # X name pin X Y length PinOrientation sizenum sizename part dmg type shape
-        return "X {name:s} {num:s} {at:s} {pin_length:d} {orientation:s} {sizenumber:d} {sizename:d} {unit_idx:d} {deMorgan_idx:d} {el_type:s}{shape}\n".format(
-            name=self.name,
-            num=str(self.num),
-            at=self.at,
-            pin_length=self.pin_length,
-            orientation=self.orientation,
-            sizenumber=self.fontsize_pinnumber,
-            sizename=self.fontsize_pinname,
-            unit_idx=self.unit_idx,
-            deMorgan_idx=self.deMorgan_idx,
-            el_type=self.el_type,
-            shape=self.__pinShapeRender(),
+        return (
+            "X {name:s} {num:s} {at:s} {pin_length:d} {orientation:s} {sizenumber:d}"
+            " {sizename:d} {unit_idx:d} {deMorgan_idx:d} {el_type:s}{shape}\n".format(
+                name=self.name,
+                num=str(self.num),
+                at=self.at,
+                pin_length=self.pin_length,
+                orientation=self.orientation,
+                sizenumber=self.fontsize_pinnumber,
+                sizename=self.fontsize_pinname,
+                unit_idx=self.unit_idx,
+                deMorgan_idx=self.deMorgan_idx,
+                el_type=self.el_type,
+                shape=self.__pinShapeRender(),
+            )
         )
 
     def translate(self, distance, apply_on_copy=False):
@@ -213,13 +216,16 @@ class DrawingRectangle:
 
     def __str__(self):
         # S X1 Y1 X2 Y2 part dmg pen fill
-        return "S {start:s} {end:s} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s}\n".format(
-            start=self.start,
-            end=self.end,
-            unit_idx=self.unit_idx,
-            deMorgan_idx=self.deMorgan_idx,
-            line_width=self.line_width,
-            fill=self.fill,
+        return (
+            "S {start:s} {end:s} {unit_idx:d} {deMorgan_idx:d} {line_width:d}"
+            " {fill:s}\n".format(
+                start=self.start,
+                end=self.end,
+                unit_idx=self.unit_idx,
+                deMorgan_idx=self.deMorgan_idx,
+                line_width=self.line_width,
+                fill=self.fill,
+            )
         )
 
     def toPolyline(self):
@@ -251,7 +257,8 @@ class DrawingRectangle:
         # obj = self if not apply_on_copy else deepcopy(self)
         if not apply_on_copy:
             raise NotImplementedError(
-                "Rotating the rectangles only implemented for copies -> converts to polyline"
+                "Rotating the rectangles only implemented for copies -> converts to"
+                " polyline"
             )
 
         if origin is None:
@@ -299,13 +306,16 @@ class DrawingPolyline:
 
     def __str__(self):
         # P count part dmg pen X Y ... fill
-        return "P {count:d} {unit_idx:d} {deMorgan_idx:d} {line_width} {points:s} {fill:s}\n".format(
-            count=len(self.points),
-            unit_idx=self.unit_idx,
-            deMorgan_idx=self.deMorgan_idx,
-            points=" ".join(map(str, self.points)),
-            fill=self.fill,
-            line_width=self.line_width,
+        return (
+            "P {count:d} {unit_idx:d} {deMorgan_idx:d} {line_width} {points:s}"
+            " {fill:s}\n".format(
+                count=len(self.points),
+                unit_idx=self.unit_idx,
+                deMorgan_idx=self.deMorgan_idx,
+                points=" ".join(map(str, self.points)),
+                fill=self.fill,
+                line_width=self.line_width,
+            )
         )
 
     def translate(self, distance, apply_on_copy=False):
@@ -395,17 +405,20 @@ class DrawingArc:
             self.at
         )
         end = Point(distance=self.radius, angle=self.angle_end / 10).translate(self.at)
-        return "A {cp:s} {r:d} {angle_start:d} {angle_end:d} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s} {p_start:s} {p_end:s}\n".format(
-            cp=self.at,
-            r=self.radius,
-            angle_start=self.angle_start,
-            angle_end=self.angle_end,
-            unit_idx=self.unit_idx,
-            deMorgan_idx=self.deMorgan_idx,
-            fill=self.fill,
-            line_width=self.line_width,
-            p_start=start,
-            p_end=end,
+        return (
+            "A {cp:s} {r:d} {angle_start:d} {angle_end:d} {unit_idx:d} {deMorgan_idx:d}"
+            " {line_width:d} {fill:s} {p_start:s} {p_end:s}\n".format(
+                cp=self.at,
+                r=self.radius,
+                angle_start=self.angle_start,
+                angle_end=self.angle_end,
+                unit_idx=self.unit_idx,
+                deMorgan_idx=self.deMorgan_idx,
+                fill=self.fill,
+                line_width=self.line_width,
+                p_start=start,
+                p_end=end,
+            )
         )
 
     def translate(self, distance, apply_on_copy=False):
@@ -655,7 +668,8 @@ class Drawing:
             self.__appendDrawing(obj)
         else:
             TypeError(
-                "trying to append an illegal type to Drawing. Maybe something is not yet implemented."
+                "trying to append an illegal type to Drawing. Maybe something is not"
+                " yet implemented."
             )
 
     def __str__(self):

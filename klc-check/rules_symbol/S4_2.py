@@ -23,7 +23,8 @@ class Rule(KLCRule):
                         if first:
                             first = False
                             self.warning(
-                                "Ground and negative power pins should be placed at bottom of symbol"
+                                "Ground and negative power pins should be placed at"
+                                " bottom of symbol"
                             )
                         self.warningExtra(pinString(pin))
 

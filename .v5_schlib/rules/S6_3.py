@@ -69,7 +69,8 @@ class Rule(KLCRule):
                 )
             if (not isGraphicOrPowerSymbol) and (not documentation["datasheet"]):
                 errors.append(
-                    "Missing DOCUMENTATION FILE NAME field on 'Properties > Description' tab"
+                    "Missing DOCUMENTATION FILE NAME field on 'Properties >"
+                    " Description' tab"
                 )
 
                 if documentation["description"] and documentation["keywords"]:

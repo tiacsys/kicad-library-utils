@@ -37,7 +37,8 @@ class Rule(KLCRule):
         else:
             if self.checkVisibility(ref):
                 self.error(
-                    "Ref(erence) field must be INVISIBLE in graphic symbols or power-symbols"
+                    "Ref(erence) field must be INVISIBLE in graphic symbols or"
+                    " power-symbols"
                 )
                 fail = True
 

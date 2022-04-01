@@ -13,9 +13,7 @@ class Rule(KLCRule):
     """Footprint 3D model requirements"""
 
     # Regular expression for suffixes that shouldn't be in the model file
-    SUFFIX_RE = (
-        "(" "_ThermalVias" "|_Pad[0-9.]*x[0-9.]*mm" "|_HandSolder" "|_CircularHoles" ")"
-    )
+    SUFFIX_RE = "(_ThermalVias|_Pad[0-9.]*x[0-9.]*mm|_HandSolder|_CircularHoles)"
 
     def __init__(self, component: KicadMod, args):
         super().__init__(component, args)
@@ -137,9 +135,8 @@ class Rule(KLCRule):
 
         if model_dir != fp_dir:
             self.error(
-                "3D model directory is different from footprint directory (found '{n1}', should be '{n2}')".format(
-                    n1=model_dir, n2=fp_dir
-                )
+                "3D model directory is different from footprint directory (found"
+                " '{n1}', should be '{n2}')".format(n1=model_dir, n2=fp_dir)
             )
             self.model3D_wrongLib = True
             self.needsFixMore = True
@@ -152,7 +149,8 @@ class Rule(KLCRule):
             # Exception for footprints that have unknown additions
             elif model_file in fp_name or fp_name in model_file:
                 self.warning(
-                    "3D model name is different from footprint name (found '{n1}', expected '{n2}'), but this might be intentional!".format(
+                    "3D model name is different from footprint name (found '{n1}',"
+                    " expected '{n2}'), but this might be intentional!".format(
                         n1=model_file, n2=fp_name
                     )
                 )
@@ -161,9 +159,8 @@ class Rule(KLCRule):
                 error = False
             else:
                 self.warning(
-                    "3D model name is different from footprint name (found '{n1}', expected '{n2}')".format(
-                        n1=model_file, n2=fp_name
-                    )
+                    "3D model name is different from footprint name (found '{n1}',"
+                    " expected '{n2}')".format(n1=model_file, n2=fp_name)
                 )
                 self.needsFixMore = True
                 self.model3D_wrongName = True
@@ -172,9 +169,8 @@ class Rule(KLCRule):
         # Warn if the model filename has suffixes in it
         for match in re.finditer(self.SUFFIX_RE, model_file):
             self.warning(
-                "3D model name contains field that does not change 3D representation (found '{}')".format(
-                    match.groups()[0]
-                )
+                "3D model name contains field that does not change 3D representation"
+                " (found '{}')".format(match.groups()[0])
             )
             self.needsFixMore = True
             self.model3D_wrongName = True
@@ -223,13 +219,15 @@ class Rule(KLCRule):
             if module.attribute == "virtual":
                 # virtual components don't need a 3D model
                 self.warning(
-                    "Optional 3D model file path missing from the 3D model settings of the virtual footprint"
+                    "Optional 3D model file path missing from the 3D model settings of"
+                    " the virtual footprint"
                 )
                 self.no3DModel = True
                 return False
             else:
                 self.error(
-                    "3D model file path missing from the 3D model settings of the footprint"
+                    "3D model file path missing from the 3D model settings of the"
+                    " footprint"
                 )
                 self.no3DModel = True
                 return True
@@ -238,7 +236,8 @@ class Rule(KLCRule):
         if len(models) > 1:
             self.tooMany3DModel = True
             self.warning(
-                "More than one 3D model file path provided within the 3D model settings of the footprint"
+                "More than one 3D model file path provided within the 3D model settings"
+                " of the footprint"
             )
 
         model_error = False
@@ -298,7 +297,8 @@ class Rule(KLCRule):
 
     def fixmore(self) -> None:
         """
-        Proceeds the additional fixing of the rule, if possible and if --fixmore is provided as command-line argument.
+        Proceeds the additional fixing of the rule, if possible and if --fixmore is provided as
+        command-line argument.
         """
 
         module = self.module

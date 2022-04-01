@@ -23,9 +23,9 @@ from Point import *
 
 ################################  Parameters ##################################
 pin_per_row_range = range(1, 41)
-pin_per_row_range_dual = range(
-    2, 41
-)  # for some dual row connectors all numbering schemes generate the same symbol for the 1 pin per row variant.
+# For some dual row connectors all numbering schemes generate the same symbol for the 1 pin per row
+# variant.
+pin_per_row_range_dual = range(2, 41)
 pin_per_row_range_screw = range(1, 21)
 pin_range_dual_row_odd_count = range(2, 38)
 
@@ -123,7 +123,9 @@ conn_male_female = {
         symbol_name_format="Conn_01x{num_pins_per_row:02d}_Male{suffix:s}",
         top_pin_number=[1],
         pin_number_generator=[lambda old_number: old_number + 1],
-        description="Generic{extra_pin:s} connector, single row, 01x{num_pins_per_row:02d}",
+        description=(
+            "Generic{extra_pin:s} connector, single row, 01x{num_pins_per_row:02d}"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -139,7 +141,9 @@ conn_male_female = {
         symbol_name_format="Conn_01x{num_pins_per_row:02d}_Female{suffix:s}",
         top_pin_number=[1],
         pin_number_generator=[lambda old_number: old_number + 1],
-        description="Generic{extra_pin:s} connector, single row, 01x{num_pins_per_row:02d}",
+        description=(
+            "Generic{extra_pin:s} connector, single row, 01x{num_pins_per_row:02d}"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -158,7 +162,9 @@ conn_generic = {
         symbol_name_format="Conn_01x{num_pins_per_row:02d}{suffix:s}",
         top_pin_number=[1],
         pin_number_generator=[lambda old_number: old_number + 1],
-        description="Generic{extra_pin:s} connector, single row, 01x{num_pins_per_row:02d}",
+        description=(
+            "Generic{extra_pin:s} connector, single row, 01x{num_pins_per_row:02d}"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -177,7 +183,10 @@ conn_generic = {
             lambda old_number: old_number + 2,
             lambda old_number: old_number + 2,
         ],
-        description="Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d}, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers)",
+        description=(
+            "Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d},"
+            " odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers)"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -196,7 +205,10 @@ conn_generic = {
             lambda old_number: old_number + 1,
             lambda old_number: old_number - 1,
         ],
-        description="Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d}, counter clockwise pin numbering scheme (similar to DIP packge numbering)",
+        description=(
+            "Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d},"
+            " counter clockwise pin numbering scheme (similar to DIP packge numbering)"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -215,7 +227,11 @@ conn_generic = {
             lambda old_number: old_number + 1,
             lambda old_number: old_number + 1,
         ],
-        description="Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d}, top/bottom pin numbering scheme (row 1: 1...pins_per_row, row2: pins_per_row+1 ... num_pins)",
+        description=(
+            "Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d},"
+            " top/bottom pin numbering scheme (row 1: 1...pins_per_row, row2:"
+            " pins_per_row+1 ... num_pins)"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -234,7 +250,11 @@ conn_generic = {
             lambda old_number: old_number + 1,
             lambda old_number: old_number + 1,
         ],
-        description="Generic{extra_pin:s} connector, double row, 02x01, this symbol is compatible with counter-clockwise, top-bottom and odd-even numbering schemes.",
+        description=(
+            "Generic{extra_pin:s} connector, double row, 02x01, this symbol is"
+            " compatible with counter-clockwise, top-bottom and odd-even numbering"
+            " schemes."
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -250,7 +270,12 @@ conn_generic = {
         symbol_name_format="Conn_02x{num_pins_per_row:02d}_Row_Letter_First{suffix:s}",
         top_pin_number=["a1", lambda num_pin_per_row: "b1"],
         pin_number_generator=[num_gen_row_letter_first, num_gen_row_letter_first],
-        description="Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d}, row letter first pin numbering scheme (pin number consists of a letter for the row and a number for the pin index in this row. a1, ..., aN; b1, ..., bN)",
+        description=(
+            "Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d}, row"
+            " letter first pin numbering scheme (pin number consists of a letter for"
+            " the row and a number for the pin index in this row. a1, ..., aN; b1,"
+            " ..., bN)"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -266,7 +291,12 @@ conn_generic = {
         symbol_name_format="Conn_02x{num_pins_per_row:02d}_Row_Letter_Last{suffix:s}",
         top_pin_number=["1a", lambda num_pin_per_row: "1b"],
         pin_number_generator=[num_gen_row_letter_last, num_gen_row_letter_last],
-        description="Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d}, row letter last pin numbering scheme (pin number consists of a number for the row and a letter for the pin index in this row. 1a, ..., Na; 1b, ..., Nb))",
+        description=(
+            "Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d}, row"
+            " letter last pin numbering scheme (pin number consists of a number for the"
+            " row and a letter for the pin index in this row. 1a, ..., Na; 1b, ...,"
+            " Nb))"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -285,7 +315,10 @@ conn_generic = {
             lambda old_number: old_number + 2,
             lambda old_number: old_number + 2,
         ],
-        description="Generic{extra_pin:s} connector, double row, {num_pins:02d} pins, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers)",
+        description=(
+            "Generic{extra_pin:s} connector, double row, {num_pins:02d} pins, odd/even"
+            " pin numbering scheme (row 1 odd numbers, row 2 even numbers)"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -387,7 +420,10 @@ conn_iec_din = {
             num_gen_row_letter_first_by2,
             num_gen_row_letter_first_by2,
         ],
-        description="DIN41612 connector, double row (AB) even pins only, 02x{num_pins_per_row:02d}",
+        description=(
+            "DIN41612 connector, double row (AB) even pins only,"
+            " 02x{num_pins_per_row:02d}"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -406,7 +442,10 @@ conn_iec_din = {
             num_gen_row_letter_first_by2,
             num_gen_row_letter_first_by2,
         ],
-        description="DIN41612 connector, double row (AC) even pins only, 02x{num_pins_per_row:02d}",
+        description=(
+            "DIN41612 connector, double row (AC) even pins only,"
+            " 02x{num_pins_per_row:02d}"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -425,7 +464,10 @@ conn_iec_din = {
             num_gen_row_letter_first_by2,
             num_gen_row_letter_first_by2,
         ],
-        description="DIN41612 connector, double row (AE) even pins only, 02x{num_pins_per_row:02d}",
+        description=(
+            "DIN41612 connector, double row (AE) even pins only,"
+            " 02x{num_pins_per_row:02d}"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -444,7 +486,10 @@ conn_iec_din = {
             num_gen_row_letter_first_by2,
             num_gen_row_letter_first_by2,
         ],
-        description="DIN41612 connector, double row (ZB) even pins only, 02x{num_pins_per_row:02d}",
+        description=(
+            "DIN41612 connector, double row (ZB) even pins only,"
+            " 02x{num_pins_per_row:02d}"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
@@ -463,7 +508,10 @@ conn_iec_din = {
             num_gen_row_letter_first_by2,
             num_gen_row_letter_first_by2,
         ],
-        description="DIN41612 connector, double row (ZB) even pins only, 02x{num_pins_per_row:02d}",
+        description=(
+            "DIN41612 connector, double row (ZB) even pins only,"
+            " 02x{num_pins_per_row:02d}"
+        ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint

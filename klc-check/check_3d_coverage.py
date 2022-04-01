@@ -109,11 +109,17 @@ class Config:
 
     def parse_arguments(self):
         parser = argparse.ArgumentParser(
-            description="Checks that KiCad footprint files (.kicad_mod) reference 3D model files that exist in the KiCad library."
+            description=(
+                "Checks that KiCad footprint files (.kicad_mod) reference 3D model"
+                " files that exist in the KiCad library."
+            )
         )
         parser.add_argument(
             "library",
-            help="name of footprint library to check (e.g. Housings_SOIC) (default is all libraries)",
+            help=(
+                "name of footprint library to check (e.g. Housings_SOIC) (default is"
+                " all libraries)"
+            ),
             type=str,
             nargs="*",
         )
@@ -287,9 +293,9 @@ class LibraryChecker:
             self.unused_wrl += len(unused_models)
             for model in unused_models:
                 logger.warning(
-                    "- Unused "
-                    ".wrl"
-                    " model {lib:s}.3dshapes/{m:s}".format(lib=library_name, m=model)
+                    "- Unused .wrl model {lib:s}.3dshapes/{m:s}".format(
+                        lib=library_name, m=model
+                    )
                 )
 
         if logger.warning_count > 0:

@@ -279,8 +279,8 @@ class Device:
                 self.package += "-7X7"
             else:
                 logging.warning(
-                    f"Unable to determine package variant for "
-                    f"device {self.name}, package {self.package}"
+                    f"Unable to determine package variant for"
+                    f" device {self.name}, package {self.package}"
                 )
 
         # Get the footprint for this package
@@ -288,7 +288,7 @@ class Device:
             self.footprint = Device._FOOTPRINT_MAPPING[self.package]
         except KeyError:
             logging.warning(
-                f"No footprint found for device {self.name}, " f"package {self.package}"
+                f"No footprint found for device {self.name}, package {self.package}"
             )
             self.footprint = ""
 
@@ -332,7 +332,8 @@ class Device:
             packPinCountR = Device._pincount_search.search(self.package)
             powerpinnumber = str(int(packPinCountR.group(1)) + 1)
             logging.info(
-                f"Device {name} with powerpad, package {self.package}, power pin: {powerpinnumber}"
+                f"Device {name} with powerpad, package {self.package}, power pin:"
+                f" {powerpinnumber}"
             )
             # Create power pad pin
             powerpadpin = DataPin(powerpinnumber, "VSS", "Power")
@@ -385,7 +386,7 @@ class Device:
         datasheet = (
             ""
             if self.pdf is None
-            else (f"https://www.st.com/" f"resource/en/datasheet/{self.pdf}")
+            else (f"https://www.st.com/resource/en/datasheet/{self.pdf}")
         )
 
         # Get footprint filters
@@ -394,8 +395,8 @@ class Device:
         except KeyError:
             footprint_filters = ""
             logging.warning(
-                f"No footprint filters found for device "
-                f"{self.name}, package {self.package}"
+                f"No footprint filters found for device"
+                f" {self.name}, package {self.package}"
             )
 
         libname = os.path.basename(lib.filename)
@@ -520,12 +521,11 @@ class Device:
         else:
             if winners:
                 logging.warning(
-                    f"Multiple datasheets determined for device "
-                    f"{self.name} ({winners})"
+                    f"Multiple datasheets determined for device {self.name} ({winners})"
                 )
             else:
                 logging.warning(
-                    f"Datasheet could not be determined for " f"device {self.name}"
+                    f"Datasheet could not be determined for device {self.name}"
                 )
             return None
 

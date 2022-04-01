@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 This file compares two .lib files and generates a list of deleted / added / updated components.
-This is to be used to compare an updated library file with a previous version to determine which components have been changed.
+This is to be used to compare an updated library file with a previous version to determine which
+components have been changed.
 """
 
 import argparse
@@ -50,7 +51,10 @@ parser.add_argument(
 )
 parser.add_argument(
     "--design-breaking-changes",
-    help="Checks if there have been changes made that would break existing designs using a particular symbol.",
+    help=(
+        "Checks if there have been changes made that would break existing designs using"
+        " a particular symbol."
+    ),
     action="store_true",
 )
 parser.add_argument(
@@ -63,7 +67,10 @@ parser.add_argument(
 )
 parser.add_argument(
     "--exclude",
-    help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"',
+    help=(
+        "Exclude a particular rule (or rules) to check against. Use comma separated"
+        ' values to select multiple rules. e.g. "-e S3.1,EC02"'
+    ),
 )
 
 (args, extra) = parser.parse_known_args()
@@ -79,7 +86,9 @@ if not args.old:
 
 
 def build_library_dict(filelist):
-    """Take a list of files, expand globs if required. Build a dict in for form {'libname': filename}"""
+    """
+    Take a list of files, expand globs if required. Build a dict in for form {'libname': filename}
+    """
     libs = {}
     for lib in filelist:
         flibs = glob(lib)
@@ -216,14 +225,16 @@ for lib_name in new_libs:
                 if pins_moved > 0 or pins_missing > 0:
                     design_breaking_changes += 1
                     printer.light_purple(
-                        "Pins have been moved, renumbered or removed in symbol '{lib}:{name}'{alias_info}".format(
+                        "Pins have been moved, renumbered or removed in symbol"
+                        " '{lib}:{name}'{alias_info}".format(
                             lib=lib_name, name=symname, alias_info=alias_info
                         )
                     )
                 elif nc_pins_moved > 0 or nc_pins_missing > 0:
                     design_breaking_changes += 1
                     printer.purple(
-                        "Normal pins ok but NC pins have been moved, renumbered or removed in symbol '{lib}:{name}'{alias_info}".format(
+                        "Normal pins ok but NC pins have been moved, renumbered or"
+                        " removed in symbol '{lib}:{name}'{alias_info}".format(
                             lib=lib_name, name=symname, alias_info=alias_info
                         )
                     )

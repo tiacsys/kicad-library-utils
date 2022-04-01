@@ -299,7 +299,8 @@ class Pin(KicadSymbolBase):
         # try to parse the pin_number into an integer if possible
         if self.number_int == None and re.match(r"^\d+$", self.number):
             self.number_int = int(self.number)
-        # there is some weird thing going on with the instance creation of name_effect and number_effect
+        # There is some weird thing going on with the instance creation of name_effect and
+        # number_effect.
         # when creating lots of pins from scratch, the id() of their name_effect member is the same
         # that is most likely the result of some optimization
         # to circumvent that, we create instances explicitly
@@ -731,8 +732,8 @@ class Property(KicadSymbolBase):
     effects: Optional[TextEffect] = None
 
     def __post_init__(self):
-        # there is some weird thing going on with the instance creation of effect. Do the same trick as
-        # we do with Pin()
+        # There is some weird thing going on with the instance creation of effect.
+        # Do the same trick as we do with Pin().
         if self.effects == None:
             self.effects = TextEffect(1.27, 1.27)
 
@@ -981,7 +982,8 @@ class KicadSymbol(KicadSymbolBase):
                 pins.append(pin)
         return pins
 
-    # heuristics, which tries to determine whether this is a "small" component (resistor, capacitor, LED, diode, transistor, ...)
+    # Heuristics, which tries to determine whether this is a "small" component (resistor,
+    # capacitor, LED, diode, transistor, ...).
     def is_small_component_heuristics(self) -> bool:
         if len(self.pins) <= 2:
             return True
@@ -1114,7 +1116,9 @@ class KicadLibrary(KicadSymbolBase):
                 for arc in _get_array(unit_data, "arc"):
                     symbol.arcs.append(Arc.from_sexpr(arc, unit_idx, demorgan_idx))
                 for rect in _get_array(unit_data, "rectangle"):
-                    # symbol.polylines.append(Rectangle.from_sexpr(rect, unit, demorgan).as_polyline())
+                    # symbol.polylines.append(
+                    #     Rectangle.from_sexpr(rect, unit, demorgan).as_polyline()
+                    # )
                     symbol.rectangles.append(
                         Rectangle.from_sexpr(rect, unit_idx, demorgan_idx)
                     )

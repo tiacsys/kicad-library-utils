@@ -81,7 +81,8 @@ class Rule(KLCRule):
             )
         if ft < KLC_TEXT_THICKNESS_MIN or ft > KLC_TEXT_THICKNESS_MAX:
             errors.append(
-                "Value label thickness ({t}mm) is outside allowed range of {a}mm - {b}mm".format(
+                "Value label thickness ({t}mm) is outside allowed range of {a}mm -"
+                " {b}mm".format(
                     t=ft, a=KLC_TEXT_THICKNESS_MIN, b=KLC_TEXT_THICKNESS_MAX
                 )
             )

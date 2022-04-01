@@ -39,12 +39,14 @@ class Rule(KLCRule):
         if self.component.is_small_component_heuristics():
             if not math.isclose(self.center_rect_polyline.stroke_width, mil_to_mm(10)):
                 self.warning(
-                    "Component outline is thickness {0}mil, recommended is {1}mil for standard symbol".format(
+                    "Component outline is thickness {0}mil, recommended is {1}mil for"
+                    " standard symbol".format(
                         mm_to_mil(self.center_rect_polyline.stroke_width), 10
                     )
                 )
                 self.warningExtra(
-                    "exceptions are allowed for small symbols like resistor, transistor, ..."
+                    "exceptions are allowed for small symbols like resistor,"
+                    " transistor, ..."
                 )
                 rectangle_need_fix = False
         else:
@@ -57,13 +59,15 @@ class Rule(KLCRule):
                 rectangle_need_fix = True
 
         if self.center_rect_polyline.fill_type != "background":
-            msg = "Component background is filled with {0} color, recommended is filling with {1} color".format(
-                self.center_rect_polyline.fill_type, "background"
+            msg = (
+                "Component background is filled with {0} color, recommended is filling"
+                " with {1} color".format(self.center_rect_polyline.fill_type, "background")
             )
             if self.component.is_small_component_heuristics():
                 self.warning(msg)
                 self.warningExtra(
-                    "exceptions are allowed for small symbols like resistor, transistor, ..."
+                    "exceptions are allowed for small symbols like resistor,"
+                    " transistor, ..."
                 )
             else:
                 self.error(msg)

@@ -9,8 +9,10 @@ from schlib import *
 #  (2) resize pins with posx wrong if component has pins with R direction but not L direction
 #  (3) resize pins with posy wrong if component has pins with U direction but not D direction
 #  (4) resize pins with posy wrong if component has pins with D direction but not U direction
-#  (5) resize pins with posx wrong if component has at least one pin wrong in each of the following direction: L, R
-#  (6) resize pins with posy wrong if component has at least one pin wrong in each of the following direction: U, D
+#  (5) resize pins with posx wrong if component has at least one pin wrong in each of the following
+#      directions: L, R
+#  (6) resize pins with posy wrong if component has at least one pin wrong in each of the following
+#      directions: U, D
 
 
 class CheckComponent(object):

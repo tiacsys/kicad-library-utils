@@ -44,7 +44,10 @@ if common not in sys.path:
 from glob import glob
 
 parser = argparse.ArgumentParser(
-    description="Rename footprint files according to supplied set or regex (regular expressions)"
+    description=(
+        "Rename footprint files according to supplied set or regex (regular"
+        " expressions)"
+    )
 )
 parser.add_argument(
     "footprints", nargs="+", help="Footprint files (.kicad_mod) to be renamed"
@@ -57,7 +60,10 @@ parser.add_argument("--remove", help="String to remove from the filename")
 parser.add_argument(
     "-r",
     "--real",
-    help="Perform renaming actions. By default, script performs a dry-run and will not rename any files",
+    help=(
+        "Perform renaming actions. By default, script performs a dry-run and will not"
+        " rename any files"
+    ),
     action="store_true",
 )
 parser.add_argument(

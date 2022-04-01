@@ -54,7 +54,8 @@ class Rule(KLCRule):
         for stack in self.component.get_pinstacks().values():
             visible = [pin for pin in stack if pin.is_hidden == False]
             invisible = [pin for pin in stack if pin.is_hidden == True]
-            # Due to the implementation of S4.3 it is possible to assume that at maximum one pin is visible
+            # Due to the implementation of S4.3 it is possible to assume that at maximum one pin is
+            # visible.
             if visible:
                 checkpins = [visible[0]]
             else:
@@ -80,7 +81,8 @@ class Rule(KLCRule):
                     if pin.etype.lower() != "passive":
                         if len(self.power_errors) == 0:
                             self.error(
-                                "Invisible powerpins in stacks should be of type PASSIVE"
+                                "Invisible powerpins in stacks should be of type"
+                                " PASSIVE"
                             )
 
         return len(self.power_errors) > 0
@@ -120,7 +122,8 @@ class Rule(KLCRule):
             if m and pin.shape == "inverted":
                 if len(self.inversion_errors) == 0:
                     self.error(
-                        "Pins should not be inverted twice (with inversion-symbol on pin and overline on label)"
+                        "Pins should not be inverted twice (with inversion-symbol on"
+                        " pin and overline on label)"
                     )
                 self.inversion_errors.append(pin)
                 self.errorExtra(

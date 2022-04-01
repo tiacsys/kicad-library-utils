@@ -239,7 +239,17 @@ class Component(object):
         "T": _TEXT_KEYS,
         "X": _PIN_KEYS,
     }
-    # _DRAW_ELEMS = {'arcs':'A', 'circles':'C', 'polylines':'P', 'rectangles':'S', 'texts':'T', 'pins':'X'}
+
+    """
+    _DRAW_ELEMS = {
+        "arcs": "A",
+        "circles": "C",
+        "polylines": "P",
+        "rectangles": "S",
+        "texts": "T",
+        "pins": "X",
+    }
+    """
 
     _KEYS = {
         "DEF": _DEF_KEYS,
@@ -431,7 +441,8 @@ class Component(object):
     def isGraphicSymbol(self):
         return self.isNonBOMSymbol() and len(self.pins) == 0
 
-    # heuristics, which tries to determine whether this is a "small" component (resistor, capacitor, LED, diode, transistor, ...)
+    # Heuristics, which tries to determine whether this is a "small" component (resistor,
+    # capacitor, LED, diode, transistor, ...).
     def isSmallComponentHeuristics(self):
         if len(self.pins) <= 2:
             return True
