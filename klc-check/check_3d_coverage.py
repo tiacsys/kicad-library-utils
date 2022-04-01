@@ -222,7 +222,7 @@ class LibraryChecker:
             long_reference = "/".join(long_reference.split("\\"))
             return os.path.basename(long_reference)
         except:
-            logger.warning("- Invalid model reference {f:s}".format(f=full))
+            logger.warning("- Invalid model reference {f:s}".format(f=long_reference))
             self.invalid_model_path += 1
             return None
 
