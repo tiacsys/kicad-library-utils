@@ -233,7 +233,7 @@ class Rule(KLCRule):
                                 filter(lambda p: p.is_hidden == False, pins)
                             ):
                                 self.errorExtra(
-                                    "Pin {0} is visible".format(pinString(ivpin))
+                                    "Pin {0} is visible".format(pinString(vpin))
                                 )
 
             else:
