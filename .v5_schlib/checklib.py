@@ -6,7 +6,7 @@ import sys
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 
-if not common in sys.path:
+if common not in sys.path:
     sys.path.append(common)
 
 import re

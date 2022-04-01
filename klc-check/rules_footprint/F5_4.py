@@ -30,7 +30,7 @@ class Rule(KLCRule):
                 if c is c2:
                     continue
                 if is_same(c, c2):
-                    if not c in overlap:
+                    if c not in overlap:
                         overlap.append(c)
 
         return overlap

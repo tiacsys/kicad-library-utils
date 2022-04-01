@@ -5,11 +5,11 @@ import os
 import sys
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
-if not common in sys.path:
+if common not in sys.path:
     sys.path.append(common)
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "..", "common"))
-if not common in sys.path:
+if common not in sys.path:
     sys.path.append(common)
 
 import kicad_sym

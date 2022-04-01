@@ -32,12 +32,12 @@ def logError(
 
     key = "warnings" if warning else "errors"
 
-    if not key in log_data:
+    if key not in log_data:
         log_data[key] = {}
 
     log_entry = {"library": lib_name, "item": item_name}
 
-    if not rule_name in log_data[key]:
+    if rule_name not in log_data[key]:
         log_data[key][rule_name] = []
 
     log_data[key][rule_name].append(log_entry)

@@ -37,7 +37,7 @@ import time
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 
-if not common in sys.path:
+if common not in sys.path:
     sys.path.append(common)
 
 # enable windows wildcards
@@ -174,7 +174,7 @@ for f in footprints:
                 pd = match.groups()[0]
                 ki = "${KISYS3DMOD}"
 
-                if not ki in line:
+                if ki not in line:
                     line = line.replace(pd, ki + "/" + pd)
                     if args.verbose > 1:
                         print("Adding " + ki + " prefix")

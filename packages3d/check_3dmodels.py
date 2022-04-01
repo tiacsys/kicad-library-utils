@@ -54,7 +54,7 @@ errors = 0
 for m in models:
     if args.verbose:
         print("Checking '{f}'".format(f=m))
-    if not m in pretty:
+    if m not in pretty:
         print("- Mislabeled 3D folder '{f}'".format(f=m))
         errors += 1
 
@@ -85,11 +85,11 @@ for m in models:
 
         # Remove file extension
         m_name = ".".join(f.split(".")[:-1])
-        if not m_name in model_files:
+        if m_name not in model_files:
             model_files.append(m_name)
 
     for mf in model_files:
-        if not mf in pretty_files:
+        if mf not in pretty_files:
             if args.verbose:
                 print("- Mislabeled 3D model '{m}'".format(m=mf))
             errors += 1

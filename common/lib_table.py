@@ -22,7 +22,7 @@ class LibTable:
             for line in lib_table_file:
 
                 # Skip lines that do not define a library
-                if not "(lib " in line:
+                if "(lib " not in line:
                     continue
 
                 re_name = re.search(RE_NAME, line)

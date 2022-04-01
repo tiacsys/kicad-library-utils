@@ -212,7 +212,7 @@ for src_lib in src_libs:
                     src=lib_name, dst=copy_lib
                 )
             )
-        if not copy_lib in output_libs:
+        if copy_lib not in output_libs:
             output_libs[copy_lib] = schlib.SchLib(
                 os.path.join(dst_dir, copy_lib + ".lib"), create=real_mode
             )

@@ -88,7 +88,7 @@ KEYS = ["library", "footprint", "prefix", "replace"]
 
 # Ensure correct keys
 for key in KEYS:
-    if not key in replacements:
+    if key not in replacements:
         replacements[key] = {}
 
 symbol_libs = []
@@ -200,7 +200,7 @@ try:
                 skip_replace = False
 
                 # If the footprint lib is not found
-                if fplib and not fplib in footprint_libs:
+                if fplib and fplib not in footprint_libs:
                     # Try to find a replacement name for the footprint lib
                     if fplib in replacements["library"]:
                         newlib = replacements["library"][fplib]
@@ -233,7 +233,7 @@ try:
                     footprint_lib = footprint_libs[fplib]
 
                     # Footprint name does not exist in the library
-                    if not fpname in footprint_lib:
+                    if fpname not in footprint_lib:
 
                         # Try to replace the fpname
                         if fpname in replacements["footprint"]:
@@ -244,13 +244,13 @@ try:
                                 fpname = newname
 
                         # Still nothing? Try to augment the name
-                        if not fpname in footprint_lib:
+                        if fpname not in footprint_lib:
                             for a in replacements["replace"]:
                                 b = replacements["replace"][a]
                                 fpname = fpname.replace(a, b)
 
                         # Has the footprint still not been found?
-                        if not fpname in footprint_lib:
+                        if fpname not in footprint_lib:
                             if args.verbose:
                                 print(
                                     "Footprint '{f}' not found in library '{l}'".format(

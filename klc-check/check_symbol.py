@@ -11,7 +11,7 @@ from multiprocessing import JoinableQueue, Lock, Process, Queue
 from typing import List, Optional, Tuple
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
-if not common in sys.path:
+if common not in sys.path:
     sys.path.append(common)
 
 from typing import List, Optional

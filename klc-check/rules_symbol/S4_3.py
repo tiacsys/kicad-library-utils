@@ -53,7 +53,7 @@ class Rule(KLCRule):
             min_pin_number = self.get_smallest_pin_number(pins)
 
             for pin in pins:
-                if pin.number_int == None and not pos in self.non_numeric:
+                if pin.number_int == None and pos not in self.non_numeric:
                     self.warning(
                         "Found non-numeric pin in a pinstack: {0}".format(
                             pinString(pin)
@@ -71,7 +71,7 @@ class Rule(KLCRule):
                     self.NC_stacked.append(pin)
 
                 # Check2: all pins should have the same name
-                if pin.name != common_pin_name and not pos in self.different_names:
+                if pin.name != common_pin_name and pos not in self.different_names:
                     self.error("Pin names in the stack have different names")
                     self.different_names.append(pos)
                     for pin in pins:
@@ -96,7 +96,7 @@ class Rule(KLCRule):
                     if (
                         pin.number_int != None
                         and pin.number_int != min_pin_number
-                        and not pos in self.visible_pin_not_lowest
+                        and pos not in self.visible_pin_not_lowest
                     ):
                         self.warning(
                             "The pin with the lowest number in a pinstack should be visible"
@@ -119,7 +119,7 @@ class Rule(KLCRule):
                     ):
                         possible_power_pin_stacks.append(pos)
                     else:
-                        if not pos in self.different_types:
+                        if pos not in self.different_types:
                             self.error(
                                 "Pin names in the stack have different electrical types"
                             )
@@ -184,7 +184,7 @@ class Rule(KLCRule):
                         if (
                             pin.number_int != None
                             and pin.number_int != min_pin_number
-                            and not pos in self.visible_pin_not_lowest
+                            and pos not in self.visible_pin_not_lowest
                         ):
                             self.warning(
                                 "The pin with the lowest number in a pinstack should be visible"
@@ -209,7 +209,7 @@ class Rule(KLCRule):
                             if (
                                 pin.number_int != None
                                 and pin.number_int != min_pin_number
-                                and not pos in self.visible_pin_not_lowest
+                                and pos not in self.visible_pin_not_lowest
                             ):
                                 self.warning(
                                     "The pin with the lowest number in a pinstack should be visible"

@@ -16,7 +16,7 @@ from glob import glob
 # Path to common directory
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 
-if not common in sys.path:
+if common not in sys.path:
     sys.path.append(common)
 
 from print_color import *
@@ -134,7 +134,7 @@ for lib_name in new_libs:
     new_lib = SchLib(lib_path)
 
     # New library has been created!
-    if not lib_name in old_libs:
+    if lib_name not in old_libs:
 
         if args.verbose:
             printer.light_green("Created library '{lib}'".format(lib=lib_name))
@@ -179,7 +179,7 @@ for lib_name in new_libs:
         if new_cmp[cmp]["alias_of"]:
             alias_info = " alias of {}".format(new_cmp[cmp]["alias_of"])
 
-        if not cmp in old_cmp:
+        if cmp not in old_cmp:
 
             if args.verbose:
                 printer.light_green(
@@ -256,7 +256,7 @@ for lib_name in new_libs:
 
     for cmp in old_cmp:
         # Component has been deleted from library
-        if not cmp in new_cmp:
+        if cmp not in new_cmp:
             alias_info = ""
             if old_cmp[cmp]["alias_of"]:
                 alias_info = " was an alias of {}".format(old_cmp[cmp]["alias_of"])
@@ -272,7 +272,7 @@ for lib_name in new_libs:
 
 # Entire lib has been deleted?
 for lib_name in old_libs:
-    if not lib_name in new_libs:
+    if lib_name not in new_libs:
         if args.verbose:
             printer.red("Removed library '{lib}'".format(lib=lib_name))
         if args.design_breaking_changes:

@@ -1073,7 +1073,7 @@ class KicadMod(object):
         tp = text["pos"]
         pos = [tp["x"], tp["y"]]
         rot = tp.get("orientation", 0)
-        if not rot in [0, None]:
+        if rot not in [0, None]:
             pos.append(rot)
 
         se.addItems(

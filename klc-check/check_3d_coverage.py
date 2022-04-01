@@ -7,7 +7,7 @@ import sys
 from glob import glob  # enable windows wildcards
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
-if not common in sys.path:
+if common not in sys.path:
     sys.path.append(common)
 
 from kicad_mod import *

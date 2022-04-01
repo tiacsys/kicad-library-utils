@@ -53,7 +53,7 @@ class Documentation(object):
         f = open(self.filename, "r")
         self.header = [f.readline()]
 
-        if self.header and not self.line_keys["header"] in self.header[0]:
+        if self.header and self.line_keys["header"] not in self.header[0]:
             self.header = None
             sys.stderr.write(
                 "'{fn}' is not a KiCad Documentation Library File\n".format(
@@ -502,7 +502,7 @@ class SchLib(object):
 
         checksum_data += self.header[0]
 
-        if self.header and not SchLib.line_keys["header"] in self.header[0]:
+        if self.header and SchLib.line_keys["header"] not in self.header[0]:
             sys.stderr.write(
                 "'{fn}' is not a KiCad Schematic Library File\n".format(
                     fn=self.filename
@@ -594,7 +594,7 @@ class SchLib(object):
         return component
 
     def addComponent(self, component):
-        if not component in self.components:
+        if component not in self.components:
             self.components.append(component)
             self.documentation.add(component.name, component.documentation)
             for alias in component.aliases.keys():

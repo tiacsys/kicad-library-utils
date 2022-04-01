@@ -5,7 +5,7 @@ class Rule(KLCRule):
     """Minimum annular ring width"""
 
     def checkPad(self, pad: Dict[str, Any]) -> bool:
-        if not "size" in pad["drill"]:
+        if "size" not in pad["drill"]:
             self.error(
                 "Pad {n} drill data has no 'size' attribute".format(n=pad["number"])
             )
