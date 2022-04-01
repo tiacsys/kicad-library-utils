@@ -324,7 +324,7 @@ class Rule(KLCRule):
                     + ")"
                 )
             if pin["num"] in self.fix_make_visible:
-                pin["pin_type"] = pin["pin_type"][1 : len(pin["pin_type"])]
+                pin["pin_type"] = pin["pin_type"][1:]
                 self.info(
                     "pin "
                     + pin["num"]

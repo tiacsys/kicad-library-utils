@@ -169,7 +169,7 @@ class Rule(KLCRule):
         ) and (len(self.component.fields[3]["name"]) > 2):
             ds = self.component.fields[3]["name"]
             if ds[0] == '"' and ds[len(ds) - 1] == '"':
-                ds = ds[1 : (len(ds) - 1)]
+                ds = ds[1:-1]
             self.component.documentation["datasheet"] = ds
             self.info("Copying DATASHEET '{ds}' to DCM-file ...".format(ds=ds))
 

@@ -85,7 +85,7 @@ class Rule(KLCRule):
         if self.fixPinSignalName:
             newname = self.component.name
             if self.component.name.startswith("~"):
-                newname = self.component.name[1 : len(self.component.name)]
+                newname = self.component.name[1:]
             self.info("FIX: change pin name to '" + newname + "'")
             self.component.pins[0].name = newname
         if self.fixNoFootprint:

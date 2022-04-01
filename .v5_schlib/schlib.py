@@ -385,7 +385,7 @@ class Component(object):
     def getDocumentation(self, documentation, name):
         try:
             if name.startswith("~"):
-                return documentation.components[name[1 : (len(name))]]
+                return documentation.components[name[1:]]
             else:
                 return documentation.components[name]
         except KeyError:
