@@ -65,7 +65,7 @@ class Rule(KLCRule):
             offset = 0.15
 
         # BGA components required 1.0mm clearance
-        if re.match("BGA\-.*", module.name) or re.match(".*Housing.*BGA.*", module_dir):
+        if re.match("BGA-.*", module.name) or re.match(".*Housing.*BGA.*", module_dir):
             offset = 1
 
         # Connectors require 0.5mm clearance

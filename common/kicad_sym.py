@@ -1094,7 +1094,7 @@ class KicadLibrary(KicadSymbolBase):
                 name = unit_data.pop(0)
 
                 # split the name
-                m1 = re.match(r"^" + re.escape(partname) + "_(\d+?)_(\d+?)$", name)
+                m1 = re.match(r"^" + re.escape(partname) + r"_(\d+?)_(\d+?)$", name)
                 if not m1:
                     raise ValueError("failed to parse subsymbol")
 

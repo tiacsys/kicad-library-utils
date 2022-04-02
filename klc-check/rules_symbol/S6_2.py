@@ -165,7 +165,7 @@ class Rule(KLCRule):
             # find special chars.
             # A dot followed by a non-word char is also considered a violation.
             # This allows 3.3V but prevents 'foobar. buzz'
-            forbidden_matches = re.findall("\.\W|\.$|[,:;?!<>]", dsc.value)
+            forbidden_matches = re.findall(r"\.\W|\.$|[,:;?!<>]", dsc.value)
             if forbidden_matches:
                 self.error(
                     "Symbol keywords contain forbidden characters: {}".format(

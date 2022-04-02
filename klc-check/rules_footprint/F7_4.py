@@ -45,10 +45,10 @@ class Rule(KLCRule):
         # Looks for the string:
         # '-xEP' where x is any number between 0 and 9 and designates number of exposed pads.
         # EP is NOT case sensitive and registers 'ep' just as well as 'EP'
-        exposed_pad_search = re.search("\-\d+[EP]{2}", fpName, re.IGNORECASE)
+        exposed_pad_search = re.search(r"-\d+[EP]{2}", fpName, re.IGNORECASE)
 
         if exposed_pad_search:
-            noExposedPads = int(re.findall("\d", exposed_pad_search.group(0))[0])
+            noExposedPads = int(re.findall(r"\d", exposed_pad_search.group(0))[0])
 
             # Finds the maximum pad number
             for pad in pads:

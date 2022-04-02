@@ -9,7 +9,7 @@ class Rule(KLCRule):
     """Hidden pins"""
 
     # No-connect pins should be "N"
-    NC_PINS = ["^nc$", "^dnc$", "^n\.c\.$"]
+    NC_PINS = ["^nc$", "^dnc$", r"^n\.c\.$"]
 
     def __init__(self, component: KicadSymbol):
         super().__init__(component)

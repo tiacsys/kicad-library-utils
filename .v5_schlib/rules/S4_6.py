@@ -6,7 +6,7 @@ from rules.rule import *
 class Rule(KLCRule):
 
     # No-connect pins should be "N"
-    NC_PINS = ["^nc$", "^dnc$", "^n\.c\.$"]
+    NC_PINS = ["^nc$", "^dnc$", r"^n\.c\.$"]
 
     # check if a pin name fits within a list of possible pins (using regex testing)
     def test(self, pinName, nameList):

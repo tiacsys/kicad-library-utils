@@ -118,7 +118,7 @@ class Rule(KLCRule):
     def checkDoubleInversions(self) -> bool:
         self.inversion_errors = []
         for pin in self.component.pins:
-            m = re.search("(\~{)(.+)}", pin.name)
+            m = re.search(r"(\~{)(.+)}", pin.name)
             if m and pin.shape == "inverted":
                 if len(self.inversion_errors) == 0:
                     self.error(

@@ -125,7 +125,7 @@ class Rule(KLCRule):
         self.inversion_errors = []
 
         for pin in pins:
-            m = re.search("(\~)(.+)", pin["name"])
+            m = re.search(r"(\~)(.+)", pin["name"])
             if m and pin["pin_type"] == "I":
                 if len(self.inversion_errors) == 0:
                     self.error(
