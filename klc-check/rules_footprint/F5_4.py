@@ -5,8 +5,7 @@ import math
 from typing import Any, Dict, List
 
 from kicad_mod import KicadMod
-from rules_footprint.klc_constants import *
-from rules_footprint.rule import *
+from rules_footprint.rule import KLCRule, getEndPoint, getStartPoint, graphItemString
 
 
 class Rule(KLCRule):

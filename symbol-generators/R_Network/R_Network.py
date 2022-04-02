@@ -8,7 +8,16 @@ common = os.path.abspath(os.path.join(sys.path[0], "..", "..", "common"))
 if common not in sys.path:
     sys.path.append(common)
 
-from kicad_sym import *
+from kicad_sym import (
+    Circle,
+    KicadLibrary,
+    KicadSymbol,
+    Pin,
+    Point,
+    Polyline,
+    Rectangle,
+    mil_to_mm,
+)
 
 
 def roundToGrid(x, g):

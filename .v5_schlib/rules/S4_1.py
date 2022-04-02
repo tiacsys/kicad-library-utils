@@ -1,4 +1,4 @@
-from rules.rule import *
+from rules.rule import KLCRule, pinString, positionFormater
 
 
 class Rule(KLCRule):

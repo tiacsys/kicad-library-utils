@@ -42,7 +42,6 @@ import argparse
 import json
 import os
 import re
-import sys
 
 parser = argparse.ArgumentParser(description="Check symbols for footprint errors")
 

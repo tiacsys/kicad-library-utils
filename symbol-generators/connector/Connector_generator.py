@@ -1,7 +1,12 @@
 #!/usr/bin/python3
 
+import argparse
+import fnmatch
 import os
+import re
 import sys
+from collections import namedtuple
+from math import sqrt
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 if common not in sys.path:
@@ -11,15 +16,19 @@ common = os.path.abspath(os.path.join(sys.path[0], "..", "..", "common"))
 if common not in sys.path:
     sys.path.append(common)
 
-import argparse
-import fnmatch
-import re
-from collections import namedtuple
-from math import sqrt
-
 import kicad_sym
-from DrawingElements import *
-from Point import *
+from DrawingElements import (
+    Drawing,
+    DrawingArc,
+    DrawingArray,
+    DrawingCircle,
+    DrawingPin,
+    DrawingPolyline,
+    DrawingRectangle,
+    DrawingText,
+    ElementFill,
+)
+from Point import Point
 
 ################################  Parameters ##################################
 pin_per_row_range = range(1, 41)

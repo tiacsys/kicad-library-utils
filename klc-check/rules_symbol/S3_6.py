@@ -1,5 +1,5 @@
-from kicad_sym import KicadSymbol, mil_to_mm, mm_to_mil
-from rules_symbol.rule import KLCRule, positionFormater
+from kicad_sym import mil_to_mm, mm_to_mil
+from rules_symbol.rule import KLCRule
 
 
 class Rule(KLCRule):

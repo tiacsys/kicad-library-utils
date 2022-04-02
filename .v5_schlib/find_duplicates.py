@@ -9,17 +9,15 @@ This file looks for components that are duplicated within a library
 import argparse
 import os
 import sys
+from glob import glob
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 
 if common not in sys.path:
     sys.path.append(common)
 
-# enable windows wildcards
-from glob import glob
-
-from print_color import *
-from schlib import *
+from print_color import PrintColor
+from schlib import SchLib
 
 
 def ExitError(msg):

@@ -2,23 +2,20 @@
 
 import argparse
 import os
+import re
 import sys
+from glob import glob
 
 common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 
 if common not in sys.path:
     sys.path.append(common)
 
-import re
-
-# enable windows wildcards
-from glob import glob
-
-from print_color import *
+from print_color import PrintColor
 from rulebase import logError
 from rules import get_all_symbol_rules
 from rules.rule import KLCRule
-from schlib import *
+from schlib import SchLib
 
 parser = argparse.ArgumentParser(
     description=(

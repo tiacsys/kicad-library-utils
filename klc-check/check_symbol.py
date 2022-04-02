@@ -3,6 +3,7 @@
 import argparse
 import os
 import queue
+import re
 import sys
 import time
 import traceback
@@ -14,11 +15,9 @@ common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 if common not in sys.path:
     sys.path.append(common)
 
-from typing import List, Optional
-
-from kicad_sym import *
-from print_color import *
-from rulebase import PrintColor, Verbosity
+from kicad_sym import KicadLibrary
+from print_color import PrintColor
+from rulebase import Verbosity, logError
 from rules_symbol import get_all_symbol_rules
 from rules_symbol.rule import KLCRule
 

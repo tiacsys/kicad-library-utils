@@ -13,8 +13,15 @@ if common not in sys.path:
     sys.path.append(common)
 
 import kicad_sym
-from DrawingElements import *
-from Point import *
+from DrawingElements import (
+    Drawing,
+    DrawingCircle,
+    DrawingPin,
+    DrawingPolyline,
+    DrawingRectangle,
+    ElementFill,
+)
+from Point import Point
 
 libname = "SW_DIP"
 library = kicad_sym.KicadLibrary(libname + ".kicad_sym")

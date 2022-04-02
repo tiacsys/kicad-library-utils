@@ -2,7 +2,7 @@
 
 import argparse
 
-from schlib import *
+from schlib import SchLib
 
 # cases covered by this script:
 #  (1) resize pins with posx wrong if component has pins with L direction but not R direction

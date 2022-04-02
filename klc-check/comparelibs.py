@@ -19,9 +19,9 @@ if common not in sys.path:
     sys.path.append(common)
 
 import check_symbol
-from kicad_sym import *
-from print_color import *
-from rulebase import PrintColor, Verbosity
+from kicad_sym import KicadLibrary
+from print_color import PrintColor
+from rulebase import Verbosity
 
 
 def ExitError(msg):

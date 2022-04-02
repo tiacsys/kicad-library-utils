@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
-import sys
 
-from schlib import *
+from schlib import SchLib
 
 # cases covered by this script:
 #  (1) resize field text sizes that are not 50mils

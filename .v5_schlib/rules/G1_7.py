@@ -1,6 +1,7 @@
 import platform
 
-from rules.rule import *
+from rulebase import checkLineEndings
+from rules.rule import KLCRule
 
 
 class Rule(KLCRule):

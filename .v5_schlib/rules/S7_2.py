@@ -1,6 +1,4 @@
-import re
-
-from rules.rule import *
+from rules.rule import KLCRule
 
 
 class Rule(KLCRule):

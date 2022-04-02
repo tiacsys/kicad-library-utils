@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import math
 import multiprocessing
 import os
 import re
@@ -20,8 +19,8 @@ if common not in sys.path:
     sys.path.append(common)
 
 import kicad_sym
-from DrawingElements import *
-from Point import *
+from DrawingElements import Drawing, DrawingPin, DrawingRectangle, ElementFill
+from Point import Point
 
 
 class DataPin:

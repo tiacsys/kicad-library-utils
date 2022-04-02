@@ -33,7 +33,6 @@ import fnmatch
 import glob
 import json
 import os
-import shutil
 import sys
 
 

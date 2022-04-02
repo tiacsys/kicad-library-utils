@@ -12,9 +12,9 @@ common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 if common not in sys.path:
     sys.path.append(common)
 
-from kicad_mod import *
-from print_color import *
-from rulebase import PrintColor, Verbosity, logError
+from kicad_mod import KicadMod
+from print_color import PrintColor
+from rulebase import Verbosity, logError
 from rules_footprint import get_all_footprint_rules
 from rules_footprint.rule import KLCRule
 

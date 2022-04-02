@@ -4,8 +4,18 @@
 from typing import Any, Dict, List, Optional
 
 from kicad_mod import KicadMod
-from rules_footprint.klc_constants import *
-from rules_footprint.rule import *
+from rules_footprint.klc_constants import (
+    KLC_FAB_WIDTH,
+    KLC_FAB_WIDTH_MAX,
+    KLC_FAB_WIDTH_MIN,
+    KLC_TEXT_SIZE,
+    KLC_TEXT_SIZE_MAX,
+    KLC_TEXT_SIZE_MIN,
+    KLC_TEXT_THICKNESS,
+    KLC_TEXT_THICKNESS_MAX,
+    KLC_TEXT_THICKNESS_MIN,
+)
+from rules_footprint.rule import KLCRule, graphItemString, mapToGrid
 
 
 class Rule(KLCRule):

@@ -3,8 +3,13 @@ from copy import deepcopy
 from typing import Any, Dict, List
 
 from kicad_mod import KicadMod
-from rules_footprint.klc_constants import *
-from rules_footprint.rule import *
+from rules_footprint.klc_constants import (
+    KLC_SILK_WIDTH,
+    KLC_SILK_WIDTH_ALLOWED,
+    KLC_TEXT_SIZE,
+    KLC_TEXT_THICKNESS,
+)
+from rules_footprint.rule import KLCRule, graphItemString
 
 
 class Rule(KLCRule):

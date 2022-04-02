@@ -11,7 +11,7 @@ common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 if common not in sys.path:
     sys.path.append(common)
 
-from kicad_sym import *
+from kicad_sym import Circle, KicadLibrary, KicadSymbol, Pin, Rectangle
 
 # the libname of the file and the symbol needs to be the same
 libname = "demo"

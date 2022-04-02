@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-from schlib import *
+from schlib import SchLib
 
 parser = argparse.ArgumentParser(
     description="Moves a component symbol between libraries"

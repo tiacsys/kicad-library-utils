@@ -1,7 +1,7 @@
 import math
 
 from kicad_sym import mm_to_mil
-from rules_symbol.rule import *
+from rules_symbol.rule import KLCRule
 
 
 class Rule(KLCRule):

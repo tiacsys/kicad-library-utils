@@ -1,5 +1,5 @@
 from kicad_mod import KicadMod
-from rules_footprint.rule import *
+from rules_footprint.rule import KLCRule
 
 
 class Rule(KLCRule):

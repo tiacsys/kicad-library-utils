@@ -1,6 +1,8 @@
 import fnmatch
+import os
 
-from rules.rule import *
+from rulebase import isValidName
+from rules.rule import KLCRule
 
 
 class Rule(KLCRule):

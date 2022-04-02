@@ -2,12 +2,11 @@
 Library for processing KiCad's symbol files.
 """
 
+import json
 import math
-import pprint
 import re
 import sys
 from dataclasses import dataclass, field
-from optparse import Option
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 

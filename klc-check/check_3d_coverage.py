@@ -10,8 +10,8 @@ common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 if common not in sys.path:
     sys.path.append(common)
 
-from kicad_mod import *
-from print_color import *
+from kicad_mod import KicadMod
+from print_color import PrintColor
 
 
 class Config:

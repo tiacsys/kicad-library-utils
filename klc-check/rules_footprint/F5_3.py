@@ -7,8 +7,16 @@ from typing import Any, Dict, List, Optional
 
 from boundingbox import BoundingBox
 from kicad_mod import KicadMod
-from rules_footprint.klc_constants import *
-from rules_footprint.rule import *
+
+from rules_footprint.klc_constants import KLC_CRTYD_GRID, KLC_CRTYD_WIDTH
+from rules_footprint.rule import (
+    KLCRule,
+    getEndPoint,
+    getStartPoint,
+    graphItemString,
+    mapToGrid,
+    mmToNanoMeter,
+)
 
 
 class Rule(KLCRule):

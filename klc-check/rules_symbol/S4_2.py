@@ -1,6 +1,5 @@
 import re
 
-from kicad_sym import KicadSymbol
 from rules_symbol.rule import KLCRule, pinString
 
 

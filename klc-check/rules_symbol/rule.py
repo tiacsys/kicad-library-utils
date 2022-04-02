@@ -1,4 +1,4 @@
-from kicad_sym import KicadSymbol, Pin, mil_to_mm, mm_to_mil
+from kicad_sym import KicadSymbol, Pin, mm_to_mil
 from rulebase import KLCRuleBase, Verbosity
 
 

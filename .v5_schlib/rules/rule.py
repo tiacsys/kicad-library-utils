@@ -1,4 +1,4 @@
-from rulebase import *
+from rulebase import KLCRuleBase
 
 
 # this should go to separate file

@@ -20,8 +20,8 @@ common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 if common not in sys.path:
     sys.path.append(common)
 
-from print_color import *
-from schlib import *
+from print_color import PrintColor
+from schlib import SchLib
 
 
 def ExitError(msg):
