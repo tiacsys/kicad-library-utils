@@ -36,7 +36,7 @@ class Rule(KLCRule):
 
     def check(self) -> bool:
         # no need to check this for an alias
-        if self.component.extends != None:
+        if self.component.extends is not None:
             return False
 
         possible_power_pin_stacks = []
@@ -53,7 +53,7 @@ class Rule(KLCRule):
             min_pin_number = self.get_smallest_pin_number(pins)
 
             for pin in pins:
-                if pin.number_int == None and pos not in self.non_numeric:
+                if pin.number_int is None and pos not in self.non_numeric:
                     self.warning(
                         "Found non-numeric pin in a pinstack: {0}".format(
                             pinString(pin)
@@ -79,7 +79,7 @@ class Rule(KLCRule):
 
                 # Check3: exactly one pin should be visible
                 if pin.is_hidden == False:
-                    if visible_pin != None:
+                    if visible_pin is not None:
                         if self.more_then_one_visible == False:
                             self.error(
                                 "A pin stack must have exactly one (1) visible pin"
@@ -94,7 +94,7 @@ class Rule(KLCRule):
 
                     # the visible pin should have the lowest pin_number
                     if (
-                        pin.number_int != None
+                        pin.number_int is not None
                         and pin.number_int != min_pin_number
                         and pos not in self.visible_pin_not_lowest
                     ):
@@ -185,7 +185,7 @@ class Rule(KLCRule):
                             )
 
                         if (
-                            pin.number_int != None
+                            pin.number_int is not None
                             and pin.number_int != min_pin_number
                             and pos not in self.visible_pin_not_lowest
                         ):
@@ -206,11 +206,11 @@ class Rule(KLCRule):
                 # all but one pins should be invisible
                 for pin in pins:
                     if pin.is_hidden == False:
-                        if visible_pin == None:
+                        if visible_pin is None:
                             # this is the first time we found a visible pin in this stack
                             visible_pin = pin
                             if (
-                                pin.number_int != None
+                                pin.number_int is not None
                                 and pin.number_int != min_pin_number
                                 and pos not in self.visible_pin_not_lowest
                             ):

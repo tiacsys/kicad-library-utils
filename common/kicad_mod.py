@@ -289,7 +289,7 @@ class KicadMod(object):
         rects = []
         for rect in self._getArray(self.sexpr_data, "fp_rect"):
             rect_dict = {}
-            if self._hasValue(rect, layer) or layer == None:
+            if self._hasValue(rect, layer) or layer is None:
                 a = self._getArray(rect, "start")[0]
                 rect_dict["start"] = {"x": a[1], "y": a[2]}
 

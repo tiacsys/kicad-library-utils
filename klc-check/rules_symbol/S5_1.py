@@ -13,7 +13,7 @@ class Rule(KLCRule):
 
         # get footprint from properties
         fp = self.component.get_property("Footprint")
-        if fp != None:
+        if fp is not None:
             fp_name = fp.value
             # Strip the quote characters
             if fp_name.startswith('"') and fp_name.endswith('"'):

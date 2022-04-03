@@ -49,7 +49,7 @@ class Rule(KLCRule):
 
     def check(self) -> bool:
         # no need to check pins on an alias
-        if self.component.extends != None:
+        if self.component.extends is not None:
             return False
 
         self.checkGroundPins()

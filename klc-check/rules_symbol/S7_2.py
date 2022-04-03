@@ -13,7 +13,7 @@ class Rule(KLCRule):
 
     def check(self) -> bool:
         # no need to check this for an alias
-        if self.component.extends != None:
+        if self.component.extends is not None:
             return False
 
         fail = False

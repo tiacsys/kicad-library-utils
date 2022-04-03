@@ -296,16 +296,16 @@ class Pin(KicadSymbolBase):
 
     def __post_init__(self):
         # try to parse the pin_number into an integer if possible
-        if self.number_int == None and re.match(r"^\d+$", self.number):
+        if self.number_int is None and re.match(r"^\d+$", self.number):
             self.number_int = int(self.number)
         # There is some weird thing going on with the instance creation of name_effect and
         # number_effect.
         # when creating lots of pins from scratch, the id() of their name_effect member is the same
         # that is most likely the result of some optimization
         # to circumvent that, we create instances explicitly
-        if self.name_effect == None:
+        if self.name_effect is None:
             self.name_effect = TextEffect(1.27, 1.27)
-        if self.number_effect == None:
+        if self.number_effect is None:
             self.number_effect = TextEffect(1.27, 1.27)
 
     @classmethod
@@ -733,7 +733,7 @@ class Property(KicadSymbolBase):
     def __post_init__(self):
         # There is some weird thing going on with the instance creation of effect.
         # Do the same trick as we do with Pin().
-        if self.effects == None:
+        if self.effects is None:
             self.effects = TextEffect(1.27, 1.27)
 
     def get_sexpr(s) -> List[Any]:
@@ -945,7 +945,7 @@ class KicadSymbol(KicadSymbolBase):
         return self.is_power
 
     def is_locked(self) -> bool:
-        return self.get_property("ki_locked") != None
+        return self.get_property("ki_locked") is not None
 
     def does_extend(self):
         # @todo Not defined
@@ -991,7 +991,7 @@ class KicadSymbol(KicadSymbolBase):
 
         # if there is no filled rectangle as symbol outline and we have 3 or 4 pins, we assume this
         # is a small symbol
-        if len(self.pins) >= 3 and len(self.pins) <= 4 and filled_rect == None:
+        if len(self.pins) >= 3 and len(self.pins) <= 4 and filled_rect is None:
             return True
 
         return False

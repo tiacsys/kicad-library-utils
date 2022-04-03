@@ -25,7 +25,7 @@ class Rule(KLCRule):
             # If there is only a single filled rectangle, we assume that it is the
             # main symbol outline.
             center_pl = self.component.get_center_rectangle([0, unit])
-            if center_pl != None:
+            if center_pl is not None:
                 (x, y) = center_pl.get_center_of_boundingbox()
             else:
                 pins = [pin for pin in self.component.pins if (pin.unit in [unit, 0])]

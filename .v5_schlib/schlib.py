@@ -119,7 +119,7 @@ class Documentation(object):
             )  # just spacer (no even in dcm format specification, but used everywhere)
             to_write.append(self.line_keys["start"] + name + "\n")
             for key in doc.keys():
-                if doc[key] != None:
+                if doc[key] is not None:
                     to_write.append(self.line_keys[key] + doc[key] + "\n")
             to_write.append(self.line_keys["end"] + "\n")
         to_write.append("#\n")  # again, spacer^^
