@@ -30,7 +30,7 @@ class Rule(KLCRule):
                     )
                     fail = True
                     self.makePinPowerInput = True
-                if self.component.pins[0].is_hidden != True:
+                if not self.component.pins[0].is_hidden:
                     self.error("The pin in power-flag symbols has to be INVISIBLE")
                     fail = True
                     self.makePinINVISIBLE = True

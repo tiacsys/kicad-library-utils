@@ -40,7 +40,7 @@ class Rule(KLCRule):
                     self.type_errors.append(pin)
 
                 # NC pins should be invisible
-                if pin.is_hidden == False:
+                if not pin.is_hidden:
                     self.invisible_errors.append(pin)
 
         if len(self.type_errors) > 0:
@@ -90,7 +90,7 @@ class Rule(KLCRule):
         self.info("Fixing...")
 
         for pin in self.invisible_errors:
-            if not pin.is_hidden == True:
+            if not pin.is_hidden:
                 pin.is_hidden = True
                 self.info("Setting pin {n} to INVISIBLE".format(n=pin.number))
 

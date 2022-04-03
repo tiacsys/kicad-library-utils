@@ -129,7 +129,7 @@ for lib_name in new_libs:
 
     # If library checksums match, we can skip entire library check
     if lib_name in old_libs:
-        if filecmp.cmp(old_libs[lib_name], lib_path) == True:
+        if filecmp.cmp(old_libs[lib_name], lib_path):
             if args.verbose and args.shownochanges:
                 printer.yellow("No changes to library '{lib}'".format(lib=lib_name))
             continue

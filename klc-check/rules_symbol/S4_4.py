@@ -52,8 +52,8 @@ class Rule(KLCRule):
         self.power_errors = []
 
         for stack in self.component.get_pinstacks().values():
-            visible = [pin for pin in stack if pin.is_hidden == False]
-            invisible = [pin for pin in stack if pin.is_hidden == True]
+            visible = [pin for pin in stack if not pin.is_hidden]
+            invisible = [pin for pin in stack if pin.is_hidden]
             # Due to the implementation of S4.3 it is possible to assume that at maximum one pin is
             # visible.
             if visible:

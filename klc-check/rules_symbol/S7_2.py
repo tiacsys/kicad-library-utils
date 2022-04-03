@@ -46,7 +46,7 @@ class Rule(KLCRule):
                 if ref_prop.value != "#SYM":
                     self.error("Graphical symbols have Reference set to '#SYM' ")
                     fail = True
-                if ref_prop.effects.is_hidden != True:
+                if not ref_prop.effects.is_hidden:
                     self.error("Graphical symbols have a hidden Reference")
                     fail = True
             # Value is invisible
@@ -54,7 +54,7 @@ class Rule(KLCRule):
             if not value_prop:
                 self.error("Graphical symbols have a Value property")
             else:
-                if value_prop.effects.is_hidden != True:
+                if not value_prop.effects.is_hidden:
                     self.error("Graphical symbols have a hidden Value")
                     fail = True
 

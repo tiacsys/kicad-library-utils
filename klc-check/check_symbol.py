@@ -360,7 +360,7 @@ if __name__ == "__main__":
         files[i] = (files[i], os.path.getsize(files[i]))
     # Sort list by file size, largest on top
     # the idea is to further speed up multiprocessing by working on the bigger items first
-    if args.unittest == False:
+    if not args.unittest:
         files.sort(key=lambda filename: filename[1], reverse=True)
 
     # Create queues for multiprocessing

@@ -26,7 +26,7 @@ class Rule(KLCRule):
             # Only check if there is text in the name
             if len(fp_name) > 0:
                 # footprint field should be set to invisible (if it has any text in it)
-                if fp.effects.is_hidden == False:
+                if not fp.effects.is_hidden:
                     fail = True
                     self.error(fp_desc + "must be set to invisible.")
 

@@ -78,9 +78,9 @@ class Rule(KLCRule):
                         self.errorExtra(pinString(pin))
 
                 # Check3: exactly one pin should be visible
-                if pin.is_hidden == False:
+                if not pin.is_hidden:
                     if visible_pin is not None:
-                        if self.more_then_one_visible == False:
+                        if not self.more_then_one_visible:
                             self.error(
                                 "A pin stack must have exactly one (1) visible pin"
                             )
@@ -158,11 +158,11 @@ class Rule(KLCRule):
             ):
                 # find the passive pins, they must be invisible
                 for pin in pins:
-                    if pin.etype == "passive" and pin.is_hidden == False:
+                    if pin.etype == "passive" and not pin.is_hidden:
                         self.error("Passive pins in a pinstack are hidden")
                         special_stack_err = True
                         for ipin in pins:
-                            if ipin.etype == "passive" and ipin.is_hidden == False:
+                            if ipin.etype == "passive" and not ipin.is_hidden:
                                 self.errorExtra(
                                     "{0} is of type {1} and visible".format(
                                         pinString(ipin), ipin.etype
@@ -175,7 +175,7 @@ class Rule(KLCRule):
                 for pin in pins:
                     if pin.etype != "passive":
                         # we found the non-passive pin
-                        if pin.is_hidden == True:
+                        if pin.is_hidden:
                             self.error("Non passive pins in a pinstack are visible")
                             special_stack_err = True
                             self.errorExtra(
@@ -205,7 +205,7 @@ class Rule(KLCRule):
                 visible_pin = None
                 # all but one pins should be invisible
                 for pin in pins:
-                    if pin.is_hidden == False:
+                    if not pin.is_hidden:
                         if visible_pin is None:
                             # this is the first time we found a visible pin in this stack
                             visible_pin = pin
@@ -229,9 +229,7 @@ class Rule(KLCRule):
                             # more than one visible pin found
                             special_stack_err = True
                             self.error("Only one pin in a pinstack is visible")
-                            for vpin in list(
-                                filter(lambda p: p.is_hidden == False, pins)
-                            ):
+                            for vpin in list(filter(lambda p: not p.is_hidden, pins)):
                                 self.errorExtra(
                                     "Pin {0} is visible".format(pinString(vpin))
                                 )
