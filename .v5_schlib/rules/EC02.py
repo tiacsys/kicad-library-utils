@@ -168,8 +168,11 @@ class Rule(KLCRule):
 
         # This entire rule only generates a WARNING (won't fail a component, only display a
         # message).
-        return False
-        # return True if (ref_need_fix or name_need_fix or fp_need_fix) else False
+        # TODO: discard the `*_need_fix` variables, if we really do not want to report failure
+        if True:
+            return False
+        else:
+            return ref_need_fix or name_need_fix or fp_need_fix
 
     def fix(self):
         """
