@@ -214,7 +214,7 @@ class Rule(KLCRule):
             y1 = mmToNanoMeter(start["y"])
             x2 = mmToNanoMeter(end["x"])
             y2 = mmToNanoMeter(end["y"])
-            check = [x1, y2, x2, y2]
+            check = [x1, y1, x2, y2]
 
             # use a modulo division to check if those coordinates are on the grid
             # if at least one of the coordinates is not on the grid, add this
