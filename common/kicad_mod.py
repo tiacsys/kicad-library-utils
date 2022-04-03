@@ -135,7 +135,7 @@ class KicadMod(object):
     # check if value exists in any element of data
     def _hasValue(self, data: Iterable[Any], value: str) -> bool:
         for i in data:
-            if type(i) in [list, tuple]:
+            if isinstance(i, (list, tuple)):
                 if self._hasValue(i, value):
                     return True
             elif str(i) == value:
@@ -160,7 +160,7 @@ class KicadMod(object):
         level += 1
 
         for i in data:
-            if type(i) == type([]):
+            if isinstance(i, list):
                 self._getArray(i, value, result, level, max_level)
             else:
                 if i == value:

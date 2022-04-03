@@ -49,7 +49,7 @@ def _get_array(
     level += 1
 
     for i in data:
-        if type(i) == type([]):
+        if isinstance(i, list):
             _get_array(i, value, result, level=level, max_level=max_level)
         else:
             if i == value:
@@ -60,7 +60,7 @@ def _get_array(
 def _get_array2(data, value):
     ret = []
     for i in data:
-        if type(i) == type([]) and i[0] == value:
+        if isinstance(i, list) and i[0] == value:
             ret.append(i)
     return ret
 
@@ -68,7 +68,7 @@ def _get_array2(data, value):
 def _get_color(sexpr) -> Optional["Color"]:
     col = None
     for i in sexpr:
-        if type(i) == type([]) and i[0] == "color":
+        if isinstance(i, list) and i[0] == "color":
             col = Color(i[1], i[2], i[3], i[4])
     return col
 
@@ -77,7 +77,7 @@ def _get_stroke(sexpr) -> Tuple[Optional[int], Optional["Color"]]:
     width = None
     col = None
     for i in sexpr:
-        if type(i) == type([]) and i[0] == "stroke":
+        if isinstance(i, list) and i[0] == "stroke":
             width = _get_value_of(i, "width")
             col = _get_color(i)
             break
@@ -88,7 +88,7 @@ def _get_fill(sexpr) -> Tuple[Optional[Any], Optional["Color"]]:
     fill = None
     col = None
     for i in sexpr:
-        if type(i) == type([]) and i[0] == "fill":
+        if isinstance(i, list) and i[0] == "fill":
             fill = _get_value_of(i, "type")
             col = _get_color(i)
             break
@@ -97,7 +97,7 @@ def _get_fill(sexpr) -> Tuple[Optional[Any], Optional["Color"]]:
 
 def _get_xy(sexpr, lookup) -> Tuple[float, float]:
     for i in sexpr:
-        if type(i) == type([]) and i[0] == lookup:
+        if isinstance(i, list) and i[0] == lookup:
             return (i[1], i[2])
     return (0.0, 0.0)
 
@@ -118,14 +118,14 @@ def _get_value_ofRecursively(data, path, item_to_get=False):
     for i in data:
         # look at sub-arrays, if their first element matches the path-spec,
         # strip the front item from the path list and do this recursively
-        if type(i) == type([]) and i[0] == path[0]:
+        if isinstance(i, list) and i[0] == path[0]:
             return _get_value_ofRecursively(i, path[1:], item_to_get)
 
 
 def _get_value_of(data, lookup, default=None):
     """find the array which has lookup as first element, return its 2nd element"""
     for i in data:
-        if type(i) == type([]) and i[0] == lookup:
+        if isinstance(i, list) and i[0] == lookup:
             return i[1]
     return default
 
@@ -133,7 +133,7 @@ def _get_value_of(data, lookup, default=None):
 def _has_value(data, lookup) -> bool:
     """return true if the lookup item exists"""
     for i in data:
-        if type(i) == type([]) and i[0] == lookup:
+        if isinstance(i, list) and i[0] == lookup:
             return True
     return False
 
@@ -924,7 +924,7 @@ class KicadSymbol(KicadSymbolBase):
         sym.get_property("Datasheet").value = datasheet
         sym.get_property("ki_keywords").value = keywords
         sym.get_property("ki_description").value = description
-        if type(fp_filters) is list:
+        if isinstance(fp_filters, list):
             fp_filters = " ".join(fp_filters)
         sym.get_property("ki_fp_filters").value = fp_filters
         return sym

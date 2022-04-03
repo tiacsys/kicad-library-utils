@@ -56,22 +56,20 @@ def SexprItem(val: Any, key: Optional[str] = None) -> str:
     else:
         fmt = "{val}"
 
-    t = type(val)
-
-    if val is None or t == str and len(val) == 0:
+    if val is None or isinstance(val, str) and len(val) == 0:
         val = '""'
-    elif t in [list, tuple]:
+    elif isinstance(val, (list, tuple)):
         val = " ".join([SexprItem(v) for v in val])
-    elif t == dict:
+    elif isinstance(val, dict):
         values = []
         for key in val.keys():
             values.append(SexprItem(val[key], key))
         val = " ".join(values)
-    elif t == float:
+    elif isinstance(val, float):
         val = str(round(val, 10)).rstrip("0").rstrip(".")
-    elif t == int:
+    elif isinstance(val, int):
         val = str(val)
-    elif t == str and re.search(r"[\s()\"]", val):
+    elif isinstance(val, str) and re.search(r"[\s()\"]", val):
         val = '"%s"' % repr(val)[1:-1].replace('"', r"\"")
 
     return fmt.format(val=val)
@@ -138,7 +136,7 @@ class SexprBuilder(object):
             self.indent += 1
         if newline:
             self.newLine()
-        if type(items) in [list, tuple]:
+        if isinstance(items, (list, tuple)):
             for item in items:
                 self.items.append(SexprItem(item))
         else:
@@ -160,17 +158,17 @@ def build_sexp(exp, key=None) -> str:
     out = ""
 
     # Special case for multi-values
-    if type(exp) == type([]):
+    if isinstance(exp, list):
         out += "(" + " ".join(build_sexp(x) for x in exp) + ")"
         return out
-    # elif type(exp) == type('') and re.search(r'[\s()]', exp):
+    # elif isinstance(exp, str) and re.search(r'[\s()]', exp):
     #    out += '"%s"' % repr(exp)[1:-1].replace('"', r'\"')
     #    print(exp, '"%s"' % repr(exp)[1:-1].replace('"', r'\"'))
-    elif type(exp) == float:
+    elif isinstance(exp, float):
         out += str(exp)
-    elif type(exp) == int:
+    elif isinstance(exp, int):
         out += str(exp)
-    elif type(exp) == str:
+    elif isinstance(exp, str):
         out += exp
     else:
         if exp == "":

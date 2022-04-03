@@ -14,7 +14,7 @@ def pinString(pin: Pin, loc: bool = True, unit=None, convert=None) -> str:
 
 
 def positionFormater(element) -> str:
-    if type(element) == type({}):
+    if isinstance(element, dict):
         if not {"posx", "posy"}.issubset(element.keys()):
             raise Exception("missing keys 'posx' and 'posy' in" + str(element))
         return "@ ({0}, {1})".format(
