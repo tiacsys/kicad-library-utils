@@ -180,8 +180,7 @@ class Rule(KLCRule):
             )
 
         # Check position / orientation
-        pos = ref["pos"]
-
+        # pos = ref["pos"]
         # if not pos['orientation'] == 0:
         #    errors.append("RefDes on F.Fab layer should be horizontal (no rotation)")
 

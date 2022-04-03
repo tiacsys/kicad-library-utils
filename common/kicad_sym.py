@@ -227,7 +227,6 @@ class TextEffect(KicadSymbolBase):
 
     @classmethod
     def from_sexpr(cls, sexpr):
-        sexpr_orig = sexpr.copy()
         if sexpr.pop(0) != "effects":
             return None
         font = _get_array(sexpr, "font")[0]
@@ -358,7 +357,6 @@ class Pin(KicadSymbolBase):
 
     @classmethod
     def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> "Pin":
-        sexpr_orig = sexpr.copy()
         is_global = False
         # The first 3 items are pin, type and shape
         if sexpr.pop(0) != "pin":
@@ -432,7 +430,6 @@ class Circle(KicadSymbolBase):
 
     @classmethod
     def from_sexpr(cls, sexpr, unit: int, demorgan: int):
-        sexpr_orig = sexpr.copy()
         # The first 3 items are pin, type and shape
         if sexpr.pop(0) != "circle":
             return None
@@ -483,7 +480,6 @@ class Arc(KicadSymbolBase):
 
     @classmethod
     def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Arc"]:
-        sexpr_orig = sexpr.copy()
         if sexpr.pop(0) != "arc":
             return None
         (startx, starty) = _get_xy(sexpr, "start")
@@ -1036,7 +1032,6 @@ class KicadLibrary(KicadSymbolBase):
         # to ensure that this parser is only used with v6 files. Any other version will most likely
         # not work as expected. So just don't load them at all.
         version = _get_value_of(sexpr_data, "version")
-        generator = _get_value_of(sexpr_data, "generator")
         if str(version) != "20211014":
             raise ValueError('Version of symbol file is not "20211014"')
 

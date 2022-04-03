@@ -237,10 +237,7 @@ class LibraryChecker:
             return False
 
     def check_footprint_library(self, library_name):
-
-        references = []
         logger.reset()
-
         logger.status(
             "\r\nChecking {p:s} (contains {n:d} footprints)".format(
                 p=library_name, n=len(config.valid_footprints(library_name))

@@ -30,7 +30,6 @@ library = kicad_sym.KicadLibrary(libname + ".kicad_sym")
 def generateDIPSwitch(count):
     name = "SW_DIP_x{:02d}".format(count)
     refdes = "SW"
-    footprint = ""
     footprintFilter = "SW?DIP?x{0}*".format(count)
     description = (
         "{0}x DIP Switch, Single Pole Single Throw (SPST) switch, small symbol".format(

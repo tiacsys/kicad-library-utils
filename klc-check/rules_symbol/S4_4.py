@@ -96,7 +96,6 @@ class Rule(KLCRule):
             etype = pin.etype
 
             for pin_type in self.warning_tests.keys():
-                pins = self.warning_tests[pin_type]
                 tests = self.warning_tests[pin_type]
 
                 if self.test(name, tests):

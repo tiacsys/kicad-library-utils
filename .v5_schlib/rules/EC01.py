@@ -13,7 +13,7 @@ class Rule(KLCRule):
         self.wrong_pin_numbers = []
         for pin in self.component.pins:
             try:
-                num = int(pin["num"])
+                int(pin["num"])
             except ValueError:
                 nums = map(str, range(10))
 

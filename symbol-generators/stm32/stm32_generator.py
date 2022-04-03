@@ -552,8 +552,6 @@ class Device:
         otherPins = []
         ports = {}
 
-        leftPins = []
-        rightPins = []
         topPins = []
         bottomPins = []
 
@@ -662,8 +660,6 @@ class Device:
         # Count the space needed for special groups
         for group in leftGroups:
             leftSpace += len(group) + 1
-
-        serviceSpace = leftSpace
 
         # Add ports to the right, counting the space needed
         for _, port in sorted(ports.items()):

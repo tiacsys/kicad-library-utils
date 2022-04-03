@@ -32,7 +32,6 @@ class Rule(KLCRule):
 
         # check all its aliases too
         if self.component.aliases:
-            invalid = []
             for alias in self.component.aliases.keys():
                 if self.checkDocumentation(
                     alias,

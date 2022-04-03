@@ -70,7 +70,7 @@ def do_unittest(footprint, rules, metrics) -> Tuple[int, int]:
         return (1, 0)
     unittest_result = m.group(1)
     unittest_rule = m.group(2)
-    unittest_descrp = m.group(3)
+    unittest_descrp = m.group(3)  # noqa: F841
     for rule in rules:
         rule = rule(footprint, args)
         if unittest_rule == rule.name:

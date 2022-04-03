@@ -18,7 +18,6 @@ class Rule(KLCRule):
             return False
 
         # Check units separately
-        unit_locked = self.component.is_locked()
         unit_count = self.component.unit_count
 
         for unit in range(1, unit_count + 1):
