@@ -122,14 +122,14 @@ class Rule(KLCRule):
                                     fp=fp_name, fil=filt
                                 )
                             )
-                            fails = True
+                            fail = True
                 if len(filters) == 0:
                     self.error(
                         "Symbol has a footprint defined in the footprint field, but no"
                         " footprint filter set. Add a footprint filter that matches the"
                         " default footprint (+ possibly variants)."
                     )
-                    fails = True
+                    fail = True
                 if len(filters) > 1:
                     self.error(
                         "Symbol has a footprint defined in the footprint field, but"
@@ -138,7 +138,7 @@ class Rule(KLCRule):
                         " the symbol is meant for multiple different footprints, empty"
                         " the footprint field.".format(fpcnt=len(filters))
                     )
-                    fails = True
+                    fail = True
             elif len(filters) == 1:
                 self.warning("Symbol possibly missing default footprint")
                 self.warningExtra(
@@ -147,7 +147,7 @@ class Rule(KLCRule):
                     "default footprint only), but the footprint field is "
                     "empty.".format(fil=filters[0])
                 )
-                fails = True
+                fail = True
 
         return fail
 
