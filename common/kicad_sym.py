@@ -142,14 +142,16 @@ class KicadSymbolBase(object):
     def as_json(self):
         return json.dumps(self, default=lambda x: x.__dict__, indent=2)
 
-    def compare_pos(s, x, y):
-        if "posx" in s.__dict__ and "posy" in s.__dict__:
-            return round(s.posx, 6) == round(x, 6) and round(s.posy, 6) == round(y, 6)
+    def compare_pos(self, x, y):
+        if "posx" in self.__dict__ and "posy" in self.__dict__:
+            return round(self.posx, 6) == round(x, 6) and round(self.posy, 6) == round(
+                y, 6
+            )
         return False
 
-    def is_unit(s, unit, demorgan):
-        if "unit" in s.__dict__ and "demorgan" in s.__dict__:
-            return s.unit == unit and s.demorgan == demorgan
+    def is_unit(self, unit, demorgan):
+        if "unit" in self.__dict__ and "demorgan" in self.__dict__:
+            return self.unit == unit and self.demorgan == demorgan
         return False
 
     @classmethod
@@ -201,25 +203,25 @@ class TextEffect(KicadSymbolBase):
         te = cls(mil_to_mm(size), mil_to_mm(size))
         return te
 
-    def get_sexpr(s):
-        fnt = ["font", ["size", s.sizex, s.sizey]]
-        if s.is_italic:
+    def get_sexpr(self):
+        fnt = ["font", ["size", self.sizex, self.sizey]]
+        if self.is_italic:
             fnt.append("italic")
-        if s.is_bold:
+        if self.is_bold:
             fnt.append("bold")
         sx = ["effects", fnt]
-        if s.is_mirrored:
+        if self.is_mirrored:
             sx.append("mirror")
-        if s.color:
-            sx.append(s.color.get_sexpr())
-        if s.is_hidden:
+        if self.color:
+            sx.append(self.color.get_sexpr())
+        if self.is_hidden:
             sx.append("hide")
 
         justify = ["justify"]
-        if s.h_justify and s.h_justify != "center":
-            justify.append(s.h_justify)
-        if s.v_justify and s.v_justify != "center":
-            justify.append(s.v_justify)
+        if self.h_justify and self.h_justify != "center":
+            justify.append(self.h_justify)
+        if self.v_justify and self.v_justify != "center":
+            justify.append(self.v_justify)
 
         if len(justify) > 1:
             sx.append(justify)
@@ -315,21 +317,23 @@ class Pin(KicadSymbolBase):
         effects = TextEffect.from_sexpr(_get_array(sexpr_n, "effects")[0])
         return (name, effects)
 
-    def get_sexpr(s):
+    def get_sexpr(self):
         sx = [
             "pin",
-            s.etype,
-            s.shape,
-            ["at", s.posx, s.posy, s.rotation],
+            self.etype,
+            self.shape,
+            ["at", self.posx, self.posy, self.rotation],
         ]
-        if s.is_global:
+        if self.is_global:
             sx.append("global")
-        sx.append(["length", s.length])
-        if s.is_hidden:
+        sx.append(["length", self.length])
+        if self.is_hidden:
             sx.append("hide")
-        sx.append(["name", s.quoted_string(s.name), s.name_effect.get_sexpr()])
-        sx.append(["number", s.quoted_string(s.number), s.number_effect.get_sexpr()])
-        for altfn in s.altfuncs:
+        sx.append(["name", self.quoted_string(self.name), self.name_effect.get_sexpr()])
+        sx.append(
+            ["number", self.quoted_string(self.number), self.number_effect.get_sexpr()]
+        )
+        for altfn in self.altfuncs:
             sx.append(altfn.get_sexpr())
 
         return sx
@@ -467,15 +471,15 @@ class Arc(KicadSymbolBase):
     unit: int = 0
     demorgan: int = 0
 
-    def get_sexpr(s) -> List[Any]:
+    def get_sexpr(self) -> List[Any]:
         sx = [
             "arc",
-            ["start", s.startx, s.starty],
-            ["mid", s.midx, s.midy],
-            ["end", s.endx, s.endy],
+            ["start", self.startx, self.starty],
+            ["mid", self.midx, self.midy],
+            ["end", self.endx, self.endy],
         ]
-        sx.append(["stroke", ["width", s.stroke_width]])
-        sx.append(["fill", ["type", s.fill_type]])
+        sx.append(["stroke", ["width", self.stroke_width]])
+        sx.append(["fill", ["type", self.fill_type]])
         return sx
 
     @classmethod
@@ -509,11 +513,11 @@ class Point(KicadSymbolBase):
     y: float
 
     @classmethod
-    def new_mil(c, x: float, y: float) -> "Point":
-        return c(mil_to_mm(x), mil_to_mm(y))
+    def new_mil(cls, x: float, y: float) -> "Point":
+        return cls(mil_to_mm(x), mil_to_mm(y))
 
-    def get_sexpr(s):
-        return ["xy", s.x, s.y]
+    def get_sexpr(self):
+        return ["xy", self.x, self.y]
 
 
 @dataclass
@@ -526,14 +530,14 @@ class Polyline(KicadSymbolBase):
     unit: int = 0
     demorgan: int = 0
 
-    def get_sexpr(s):
-        pts_list = list(map(lambda x: x.get_sexpr(), s.points))
+    def get_sexpr(self):
+        pts_list = list(map(lambda x: x.get_sexpr(), self.points))
         pts_list.insert(0, "pts")
         sx = [
             "polyline",
             pts_list,
-            ["stroke", ["width", s.stroke_width]],
-            ["fill", ["type", s.fill_type]],
+            ["stroke", ["width", self.stroke_width]],
+            ["fill", ["type", self.fill_type]],
         ]
         return sx
 
@@ -551,34 +555,34 @@ class Polyline(KicadSymbolBase):
             maxy = max(maxy, p.y)
         return (maxx, maxy, minx, miny)
 
-    def as_rectangle(s) -> "Rectangle":
-        (maxx, maxy, minx, miny) = s.get_boundingbox()
+    def as_rectangle(self) -> "Rectangle":
+        (maxx, maxy, minx, miny) = self.get_boundingbox()
         return Rectangle(
             minx,
             maxy,
             maxx,
             miny,
-            s.stroke_width,
-            s.stroke_color,
-            s.fill_type,
-            s.fill_color,
-            unit=s.unit,
-            demorgan=s.demorgan,
+            self.stroke_width,
+            self.stroke_color,
+            self.fill_type,
+            self.fill_color,
+            unit=self.unit,
+            demorgan=self.demorgan,
         )
 
-    def get_center_of_boundingbox(s) -> Tuple[float, float]:
-        (maxx, maxy, minx, miny) = s.get_boundingbox()
+    def get_center_of_boundingbox(self) -> Tuple[float, float]:
+        (maxx, maxy, minx, miny) = self.get_boundingbox()
         return ((minx + maxx) / 2, ((miny + maxy) / 2))
 
-    def is_rectangle(s) -> bool:
+    def is_rectangle(self) -> bool:
         # a rectangle has 5 points and is closed
-        if len(s.points) != 5 or not s.is_closed():
+        if len(self.points) != 5 or not self.is_closed():
             return False
 
         # construct lines between the points
-        p0 = s.points[0]
-        for p1_idx in range(1, len(s.points)):
-            p1 = s.points[p1_idx]
+        p0 = self.points[0]
+        for p1_idx in range(1, len(self.points)):
+            p1 = self.points[p1_idx]
             dx = p1.x - p0.x
             dy = p1.y - p0.y
             if dx != 0 and dy != 0:
@@ -614,12 +618,12 @@ class Text(KicadSymbolBase):
     unit: int = 0
     demorgan: int = 0
 
-    def get_sexpr(s) -> List[Any]:
+    def get_sexpr(self) -> List[Any]:
         sx = [
             "text",
-            s.quoted_string(s.text),
-            ["at", s.posx, s.posy, s.rotation],
-            s.effects.get_sexpr(),
+            self.quoted_string(self.text),
+            ["at", self.posx, self.posy, self.rotation],
+            self.effects.get_sexpr(),
         ]
         return sx
 
@@ -660,37 +664,37 @@ class Rectangle(KicadSymbolBase):
             r.fill_type = fill
         return r
 
-    def get_sexpr(s) -> List[Any]:
+    def get_sexpr(self) -> List[Any]:
         sx = [
             "rectangle",
-            ["start", s.startx, s.starty],
-            ["end", s.endx, s.endy],
-            ["stroke", ["width", s.stroke_width]],
-            ["fill", ["type", s.fill_type]],
+            ["start", self.startx, self.starty],
+            ["end", self.endx, self.endy],
+            ["stroke", ["width", self.stroke_width]],
+            ["fill", ["type", self.fill_type]],
         ]
         return sx
 
-    def as_polyline(s) -> Polyline:
+    def as_polyline(self) -> Polyline:
         pts = [
-            Point(s.startx, s.starty),
-            Point(s.endx, s.starty),
-            Point(s.endx, s.endy),
-            Point(s.startx, s.endy),
-            Point(s.startx, s.starty),
+            Point(self.startx, self.starty),
+            Point(self.endx, self.starty),
+            Point(self.endx, self.endy),
+            Point(self.startx, self.endy),
+            Point(self.startx, self.starty),
         ]
         return Polyline(
             pts,
-            s.stroke_width,
-            s.stroke_color,
-            s.fill_type,
-            s.fill_color,
-            unit=s.unit,
-            demorgan=s.demorgan,
+            self.stroke_width,
+            self.stroke_color,
+            self.fill_type,
+            self.fill_color,
+            unit=self.unit,
+            demorgan=self.demorgan,
         )
 
-    def get_center(s) -> Tuple[float, float]:
-        x = (s.endx + s.startx) / 2.0
-        y = (s.endy + s.starty) / 2.0
+    def get_center(self) -> Tuple[float, float]:
+        x = (self.endx + self.startx) / 2.0
+        y = (self.endy + self.starty) / 2.0
         return (x, y)
 
     @classmethod
@@ -732,14 +736,14 @@ class Property(KicadSymbolBase):
         if self.effects is None:
             self.effects = TextEffect(1.27, 1.27)
 
-    def get_sexpr(s) -> List[Any]:
+    def get_sexpr(self) -> List[Any]:
         sx = [
             "property",
-            s.quoted_string(s.name),
-            s.quoted_string(s.value),
-            ["id", s.idd],
-            ["at", s.posx, s.posy, s.rotation],
-            s.effects.get_sexpr(),
+            self.quoted_string(self.name),
+            self.quoted_string(self.value),
+            ["id", self.idd],
+            ["at", self.posx, self.posy, self.rotation],
+            self.effects.get_sexpr(),
         ]
         return sx
 
@@ -788,41 +792,46 @@ class KicadSymbol(KicadSymbolBase):
             raise ValueError("Filename can not be empty")
         self.libname = Path(self.filename).stem
 
-    def get_sexpr(s) -> List[str]:
+    def get_sexpr(self) -> List[str]:
         # add header
-        full_name = s.quoted_string("{}".format(s.name))
+        full_name = self.quoted_string("{}".format(self.name))
         sx = ["symbol", full_name]
-        if s.extends:
-            sx.append(["extends", s.quoted_string(s.extends)])
+        if self.extends:
+            sx.append(["extends", self.quoted_string(self.extends)])
 
         pn = ["pin_names"]
-        if s.pin_names_offset != 0.508:
-            pn.append(["offset", s.pin_names_offset])
-        if s.hide_pin_names:
+        if self.pin_names_offset != 0.508:
+            pn.append(["offset", self.pin_names_offset])
+        if self.hide_pin_names:
             pn.append("hide")
         if len(pn) > 1:
             sx.append(pn)
 
-        if s.in_bom:
+        if self.in_bom:
             sx.append(["in_bom", "yes"])
-        if s.on_board:
+        if self.on_board:
             sx.append(["on_board", "yes"])
-        if s.is_power:
+        if self.is_power:
             sx.append(["power"])
-        if s.hide_pin_numbers:
+        if self.hide_pin_numbers:
             sx.append(["pin_numbers", "hide"])
 
         # add properties
-        for prop in s.properties:
+        for prop in self.properties:
             sx.append(prop.get_sexpr())
 
         # add units
-        for d in range(0, s.demorgan_count + 1):
-            for u in range(0, s.unit_count + 1):
-                hdr = s.quoted_string("{}_{}_{}".format(s.name, u, d))
+        for d in range(0, self.demorgan_count + 1):
+            for u in range(0, self.unit_count + 1):
+                hdr = self.quoted_string("{}_{}_{}".format(self.name, u, d))
                 sx_i = ["symbol", hdr]
                 for pin in (
-                    s.arcs + s.circles + s.texts + s.rectangles + s.polylines + s.pins
+                    self.arcs
+                    + self.circles
+                    + self.texts
+                    + self.rectangles
+                    + self.polylines
+                    + self.pins
                 ):
                     if pin.is_unit(u, d):
                         sx_i.append(pin.get_sexpr())
@@ -832,13 +841,13 @@ class KicadSymbol(KicadSymbolBase):
 
         return sx
 
-    def get_center_rectangle(s, units: List[int]) -> Optional[Polyline]:
+    def get_center_rectangle(self, units: List[int]) -> Optional[Polyline]:
         # return a polyline for the requested unit that is a rectangle
         # and is closest to the center
         candidates = {}
         # building a dict with floats as keys.. there needs to be a rule against that^^
-        pl_rects = [i.as_polyline() for i in s.rectangles]
-        pl_rects.extend(filter(lambda pl: pl.is_rectangle(), s.polylines))
+        pl_rects = [i.as_polyline() for i in self.rectangles]
+        pl_rects.extend(filter(lambda pl: pl.is_rectangle(), self.polylines))
         for pl in pl_rects:
             if pl.unit in units:
                 # extract the center, calculate the distance to origin
@@ -851,18 +860,18 @@ class KicadSymbol(KicadSymbolBase):
             return candidates[sorted(candidates.keys())[0]]
         return None
 
-    def get_pinstacks(s) -> Dict[str, List[Pin]]:
+    def get_pinstacks(self) -> Dict[str, List[Pin]]:
         stacks = {}
-        for pin in s.pins:
+        for pin in self.pins:
             # if the unit is 0 that means this pin is common to all units
             unit_list = [pin.unit]
             if pin.unit == 0:
-                unit_list = list(range(1, s.unit_count + 1))
+                unit_list = list(range(1, self.unit_count + 1))
 
             # if the unit is 0 that means this pin is common to all units
             demorgan_list = [pin.demorgan]
             if pin.demorgan == 0:
-                demorgan_list = list(range(1, s.demorgan_count + 1))
+                demorgan_list = list(range(1, self.demorgan_count + 1))
 
             # add the pin to the correct stack
             for demorgan in demorgan_list:
@@ -1004,14 +1013,18 @@ class KicadLibrary(KicadSymbolBase):
     generator: str = "kicad-library-utils"
     version: str = "20211218"
 
-    def write(s) -> None:
-        lib_file = open(s.filename, "w")
-        lib_file.write(s.get_sexpr())
+    def write(self) -> None:
+        lib_file = open(self.filename, "w")
+        lib_file.write(self.get_sexpr())
         lib_file.close()
 
-    def get_sexpr(s) -> str:
-        sx = ["kicad_symbol_lib", ["version", s.version], ["generator", s.generator]]
-        for sym in s.symbols:
+    def get_sexpr(self) -> str:
+        sx = [
+            "kicad_symbol_lib",
+            ["version", self.version],
+            ["generator", self.generator],
+        ]
+        for sym in self.symbols:
             sx.append(sym.get_sexpr())
         return sexpr.format_sexp(sexpr.build_sexp(sx), max_nesting=4)
 
