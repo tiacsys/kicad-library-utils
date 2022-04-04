@@ -35,7 +35,7 @@ class CheckComponent(object):
         self.need_fix_U = False
         self.need_fix_D = False
 
-        ## check the prerequisites
+        # check the prerequisites
 
         # component has only one rectangle
         # assuming it as the body of the component

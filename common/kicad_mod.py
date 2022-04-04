@@ -504,7 +504,7 @@ class KicadMod(object):
             if a:
                 pad_dict["die_length"] = a[0][1]
 
-            ## clearances zones settings
+            # clearances zones settings
             # clearance
             pad_dict["clearance"] = {}
             a = self._getArray(pad, "clearance")
@@ -526,7 +526,7 @@ class KicadMod(object):
             if a:
                 pad_dict["solder_paste_margin_ratio"] = a[0][1]
 
-            ## copper zones settings
+            # copper zones settings
             # zone connect
             pad_dict["zone_connect"] = {}
             a = self._getArray(pad, "zone_connect")
@@ -1236,7 +1236,7 @@ class KicadMod(object):
         if pad["rect_delta"]:
             extras.append({"rect_delta": pad["rect_delta"]})
 
-        ## clearances zones settings
+        # clearances zones settings
         # clearance
         if pad["clearance"]:
             extras.append({"clearance": pad["clearance"]})
@@ -1252,7 +1252,7 @@ class KicadMod(object):
                 {"solder_paste_margin_ratio": pad["solder_paste_margin_ratio"]}
             )
 
-        ## copper zones settings
+        # copper zones settings
         # zone connect
         if pad["zone_connect"]:
             extras.append({"zone_connect": pad["zone_connect"]})

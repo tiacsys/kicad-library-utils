@@ -30,7 +30,7 @@ from DrawingElements import (
 )
 from Point import Point
 
-################################  Parameters ##################################
+# ##############################  Parameters ##################################
 pin_per_row_range = range(1, 41)
 # For some dual row connectors all numbering schemes generate the same symbol for the 1 pin per row
 # variant.
@@ -768,7 +768,7 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
     current_symbol.hide_pin_names = True
     current_symbol.pin_names_offset = kicad_sym.mil_to_mm(40)
 
-    ########################## reference points ################################
+    # ######################## reference points ################################
     num_pins_left_side = num_pins_per_row + (1 if series_params.odd_count else 0)
 
     top_left_pin_position = Point(
@@ -816,7 +816,7 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
             {"x": -10, "y": 10}, apply_on_copy=True, new_grid=None
         )
 
-    ############################ symbol fields #################################
+    # ########################## symbol fields #################################
     ref_pos = body_top_left_corner.translate(
         {"x": body_width / 2, "y": ref_fontsize}, apply_on_copy=True
     )
@@ -837,7 +837,7 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
     value.effects.sizey = value.effects.sizex
     value.effects.v_justify = "left" if extra_pin else "center"
 
-    ############################ artwork #################################
+    # ########################## artwork #################################
     drawing = Drawing()
 
     if series_params.enclosing_rectangle:
