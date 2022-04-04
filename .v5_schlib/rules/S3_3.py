@@ -63,7 +63,7 @@ class Rule(KLCRule):
                 )
             rectangle_need_fix = True
 
-        return True if rectangle_need_fix else False
+        return rectangle_need_fix
 
     def fix(self):
         """
