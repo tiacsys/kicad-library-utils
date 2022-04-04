@@ -359,12 +359,8 @@ class Rule(KLCRule):
                 ):  # @todo checkReference() does not return anything
                     ref["value"] = "REF**"
                     ref["layer"] = "F.SilkS"
-                    ref["font"][
-                        "width"
-                    ] = KLC_TEXT_WIDTH  # @todo KLC_TEXT_WIDTH does not exist
-                    ref["font"][
-                        "height"
-                    ] = KLC_TEXT_HEIGHT  # @todo KLC_TEXT_HEIGHT does not exist
+                    ref["font"]["width"] = KLC_TEXT_SIZE
+                    ref["font"]["height"] = KLC_TEXT_SIZE
                     ref["font"]["thickness"] = KLC_TEXT_THICKNESS
             for graph in self.bad_width:
                 graph["width"] = KLC_SILK_WIDTH
