@@ -93,16 +93,16 @@ def build_library_dict(filelist):
     for lib in filelist:
         flibs = glob(lib)
 
-        for l in flibs:
-            if os.path.isdir(l):
-                for root, dirnames, filenames in os.walk(l):
+        for lib_path in flibs:
+            if os.path.isdir(lib_path):
+                for root, dirnames, filenames in os.walk(lib_path):
                     for filename in fnmatch.filter(filenames, "*.kicad_sym"):
                         libs[os.path.basename(filename)] = os.path.abspath(
                             os.path.join(root, filename)
                         )
 
-            elif l.endswith(".kicad_sym") and os.path.exists(l):
-                libs[os.path.basename(l)] = os.path.abspath(l)
+            elif lib_path.endswith(".kicad_sym") and os.path.exists(lib_path):
+                libs[os.path.basename(lib_path)] = os.path.abspath(lib_path)
     return libs
 
 

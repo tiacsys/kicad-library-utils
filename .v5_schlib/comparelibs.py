@@ -104,30 +104,30 @@ old_libs = {}
 for lib in args.new:
     libs = glob(lib)
 
-    for l in libs:
-        if os.path.isdir(l):
-            for root, dirnames, filenames in os.walk(l):
+    for lib_path in libs:
+        if os.path.isdir(lib_path):
+            for root, dirnames, filenames in os.walk(lib_path):
                 for filename in fnmatch.filter(filenames, "*.lib"):
                     new_libs[os.path.basename(filename)] = os.path.abspath(
                         os.path.join(root, filename)
                     )
 
-        elif l.endswith(".lib") and os.path.exists(l):
-            new_libs[os.path.basename(l)] = os.path.abspath(l)
+        elif lib_path.endswith(".lib") and os.path.exists(lib_path):
+            new_libs[os.path.basename(lib_path)] = os.path.abspath(lib_path)
 
 for lib in args.old:
     libs = glob(lib)
 
-    for l in libs:
-        if os.path.isdir(l):
-            for root, dirnames, filenames in os.walk(l):
+    for lib_path in libs:
+        if os.path.isdir(lib_path):
+            for root, dirnames, filenames in os.walk(lib_path):
                 for filename in fnmatch.filter(filenames, "*.lib"):
                     old_libs[os.path.basename(filename)] = os.path.abspath(
                         os.path.join(root, filename)
                     )
 
-        elif l.endswith(".lib") and os.path.exists(l):
-            old_libs[os.path.basename(l)] = os.path.abspath(l)
+        elif lib_path.endswith(".lib") and os.path.exists(lib_path):
+            old_libs[os.path.basename(lib_path)] = os.path.abspath(lib_path)
 
 errors = 0
 design_breaking_changes = 0

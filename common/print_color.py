@@ -58,8 +58,8 @@ class PrintColor:
                 colorama.init()
 
     def flush(self) -> None:
-        for l in self.buffer:
-            print(l)
+        for line in self.buffer:
+            print(line)
         self.buffer.clear()
 
     def _replace_tabs(self, text: str) -> str:

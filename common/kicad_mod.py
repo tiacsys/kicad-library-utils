@@ -864,9 +864,9 @@ class KicadMod(object):
 
         # Add all lines
         lines = self.filterLines(layer)
-        for l in lines:
-            bb.addPoint(l["start"]["x"], l["start"]["y"])
-            bb.addPoint(l["end"]["x"], l["end"]["y"])
+        for line in lines:
+            bb.addPoint(line["start"]["x"], line["start"]["y"])
+            bb.addPoint(line["end"]["x"], line["end"]["y"])
 
         # Add all rects
         rects = self.filterRects(layer)
