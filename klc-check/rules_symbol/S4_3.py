@@ -248,11 +248,11 @@ class Rule(KLCRule):
                 self.errorExtra("Other type pins: {}".format(n_others))
                 special_stack_err = True
 
-        return (
+        return bool(
             self.more_then_one_visible
-            or len(self.different_types) > 0
-            or len(self.NC_stacked) > 0
-            or len(self.different_names) > 0
+            or self.different_types
+            or self.NC_stacked
+            or self.different_names
             or special_stack_err
         )
 

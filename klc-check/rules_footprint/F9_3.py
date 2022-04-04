@@ -214,7 +214,7 @@ class Rule(KLCRule):
             self.model3D_expectedDir + self.model3D_expectedName
         )
 
-        if len(models) == 0:
+        if not models:
             # Warning msg
             if module.attribute == "virtual":
                 # virtual components don't need a 3D model

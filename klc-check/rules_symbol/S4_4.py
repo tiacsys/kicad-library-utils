@@ -67,7 +67,7 @@ class Rule(KLCRule):
                 if self.test(name.lower(), self.POWER_INPUTS) and (
                     not etype.lower() == "power_in"
                 ):
-                    if len(self.power_errors) == 0:
+                    if not self.power_errors:
                         self.error(
                             "Power pins should be of type POWER INPUT or POWER OUTPUT"
                         )
@@ -79,7 +79,7 @@ class Rule(KLCRule):
             if len(stack) > 1 and visible and visible[0].etype.lower() == "power_in":
                 for pin in invisible:
                     if pin.etype.lower() != "passive":
-                        if len(self.power_errors) == 0:
+                        if not self.power_errors:
                             self.error(
                                 "Invisible powerpins in stacks should be of type"
                                 " PASSIVE"
@@ -100,7 +100,7 @@ class Rule(KLCRule):
 
                 if self.test(name, tests):
                     if not pin_type == etype:
-                        if len(self.suggestions) == 0:
+                        if not self.suggestions:
                             self.warning("Pin types should match pin function")
                         self.suggestions.append(pin)
                         self.warningExtra(
@@ -119,7 +119,7 @@ class Rule(KLCRule):
         for pin in self.component.pins:
             m = re.search(r"(\~{)(.+)}", pin.name)
             if m and pin.shape == "inverted":
-                if len(self.inversion_errors) == 0:
+                if not self.inversion_errors:
                     self.error(
                         "Pins should not be inverted twice (with inversion-symbol on"
                         " pin and overline on label)"

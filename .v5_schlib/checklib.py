@@ -114,7 +114,7 @@ for rule_name, rule in get_all_symbol_rules().items():
 # grab list of libfiles (even on windows!)
 libfiles = []
 
-if len(rules) <= 0:
+if not rules:
     printer.red("No rules selected for check!")
     sys.exit(1)
 else:
@@ -127,7 +127,7 @@ else:
 for libfile in args.libfiles:
     libfiles += glob(libfile)
 
-if len(libfiles) == 0:
+if not libfiles:
     printer.red("File argument invalid: {f}".format(f=args.libfiles))
     sys.exit(1)
 

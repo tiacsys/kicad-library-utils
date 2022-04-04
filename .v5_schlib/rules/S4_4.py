@@ -68,7 +68,7 @@ class Rule(KLCRule):
                 and (not etype.lower() == "w")
                 and (not inSpecialStack)
             ):
-                if len(self.power_errors) == 0:
+                if not self.power_errors:
                     self.error(
                         "Power pins should be of type POWER INPUT or POWER OUTPUT"
                     )
@@ -104,7 +104,7 @@ class Rule(KLCRule):
                 if self.test(name, tests):
 
                     if not pin_type == etype:
-                        if len(self.suggestions) == 0:
+                        if not self.suggestions:
                             self.warning("Pin types should match pin function")
                         self.suggestions.append(pin)
                         self.warningExtra(
@@ -127,7 +127,7 @@ class Rule(KLCRule):
         for pin in pins:
             m = re.search(r"(\~)(.+)", pin["name"])
             if m and pin["pin_type"] == "I":
-                if len(self.inversion_errors) == 0:
+                if not self.inversion_errors:
                     self.error(
                         "Pins should not be inverted twice (with inversion-symbol on"
                         " pin and overline on label)"

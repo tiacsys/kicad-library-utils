@@ -646,15 +646,15 @@ class Device:
         rightSpace = 0
 
         # Special groups go to the left
-        if len(resetPins) > 0:
+        if resetPins:
             leftGroups.append(resetPins)
-        if len(bootPins) > 0:
+        if bootPins:
             leftGroups.append(bootPins)
-        if len(powerPins) > 0:
+        if powerPins:
             leftGroups.append(sorted(powerPins, key=lambda p: p.name))
-        if len(clockPins) > 0:
+        if clockPins:
             leftGroups.append(clockPins)
-        if len(otherPins) > 0:
+        if otherPins:
             leftGroups.append(otherPins)
 
         # Count the space needed for special groups

@@ -30,7 +30,7 @@ class Rule(KLCRule):
             if filter.count(":") > 1:
                 errors.append("Filter should not contain more than one (':') character")
 
-            if len(errors) > 0:
+            if errors:
                 self.error(
                     "Footprint filter '{filter}' not correctly formatted".format(
                         filter=filter
@@ -74,7 +74,7 @@ class Rule(KLCRule):
         if (
             not self.component.is_graphic_symbol()
             and not self.component.is_power_symbol()
-        ) and len(filters) == 0:
+        ) and not filters:
             self.warning("No footprint filters defined")
 
         self.checkFilters(filters)

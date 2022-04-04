@@ -90,7 +90,7 @@ def KLCCheck(lib, component):
     )
 
     # Pass extra arguments to checklib script
-    if len(extra) > 0:
+    if extra:
         call += " ".join([str(e) for e in extra])
 
     return os.system(call)

@@ -34,11 +34,11 @@ class Rule(KLCRule):
 
             for name in names:
                 pads = module.getPadsByNumber(name)
-                if len(pads) > 0:
+                if pads:
                     num = name
                     break
 
-            if len(pads) == 0:
+            if not pads:
                 self.warning("Pad 1 not found in footprint!")
                 return False
 
@@ -47,7 +47,7 @@ class Rule(KLCRule):
             for pad in pads:
                 pos = pad["pos"]
 
-                if len(self.pin1_position) == 0:
+                if not self.pin1_position:
                     self.pin1_position = [pos["x"], pos["y"]]
 
                 # Pad is located at origin
@@ -73,6 +73,6 @@ class Rule(KLCRule):
         """
 
         module = self.module
-        if self.check() and len(self.pin1_position) > 0:
+        if self.check() and self.pin1_position:
             self.info("Moved anchor position to Pin-1")
             module.setAnchor(self.pin1_position)

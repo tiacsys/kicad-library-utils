@@ -351,7 +351,7 @@ if __name__ == "__main__":
     for f in args.kicad_sym_files:
         files += glob(f)
 
-    if len(files) == 0:
+    if not files:
         print("File argument invalid: {f}".format(f=args.kicad_sym_files))
         sys.exit(1)
 

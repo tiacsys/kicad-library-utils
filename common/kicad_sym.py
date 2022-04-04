@@ -108,7 +108,7 @@ def _get_value_ofRecursively(data, path, item_to_get=False):
     if item_to_get is != 0, return the array element with that index
     """
     # if we walked the whole path we are done. return the data
-    if len(path) == 0:
+    if not path:
         # in some cases it is useful to only get the 2nd item, for
         # example ['lenght', 42] should just return 42
         if item_to_get != 0:
@@ -854,7 +854,7 @@ class KicadSymbol(KicadSymbolBase):
                 dist = math.sqrt(x * x + y * y)
                 candidates[dist] = pl
 
-        if len(candidates) > 0:
+        if candidates:
             # sort the list return the first (smallest) item
             return candidates[sorted(candidates.keys())[0]]
         return None
@@ -942,7 +942,7 @@ class KicadSymbol(KicadSymbolBase):
 
     def is_graphic_symbol(self) -> bool:
         return self.extends is None and (
-            len(self.pins) == 0 or self.get_property("Reference").value == "#SYM"
+            not self.pins or self.get_property("Reference").value == "#SYM"
         )
 
     def is_power_symbol(self) -> bool:
@@ -1055,7 +1055,7 @@ class KicadLibrary(KicadSymbolBase):
 
             # extract extends property
             extends = _get_array2(item, "extends")
-            if len(extends) > 0:
+            if extends:
                 symbol.extends = extends[0][1]
 
             # extract properties

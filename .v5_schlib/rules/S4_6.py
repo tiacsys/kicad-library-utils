@@ -50,7 +50,7 @@ class Rule(KLCRule):
                 if visible:
                     self.invisible_errors.append(pin)
 
-        if len(self.type_errors) > 0:
+        if self.type_errors:
             self.error("NC pins are not correct pin-type:")
 
             for pin in self.type_errors:
@@ -61,7 +61,7 @@ class Rule(KLCRule):
                     )
                 )
 
-        if len(self.invisible_errors) > 0:
+        if self.invisible_errors:
             self.warning("NC pins are VISIBLE (should be INVISIBLE):")
 
             for pin in self.invisible_errors:
@@ -69,7 +69,7 @@ class Rule(KLCRule):
                     "{pin} should be INVISIBLE".format(pin=pinString(pin))
                 )
 
-        return len(self.invisible_errors) > 0 or len(self.type_errors) > 0
+        return self.invisible_errors or self.type_errors
 
     def check(self):
         """

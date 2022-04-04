@@ -232,7 +232,7 @@ for src_lib in src_libs:
         matches = get_matches(lib_name, cmp.name)
 
         # No matches found
-        if len(matches) == 0:
+        if not matches:
 
             if args.leave:
                 # Leave the item in the same library it already existed in
@@ -274,12 +274,12 @@ for key in output_libs:
     if real_mode:
         lib.save()
 
-if len(unallocated_symbols) > 0:
+if unallocated_symbols:
     print("\nUnallocated Symbols:")
     for s in unallocated_symbols:
         print(s)
 
-if len(overallocated_symbols) > 0:
+if overallocated_symbols:
     print("\nOverallocated Symbols:")
     for s in overallocated_symbols:
         print(s)

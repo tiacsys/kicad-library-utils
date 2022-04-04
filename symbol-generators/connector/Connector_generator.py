@@ -936,7 +936,7 @@ if __name__ == "__main__":
         if arg.startswith("o="):
             libname = arg[len("o=") :]
 
-    if len(modelfilter) == 0:
+    if not modelfilter:
         modelfilter = "*"
 
     model_filter_regobj = re.compile(fnmatch.translate(modelfilter))

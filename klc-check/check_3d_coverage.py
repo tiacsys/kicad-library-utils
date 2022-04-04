@@ -302,7 +302,7 @@ class LibraryChecker:
         if logger.error_count > 0:
             logger.status("- {n:d} footprint errors".format(n=logger.error_count))
 
-        if len(unused_models) > 0:
+        if unused_models:
             logger.status("- {n:d} unused model warnings".format(n=len(unused_models)))
 
     def check_libraries(self):

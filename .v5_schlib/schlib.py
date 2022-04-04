@@ -286,7 +286,7 @@ class Component(object):
             s.quotes = '"'
             line = list(s)
 
-            if len(line) == 0:
+            if not line:
                 continue
 
             if line[0] in self._KEYS:
@@ -439,7 +439,7 @@ class Component(object):
         return self.reference == "#PWR"
 
     def isGraphicSymbol(self):
-        return self.isNonBOMSymbol() and len(self.pins) == 0
+        return self.isNonBOMSymbol() and not self.pins
 
     # Heuristics, which tries to determine whether this is a "small" component (resistor,
     # capacitor, LED, diode, transistor, ...).
@@ -559,9 +559,9 @@ class SchLib(object):
         return True
 
     def validChecksum(self):
-        if len(self.checksum) == 0:
+        if not self.checksum:
             return False
-        if len(self.documentation.checksum) == 0:
+        if not self.documentation.checksum:
             return False
 
         return True
@@ -661,7 +661,7 @@ class SchLib(object):
                 to_write.append(line)
 
             # ALIAS
-            if len(component.aliases) > 0:
+            if component.aliases:
                 line = "ALIAS "
                 for alias in component.aliases.keys():
                     line += alias + " "
@@ -670,7 +670,7 @@ class SchLib(object):
                 to_write.append(line)
 
             # $FPLIST
-            if len(component.fplist) > 0:
+            if component.fplist:
                 to_write.append("$FPLIST\n")
                 for fp in component.fplist:
                     to_write.append(" " + fp + "\n")

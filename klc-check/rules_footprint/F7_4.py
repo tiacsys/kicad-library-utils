@@ -141,7 +141,7 @@ class Rule(KLCRule):
 
         # print(testvar) # Debug
 
-        if len(errors) > 0:
+        if errors:
             self.error("Some THT pads have incorrect layer settings")
             for msg in errors:
                 self.errorExtra(msg)

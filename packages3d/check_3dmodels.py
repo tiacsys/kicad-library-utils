@@ -41,11 +41,11 @@ for lib in args.models:
         name = os.path.basename(lib).replace(".3dshapes", "")
         models[name] = os.path.abspath(lib)
 
-if len(pretty) == 0:
+if not pretty:
     print("No .pretty directories supplied")
     sys.exit(1)
 
-if len(models) == 0:
+if not models:
     print("No .3dshapes directories supplied")
     sys.exit(1)
 

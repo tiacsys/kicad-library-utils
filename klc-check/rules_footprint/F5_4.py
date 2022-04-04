@@ -123,7 +123,7 @@ class Rule(KLCRule):
             )
 
             # Display message if silkscreen has overlapping lines
-            if len(self.overlaps[layer]) > 0:
+            if self.overlaps[layer]:
                 self.errcnt += 1
                 self.error("%s graphic elements should not overlap." % layer)
                 self.errorExtra(

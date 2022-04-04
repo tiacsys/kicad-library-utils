@@ -31,7 +31,7 @@ class Rule(KLCRule):
             # Illegal character found!
             illegal += c
 
-        if len(illegal) > 0:
+        if illegal:
             self.error("Symbol name must contain only legal characters")
             self.errorExtra(
                 "Name '{n}' contains illegal characters '{i}'".format(

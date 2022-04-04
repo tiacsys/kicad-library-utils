@@ -123,7 +123,7 @@ class Rule(KLCRule):
             return s
 
         # no line is considered as closed
-        if len(layer) == 0:
+        if not layer:
             return []
 
         # clone the lines, so we can remove them from the list
@@ -133,7 +133,7 @@ class Rule(KLCRule):
         end_point = getEndPoint(curr_line)
         tolerance = 0.0
 
-        while len(lines) > 0:
+        while lines:
             tolerance = 0.0
             match = False
             for line in lines:
@@ -184,8 +184,8 @@ class Rule(KLCRule):
         self.bCourtyard = module.filterGraphs("B.CrtYd")
 
         # Check for existence of courtyard
-        if len(self.fCourtyard) == 0:
-            if len(self.bCourtyard) == 0:
+        if not self.fCourtyard:
+            if not self.bCourtyard:
                 self.error("No courtyard found!")
                 self.errorExtra("Add courtyard around footprint")
                 return True
@@ -228,7 +228,7 @@ class Rule(KLCRule):
                 self.bad_grid.append(graph)
 
         # Check that courtyard is correct width
-        if len(self.bad_width) > 0:
+        if self.bad_width:
             self.error(
                 "Courtyard width error (expected width = {w}mm)".format(
                     w=KLC_CRTYD_WIDTH
@@ -238,7 +238,7 @@ class Rule(KLCRule):
                 self.errorExtra(graphItemString(bad, layer=True, width=True))
 
         # Check that courtyard items are on correct grid
-        if len(self.bad_grid) > 0:
+        if self.bad_grid:
             self.error(
                 "Courtyard lines are not on {grid}mm grid".format(grid=KLC_CRTYD_GRID)
             )
@@ -246,27 +246,24 @@ class Rule(KLCRule):
                 self.errorExtra(graphItemString(bad, layer=True, width=False))
 
         # Check that courtyard is closed
-        if len(self.unconnected) > 0:
+        if self.unconnected:
             self.error("Courtyard must be closed.")
             self.errorExtra("The following lines have unconnected endpoints")
             for bad in self.unconnected:
                 self.errorExtra(graphItemString(bad, layer=True, width=False))
 
-        return any(
-            [len(self.bad_width) > 0, len(self.bad_grid) > 0, len(self.unconnected) > 0]
-        )
+        return bool(self.bad_width or self.bad_grid or self.unconnected)
 
     def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
-
-        if len(self.bad_width) > 0:
+        if self.bad_width:
             self.info("Fixing line width of courtyard items")
         for graph in self.bad_width:
             graph["width"] = KLC_CRTYD_WIDTH
 
-        if len(self.bad_grid) > 0:
+        if self.bad_grid:
             self.info("Fixing grid alignment of courtyard items")
         for item in self.bad_grid:
             if "center" in item:  # Circle
@@ -281,7 +278,7 @@ class Rule(KLCRule):
             item["end"]["y"] = mapToGrid(item["end"]["y"], KLC_CRTYD_GRID)
 
         # create courtyard if does not exists
-        if len(self.fCourtyard) + len(self.bCourtyard) == 0:
+        if not self.fCourtyard and not self.bCourtyard:
             self.info("No courtyard detected - adding default courtyard")
             cy = self.defaultCourtyard()
             if not cy:

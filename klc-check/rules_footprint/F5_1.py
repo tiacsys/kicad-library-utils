@@ -83,7 +83,7 @@ class Rule(KLCRule):
 
         self.refDesError = len(errors) > 0
 
-        if len(errors) > 0:
+        if errors:
             self.error("Reference label errors:")
             for err in errors:
                 self.errorExtra(err)
@@ -345,9 +345,7 @@ class Rule(KLCRule):
                     pad_nums.append(ints["pad"]["number"])
 
         # Return True if any of the checks returned an error
-        return any(
-            [len(self.bad_width) > 0, len(self.intersections) > 0, self.refDesError]
-        )
+        return bool(self.bad_width or self.intersections or self.refDesError)
 
     def fix(self) -> None:
         """

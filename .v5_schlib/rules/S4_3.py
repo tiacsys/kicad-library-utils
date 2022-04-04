@@ -271,7 +271,7 @@ class Rule(KLCRule):
 
     def fix(self):
         # Delete duplicate pins
-        if len(self.duplicated_pins) > 0:
+        if self.duplicated_pins:
             self.info("Removing duplicate pins")
 
             for pin_groups in self.duplicated_pins:

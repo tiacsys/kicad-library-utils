@@ -96,11 +96,11 @@ class Rule(KLCRule):
                     "Datasheet entry '{ds}' does not look like a URL".format(ds=ds)
                 )
 
-        if len(errors) > 0 or len(warnings) > 0:
+        if errors or warnings:
             msg = "{cmp} {name} has metadata errors:".format(
                 cmp="ALIAS" if alias else "Component", name=name
             )
-            if len(errors) == 0:
+            if not errors:
                 self.warning(msg)
             else:
                 self.error(msg)

@@ -24,7 +24,7 @@ class Rule(KLCRule):
             filters = self.component.get_fp_filters()
 
             # Only check if there is text in the name
-            if len(fp_name) > 0:
+            if fp_name:
                 # footprint field should be set to invisible (if it has any text in it)
                 if not fp.effects.is_hidden:
                     fail = True
@@ -123,7 +123,7 @@ class Rule(KLCRule):
                                 )
                             )
                             fail = True
-                if len(filters) == 0:
+                if not filters:
                     self.error(
                         "Symbol has a footprint defined in the footprint field, but no"
                         " footprint filter set. Add a footprint filter that matches the"

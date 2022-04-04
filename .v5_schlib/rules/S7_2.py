@@ -21,7 +21,7 @@ class Rule(KLCRule):
         fail = False
         if self.component.isGraphicSymbol():
             # no pins in raphical symbol
-            if len(self.component.pins) != 0:
+            if self.component.pins:
                 self.error("Graphical symbols have no pins")
                 fail = True
                 self.fixTooManyPins = True
@@ -38,7 +38,7 @@ class Rule(KLCRule):
                 fail = True
                 self.fixNoFootprint = True
             # FPFilters must be empty
-            if len(self.component.fplist) > 0:
+            if self.component.fplist:
                 self.error("Graphical symbols have no footprint filters")
                 fail = True
                 self.fixNoFootprint = True

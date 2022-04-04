@@ -127,7 +127,7 @@ class Rule(KLCRule):
                     )
         err = False
 
-        if len(self.stencil_pads_with_number) > 0:
+        if self.stencil_pads_with_number:
             err = True
             self.error("Stencil pad(s) found with non-empty number")
             for p in self.stencil_pads_with_number:
@@ -137,13 +137,13 @@ class Rule(KLCRule):
                     )
                 )
 
-        if len(extra_layer_errors) > 0:
+        if extra_layer_errors:
             err = True
             self.error("Pad(s) found with extra layers")
             for e in extra_layer_errors:
                 self.errorExtra(e)
 
-        if len(missing_layer_errors) > 0:
+        if missing_layer_errors:
             self.warning("Pad(s) potentially missing layers")
             for w in missing_layer_errors:
                 self.warningExtra(w)

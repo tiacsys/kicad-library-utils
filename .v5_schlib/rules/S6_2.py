@@ -165,10 +165,9 @@ class Rule(KLCRule):
         self.info("Fixing VALUE-field...")
         self.component.fields[1]["name"] = self.component.name
         # store datasheet field contents for later reuse
-        if (
-            (not self.component.documentation["datasheet"])
-            or len(self.component.documentation["datasheet"]) == 0
-        ) and (len(self.component.fields[3]["name"]) > 2):
+        if (not self.component.documentation["datasheet"]) and (
+            len(self.component.fields[3]["name"]) > 2
+        ):
             ds = self.component.fields[3]["name"]
             if ds[0] == '"' and ds[len(ds) - 1] == '"':
                 ds = ds[1:-1]

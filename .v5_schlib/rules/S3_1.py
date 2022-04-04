@@ -47,7 +47,7 @@ class Rule(KLCRule):
 
                 # No pins? Ignore check.
                 # This can be improved to include graphical items too...
-                if len(pins) == 0:
+                if not pins:
                     continue
                 x_pos = [int(pin["posx"]) for pin in pins]
                 y_pos = [int(pin["posy"]) for pin in pins]

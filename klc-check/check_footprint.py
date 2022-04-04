@@ -240,7 +240,7 @@ files = []
 for f in args.kicad_mod_files:
     files += glob(f)
 
-if len(files) == 0:
+if not files:
     printer.red("File argument invalid: {f}".format(f=args.kicad_mod_files))
     sys.exit(1)
 

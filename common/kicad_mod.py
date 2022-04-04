@@ -1265,7 +1265,7 @@ class KicadMod(object):
 
         # TODO: properly format custom pad shapes
 
-        if len(extras) > 0:
+        if extras:
             se.addItems(extras, newline=True, indent=True)
             se.unIndent()
 

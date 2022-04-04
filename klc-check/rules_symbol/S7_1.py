@@ -62,7 +62,7 @@ class Rule(KLCRule):
                     fail = True
                     self.fixWrongRef = True
                 # FPFilters must be empty
-                if len(self.component.get_fp_filters()) > 0:
+                if self.component.get_fp_filters():
                     self.error("Graphical symbols have no footprint filters")
                     fail = True
                     self.fixNoFootprint = True

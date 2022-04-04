@@ -97,7 +97,7 @@ class Rule(KLCRule):
                 )
             )
 
-        if len(errors) > 0:
+        if errors:
             self.error("Value Label Errors")
             for err in errors:
                 self.errorExtra(err)
@@ -105,7 +105,7 @@ class Rule(KLCRule):
         return len(errors) > 0
 
     def checkMissingLines(self) -> bool:
-        if len(self.f_fabrication_all) + len(self.b_fabrication_all) == 0:
+        if not self.f_fabrication_all and not self.b_fabrication_all:
             if self.module.attribute != "virtual":
                 self.error("No drawings found on fabrication layer")
                 return True
@@ -184,7 +184,7 @@ class Rule(KLCRule):
         # if not pos['orientation'] == 0:
         #    errors.append("RefDes on F.Fab layer should be horizontal (no rotation)")
 
-        if len(errors) > 0:
+        if errors:
             self.error("RefDes errors")
             for err in errors:
                 self.errorExtra(err)

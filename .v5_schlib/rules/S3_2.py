@@ -73,7 +73,7 @@ class Rule(KLCRule):
                         " required by the symbol geometry)"
                     )
 
-        if len(self.violating_fields) > 0 or len(self.violating_pins) > 0:
+        if self.violating_fields or self.violating_pins:
             return True
 
         return False
@@ -82,12 +82,12 @@ class Rule(KLCRule):
         """
         Proceeds the fixing of the rule, if possible.
         """
-        if len(self.violating_fields) > 0:
+        if self.violating_fields:
             self.info("Fixing field text size")
         for field in self.violating_fields:
             field["text_size"] = "50"
 
-        if len(self.violating_pins) > 0:
+        if self.violating_pins:
             self.info("Fixing pin text size")
         for pin in self.violating_pins:
             pin["name_text_size"] = "50"
