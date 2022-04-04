@@ -73,7 +73,6 @@ filter_dual_row_odd_count = [
     "*FCC*2Rows*Pins{pn_modifier:s}_*",
 ]
 
-pinname_update_function = lambda old_name, new_number: "Pin_{}".format(new_number)
 
 CONNECTOR = namedtuple(
     "CONNECTOR",
@@ -95,15 +94,18 @@ CONNECTOR = namedtuple(
     ],
 )
 
-num_gen_row_letter_first = lambda old_number: old_number[:1] + str(
-    int(old_number[1:]) + 1
-)
-num_gen_row_letter_first_by2 = lambda old_number: old_number[:1] + str(
-    int(old_number[1:]) + 2
-)
-num_gen_row_letter_last = (
-    lambda old_number: str(int(old_number[:-1]) + 1) + old_number[-1:]
-)
+
+def num_gen_row_letter_first(old_number):
+    return old_number[:1] + str(int(old_number[1:]) + 1)
+
+
+def num_gen_row_letter_first_by2(old_number):
+    return old_number[:1] + str(int(old_number[1:]) + 2)
+
+
+def num_gen_row_letter_last(old_number):
+    return str(int(old_number[:-1]) + 1) + old_number[-1:]
+
 
 conn_screw_terminal = {
     "single_row_screw": CONNECTOR(
@@ -530,6 +532,10 @@ conn_iec_din = {
         mirror=False,
     ),
 }
+
+
+def pinname_update_function(old_name, new_number):
+    return "Pin_{}".format(new_number)
 
 
 def merge_dicts(*dict_args):

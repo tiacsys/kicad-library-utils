@@ -692,9 +692,15 @@ class Device:
         box_height = max(leftSpace, rightSpace) * 100
 
         # Calculate the width of the symbol
-        round_up = lambda x, y: (x + y - 1) // y * y
-        pin_name_width = lambda p: len(p.name) * 47
-        pin_group_max_width = lambda g: max(map(pin_name_width, g))
+        def round_up(x, y):
+            return (x + y - 1) // y * y
+
+        def pin_name_width(p):
+            return len(p.name) * 47
+
+        def pin_group_max_width(g):
+            return max(map(pin_name_width, g))
+
         left_width = round_up(
             max(map(pin_group_max_width, leftGroups + movedGroups)), 100
         )
