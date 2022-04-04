@@ -23,7 +23,7 @@ def logError(
         with open(log_file, "r") as json_file:
             try:
                 log_data = json.loads(json_file.read())
-            except:
+            except ValueError:
                 print("Found bad JSON data - clearing")
                 log_data = {}
 

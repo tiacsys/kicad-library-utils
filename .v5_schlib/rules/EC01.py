@@ -78,7 +78,7 @@ class Rule(KLCRule):
         for pin in self.component.pins:
             try:
                 int_pins.append(int(pin["num"]))
-            except:
+            except ValueError:
                 pass
 
         for i in range(1, max(int_pins) + 1):

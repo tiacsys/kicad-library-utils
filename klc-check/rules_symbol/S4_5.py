@@ -9,7 +9,7 @@ class Rule(KLCRule):
         for pin in self.component.pins:
             try:
                 int_pins.append(int(pin.number))
-            except:
+            except ValueError:
                 pass
 
         if len(int_pins) == 0:

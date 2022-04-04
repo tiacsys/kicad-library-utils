@@ -272,13 +272,13 @@ class KicadMod(object):
                 try:
                     a = self._getArray(line, "layer")[0]
                     line_dict["layer"] = a[1]
-                except:
+                except IndexError:
                     line_dict["layer"] = ""
 
                 try:
                     a = self._getArray(line, "width")[0]
                     line_dict["width"] = a[1]
-                except:
+                except IndexError:
                     line_dict["width"] = 0
 
                 lines.append(line_dict)
@@ -299,13 +299,13 @@ class KicadMod(object):
                 try:
                     a = self._getArray(rect, "layer")[0]
                     rect_dict["layer"] = a[1]
-                except:
+                except IndexError:
                     rect_dict["layer"] = ""
 
                 try:
                     a = self._getArray(rect, "width")[0]
                     rect_dict["width"] = a[1]
-                except:
+                except IndexError:
                     rect_dict["width"] = 0
 
                 rects.append(rect_dict)
@@ -327,13 +327,13 @@ class KicadMod(object):
                 try:
                     a = self._getArray(circle, "layer")[0]
                     circle_dict["layer"] = a[1]
-                except:
+                except IndexError:
                     circle_dict["layer"] = ""
 
                 try:
                     a = self._getArray(circle, "width")[0]
                     circle_dict["width"] = a[1]
-                except:
+                except IndexError:
                     circle_dict["width"] = 0
 
                 circles.append(circle_dict)
@@ -358,13 +358,13 @@ class KicadMod(object):
                 try:
                     a = self._getArray(poly, "layer")[0]
                     poly_dict["layer"] = a[1]
-                except:
+                except IndexError:
                     poly_dict["layer"] = ""
 
                 try:
                     a = self._getArray(poly, "width")[0]
                     poly_dict["width"] = a[1]
-                except:
+                except IndexError:
                     poly_dict["width"] = ""
 
                 polys.append(poly_dict)
@@ -430,13 +430,13 @@ class KicadMod(object):
                 try:
                     a = self._getArray(arc, "layer")[0]
                     arc_dict["layer"] = a[1]
-                except:
+                except IndexError:
                     arc_dict["layer"] = ""
 
                 try:
                     a = self._getArray(arc, "width")[0]
                     arc_dict["width"] = a[1]
-                except:
+                except IndexError:
                     arc_dict["width"] = 0
 
                 arcs.append(arc_dict)

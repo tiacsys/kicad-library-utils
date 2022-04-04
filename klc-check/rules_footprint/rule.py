@@ -74,7 +74,7 @@ def graphItemString(
 
         if width:
             widthText = " has width '{width}'".format(width=graph["width"])
-    except:
+    except KeyError:
         pass
 
     # Line or Arc

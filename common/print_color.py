@@ -43,18 +43,19 @@ class PrintColor:
         self.buffer: List[str] = []
         self.buffered: bool = buffered
 
+        # TODO: why is the usage of "colorama" limited to Windows?
         if platform.system() == "Windows":
             try:
                 import colorama
-
-                colorama.init()
-            except:
+            except ImportError:
                 print(
                     "To print using colors you have to install colorama. Try to install"
                     ' it using: "pip install colorama"'
                 )
                 print("[Continuing using no color mode]\n")
                 self._use_color = False
+            else:
+                colorama.init()
 
     def flush(self) -> None:
         for l in self.buffer:
@@ -126,7 +127,7 @@ class PrintColor:
             else:
                 try:
                     print(line)
-                except:
+                except (IOError, ValueError):
                     print("ERROR printing output")
 
     def regular(

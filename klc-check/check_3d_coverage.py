@@ -221,7 +221,8 @@ class LibraryChecker:
             # Accept both forward and backward slash characters in path
             long_reference = "/".join(long_reference.split("\\"))
             return os.path.basename(long_reference)
-        except:
+        # TODO: determine, which specific problem could happen above ("ValueError" is just a guess)
+        except ValueError:
             logger.warning("- Invalid model reference {f:s}".format(f=long_reference))
             self.invalid_model_path += 1
             return None

@@ -344,7 +344,7 @@ class Device:
         self.line = self.root.get("Line")
         try:
             self.freq = self.root.xpath("a:Frequency", namespaces=self.ns)[0].text
-        except:
+        except IndexError:
             # Not all chips have a frequency specification
             logging.info("Unknown frequency")
             self.freq = None
@@ -360,7 +360,7 @@ class Device:
                     "Max", default="--"
                 ),
             ]
-        except:
+        except IndexError:
             # Not all chips have a voltage specification
             logging.info("Unknown voltage")
             self.voltage = None

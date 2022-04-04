@@ -283,7 +283,7 @@ class Rule(KLCRule):
                             )
                         try:
                             differentSign = padMax / padMin
-                        except:
+                        except ZeroDivisionError:
                             differentSign = padMin / padMax
                         if (
                             (differentSign < 0)

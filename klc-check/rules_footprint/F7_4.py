@@ -57,7 +57,7 @@ class Rule(KLCRule):
                     try:
                         if int(pad["number"]) > padNoMax:
                             padNoMax = int(pad["number"])
-                    except:
+                    except ValueError:
                         break
 
             # Gets the (x,y) coordinates and x-width and y-width for the exposed pads
@@ -76,7 +76,7 @@ class Rule(KLCRule):
                                     pad_size["y"],
                                 )  # x-width and y-width
                                 EParray.append([p_x, p_y, size_x, size_y])
-                        except:
+                        except ValueError:
                             break
             # print("Exposed pad array: ", EParray) # Debug
 
