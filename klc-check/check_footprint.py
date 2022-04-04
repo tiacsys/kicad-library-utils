@@ -32,8 +32,6 @@ def check_library(filename: str, rules, metrics: List[str], args) -> Tuple[int, 
         printer.red("File is not a .kicad_mod : %s" % filename)
         return (1, 0)
 
-    lib_name = os.path.dirname(filename).split(os.path.sep)[-1].replace(".pretty", "")
-
     if args.errors:
         module = KicadMod(filename)
     else:
@@ -126,6 +124,9 @@ def do_rulecheck(module, rules, metrics) -> Tuple[int, int]:
 
         elif rule.hasErrors():
             if args.log:
+                lib_name = os.path.basename(os.path.dirname(module.filename)).replace(
+                    ".pretty", ""
+                )
                 logError(args.log, rule.name, lib_name, module.name)
 
             if args.fix:

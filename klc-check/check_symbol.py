@@ -119,7 +119,7 @@ class SymbolCheck:
 
             if rule.hasErrors():
                 if self.log:
-                    logError(self.log, rule.name, lib_name, symbol.name)
+                    logError(self.log, rule.name, symbol.libname, symbol.name)
 
             # increment the number of violations
             symbol_error_count += rule.errorCount
