@@ -951,10 +951,6 @@ class KicadSymbol(KicadSymbolBase):
     def is_locked(self) -> bool:
         return self.get_property("ki_locked") is not None
 
-    def does_extend(self):
-        # @todo Not defined
-        return does_extend
-
     def get_pins_by_name(self, name: str) -> List[Pin]:
         pins = []
         for pin in self.pins:
