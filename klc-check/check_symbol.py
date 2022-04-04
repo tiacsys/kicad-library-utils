@@ -399,8 +399,8 @@ if __name__ == "__main__":
         for p in jobs:
             while True:
                 try:
-                    id, line = out_queue.get(block=False).split(",")
-                    job_output[id].append(line)
+                    identifier, line = out_queue.get(block=False).split(",")
+                    job_output[identifier].append(line)
                 except queue.Empty:
                     break
             if not p.is_alive():

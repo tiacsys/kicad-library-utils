@@ -271,7 +271,7 @@ class AltFunction(KicadSymbolBase):
 
     @classmethod
     def from_sexpr(cls, sexpr) -> "AltFunction":
-        (id, name, etype, shape) = sexpr
+        (identifier, name, etype, shape) = sexpr
         return AltFunction(name, etype, shape)
 
 

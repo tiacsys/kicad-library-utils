@@ -223,8 +223,8 @@ for libfile in libfiles:
     if args.fix and n_allviolations > 0:
         lib.save()
         printer.green(
-            "saved '{file}' with fixes for {n_violations} violations.".format(
-                file=libfile, n_violations=n_allviolations
+            "saved '{filename}' with fixes for {n_violations} violations.".format(
+                filename=libfile, n_violations=n_allviolations
             )
         )
 

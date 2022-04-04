@@ -719,8 +719,8 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
     )
 
     fp_filter = [
-        filter.format(pn_modifier=lib_params.get("pn_modifier", ""))
-        for filter in series_params.footprint_filter
+        fp_filter.format(pn_modifier=lib_params.get("pn_modifier", ""))
+        for fp_filter in series_params.footprint_filter
     ]
 
     libname = os.path.basename(library.filename)
