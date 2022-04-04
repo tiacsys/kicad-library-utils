@@ -15,8 +15,7 @@ if common not in sys.path:
 from kicad_mod import *
 from print_color import *
 from rulebase import PrintColor, Verbosity, logError
-from rules_footprint import *
-from rules_footprint import __all__ as all_rules
+from rules_footprint import get_all_footprint_rules
 from rules_footprint.rule import KLCRule
 
 
@@ -231,10 +230,9 @@ else:
     selected_rules = None
 
 rules = []
-for r in all_rules:
-    r_name = r.replace("_", ".")
-    if selected_rules == None or r_name in selected_rules:
-        rules.append(globals()[r].Rule)
+for rule_name, rule in get_all_footprint_rules().items():
+    if selected_rules is None or rule_name in selected_rules:
+        rules.append(rule.Rule)
 
 # figure out which files should be checked
 files = []

@@ -19,8 +19,7 @@ from typing import List, Optional
 from kicad_sym import *
 from print_color import *
 from rulebase import PrintColor, Verbosity
-from rules_symbol import *
-from rules_symbol import __all__ as all_rules
+from rules_symbol import get_all_symbol_rules
 from rules_symbol.rule import KLCRule
 
 
@@ -49,13 +48,12 @@ class SymbolCheck:
         # build a list of rules to work with
         self.rules: List[KLCRule] = []
 
-        for r in all_rules:
-            r_name = r.replace("_", ".")
-            if selected_rules is None or r_name in selected_rules:
-                if excluded_rules is not None and r_name in excluded_rules:
+        for rule_name, rule in get_all_symbol_rules().items():
+            if selected_rules is None or rule_name in selected_rules:
+                if excluded_rules is not None and rule_name in excluded_rules:
                     pass
                 else:
-                    self.rules.append(globals()[r].Rule)
+                    self.rules.append(rule.Rule)
 
     def do_unittest(self, symbol) -> Tuple[int, int]:
         error_count = 0

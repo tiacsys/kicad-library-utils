@@ -16,8 +16,7 @@ from glob import glob
 
 from print_color import *
 from rulebase import logError
-from rules import *
-from rules import __all__ as all_rules
+from rules import get_all_symbol_rules
 from rules.rule import KLCRule
 from schlib import *
 
@@ -110,23 +109,21 @@ else:
     excluded_rules = None
 
 rules = []
-
-for r in all_rules:
-    r_name = r.replace("_", ".")
-    if selected_rules == None or r_name in selected_rules:
-        if excluded_rules == None or r_name not in excluded_rules:
-            rules.append(globals()[r].Rule)
+for rule_name, rule in get_all_symbol_rules().items():
+    if selected_rules is None or rule_name in selected_rules:
+        if excluded_rules is None or rule_name not in excluded_rules:
+            rules.append(rule.Rule)
 
 # grab list of libfiles (even on windows!)
 libfiles = []
 
-if len(all_rules) <= 0:
+if len(rules) <= 0:
     printer.red("No rules selected for check!")
     sys.exit(1)
 else:
     if verbosity > 2:
         printer.regular("checking rules:")
-        for rule in all_rules:
+        for rule in rules:
             printer.regular("  - " + str(rule))
         printer.regular("")
 
