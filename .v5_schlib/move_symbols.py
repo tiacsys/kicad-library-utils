@@ -68,8 +68,7 @@ def get_entire_lib_match(lib_name):
     patterns = get_lib_patterns(lib_name)
 
     # Remap to single lib
-    if type(patterns) in [str, unicode]:
-
+    if isinstance(patterns, str):
         # Return original lib name
         if patterns in [""]:
             return lib_name
