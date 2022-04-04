@@ -32,3 +32,17 @@ footprint_rulechecker:
   artifacts:
     reports:
       metrics: metrics.txt
+
+check_python_code:
+  rules:
+    - when: always
+  script:
+    - pip install flake8
+    - make lint
+
+check_spelling:
+  rules:
+    - when: always
+  script:
+    - apt-get -qq update && apt-get install --yes codespell
+    - make spelling
