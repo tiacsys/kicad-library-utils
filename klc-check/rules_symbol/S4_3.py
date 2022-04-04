@@ -64,7 +64,7 @@ class Rule(KLCRule):
                 # Check1: If a single pin in a stack is of type NC, we consider this an error
                 if pin.etype == "no_connect":
                     self.error(
-                        "NC {pin} is stacked on other pins".format(
+                        "NC {pin} (x={x}, y={y}) is stacked on other pins".format(
                             pin=pinString(pin), x=pin.posx, y=pin.posy
                         )
                     )

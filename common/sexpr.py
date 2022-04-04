@@ -44,7 +44,9 @@ def parse_sexp(sexp: str) -> Any:
         elif term == "s":
             out.append(value)
         else:
-            raise NotImplementedError("Error: %r" % (term, value))
+            raise NotImplementedError(
+                "The term '{}' with value '{}' is unknown.".format(term, value)
+            )
     assert not stack, "Trouble with nesting of brackets"
     return out[0]
 
@@ -209,7 +211,9 @@ def format_sexp(sexp: str, indentation_size: int = 2, max_nesting: int = 2) -> s
         elif term == "s":
             value += " "
         else:
-            raise NotImplementedError("Error: %r" % (term, value))
+            raise NotImplementedError(
+                "The term '{}' with value '{}' is unknown.".format(term, value)
+            )
 
         out += indentation + value
 
