@@ -12,7 +12,7 @@ function test_schlib {
     filename=`basename "$1"`
 
 # python code --- START
-python << EOF
+python3 << EOF
 from schlib import *
 lib = SchLib('$1')
 lib.save('/tmp/$filename')
