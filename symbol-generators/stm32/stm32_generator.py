@@ -695,16 +695,15 @@ class Device:
         def round_up(x, y):
             return (x + y - 1) // y * y
 
-        def pin_name_width(p):
-            return len(p.name) * 47
-
-        def pin_group_max_width(g):
-            return max(map(pin_name_width, g))
+        def pin_group_max_width(group):
+            return max(len(p.name) * 47 for p in group)
 
         left_width = round_up(
-            max(map(pin_group_max_width, leftGroups + movedGroups)), 100
+            max(pin_group_max_width(group) for group in (leftGroups + movedGroups)), 100
         )
-        right_width = round_up(max(map(pin_group_max_width, rightGroups)), 100)
+        right_width = round_up(
+            max(pin_group_max_width(group) for group in rightGroups), 100
+        )
         top_width = len(topPins) * 100
         bottom_width = len(bottomPins) * 100
         middle_width = 100 + max(top_width, bottom_width)

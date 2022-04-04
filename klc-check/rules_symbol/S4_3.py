@@ -229,7 +229,7 @@ class Rule(KLCRule):
                             # more than one visible pin found
                             special_stack_err = True
                             self.error("Only one pin in a pinstack is visible")
-                            for vpin in list(filter(lambda p: not p.is_hidden, pins)):
+                            for vpin in (pin for pin in pins if not pin.is_hidden):
                                 self.errorExtra(
                                     "Pin {0} is visible".format(pinString(vpin))
                                 )

@@ -530,7 +530,7 @@ class Polyline(KicadSymbolBase):
     demorgan: int = 0
 
     def get_sexpr(self):
-        pts_list = list(map(lambda x: x.get_sexpr(), self.points))
+        pts_list = [x.get_sexpr() for x in self.points]
         pts_list.insert(0, "pts")
         sx = [
             "polyline",
@@ -846,7 +846,7 @@ class KicadSymbol(KicadSymbolBase):
         candidates = {}
         # building a dict with floats as keys.. there needs to be a rule against that^^
         pl_rects = [i.as_polyline() for i in self.rectangles]
-        pl_rects.extend(filter(lambda pl: pl.is_rectangle(), self.polylines))
+        pl_rects.extend(pl for pl in self.polylines if pl.is_rectangle())
         for pl in pl_rects:
             if pl.unit in units:
                 # extract the center, calculate the distance to origin

@@ -15,7 +15,7 @@ class Rule(KLCRule):
             try:
                 int(pin["num"])
             except ValueError:
-                nums = map(str, range(10))
+                nums = [str(i) for i in range(10)]
 
                 if not any([num in pin["num"] for num in nums]):
                     self.wrong_pin_numbers.append(pin)

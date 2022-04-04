@@ -312,7 +312,7 @@ class DrawingPolyline:
                 count=len(self.points),
                 unit_idx=self.unit_idx,
                 deMorgan_idx=self.deMorgan_idx,
-                points=" ".join(map(str, self.points)),
+                points=" ".join(str(p) for p in self.points),
                 fill=self.fill,
                 line_width=self.line_width,
             )
@@ -674,12 +674,12 @@ class Drawing:
 
     def __str__(self):
         drawing = "DRAW\n"
-        drawing += "".join(sorted(map(str, self.arc)))
-        drawing += "".join(sorted(map(str, self.circle)))
-        drawing += "".join(sorted(map(str, self.text)))
-        drawing += "".join(sorted(map(str, self.rectangle)))
-        drawing += "".join(sorted(map(str, self.polyline)))
-        drawing += "".join(sorted(map(str, self.pins)))
+        drawing += "".join(sorted(str(i) for i in self.arc))
+        drawing += "".join(sorted(str(i) for i in self.circle))
+        drawing += "".join(sorted(str(i) for i in self.text))
+        drawing += "".join(sorted(str(i) for i in self.rectangle))
+        drawing += "".join(sorted(str(i) for i in self.polyline))
+        drawing += "".join(sorted(str(i) for i in self.pins))
         drawing += "ENDDRAW\n"
         return drawing
 

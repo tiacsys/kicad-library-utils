@@ -92,7 +92,7 @@ class SexprBuilder(object):
         self.output += "\n"
 
     def _addItems(self) -> None:
-        self.output += " ".join(map(str, self.items))
+        self.output += " ".join(str(i) for i in self.items)
         self.items = []
 
     def startGroup(
