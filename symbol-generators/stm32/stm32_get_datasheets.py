@@ -43,7 +43,7 @@ class DocumentManager:
             with urllib.request.urlopen(
                 urllib.request.Request(url, headers=self.hdr)
             ) as url:
-                data = json.loads(url.read().decode())
+                data = json.load(url)
                 rows = data["rows"]
                 for row in rows:
                     tmp_ds_list.append(

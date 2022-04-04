@@ -78,7 +78,7 @@ verbose = args.verbose
 
 if args.replace:
     with open(args.replace) as json_file:
-        replacements = json.loads(json_file.read())
+        replacements = json.load(json_file)
 
 else:
     replacements = {}

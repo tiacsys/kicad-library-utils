@@ -83,10 +83,10 @@ if not args.regex and not args.simple:
 
 if args.regex:
     with open(args.regex) as f:
-        json_data = json.loads(f.read())
+        json_data = json.load(f)
 elif args.simple:
     with open(args.simple) as f:
-        json_data = json.loads(f.read())
+        json_data = json.load(f)
 
 footprints = []
 

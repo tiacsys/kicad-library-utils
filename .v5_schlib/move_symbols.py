@@ -145,7 +145,7 @@ if args.real and args.clean:
 
 if args.patterns:
     with open(args.patterns) as f:
-        PATTERNS = json.loads(f.read())
+        PATTERNS = json.load(f)
 else:
     PATTERNS = {}
 

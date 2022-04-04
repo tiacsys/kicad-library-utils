@@ -22,7 +22,7 @@ def logError(
     if os.path.exists(log_file) and os.path.isfile(log_file):
         with open(log_file, "r") as json_file:
             try:
-                log_data = json.loads(json_file.read())
+                log_data = json.load(json_file)
             except ValueError:
                 print("Found bad JSON data - clearing")
                 log_data = {}
