@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 99
+# E203: compatibility with black formatting (whitespace before colon)
+# E402: top-level imports should be placed before code; TODO: remove as soon as sys.path is not manipulated anymore
+extend-ignore = E203,E402
