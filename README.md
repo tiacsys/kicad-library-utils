@@ -64,7 +64,7 @@ How to use
     # run the script passing the files to be checked
     ./check_footprint.py path_to_fp1.kicad_mod path_to_fp2.kicad_mod
 
-    # Add `-v`, `-vv`, or `-vvv` for extra verbose output. The most useful is `-vv`, which explains in details the violations. Ex: 
+    # Add `-v`, `-vv`, or `-vvv` for extra verbose output. The most useful is `-vv`, which explains in details the violations. Ex:
     ./check_footprint.py path_to_fp1.kicad_mod path_to_fp2.kicad_mod -vv
 
     # run the following 'h'elp command to see other options

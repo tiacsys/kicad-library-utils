@@ -1,5 +1,5 @@
 image: python:latest
-  
+
 before_script:
   - python -V
 

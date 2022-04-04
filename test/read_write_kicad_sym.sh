@@ -19,7 +19,7 @@ function check {
   # remove temp files, forward exit code
   rm $o1
   return $R;
-} 
+}
 
 
 for file in $1/*.kicad_sym; do
