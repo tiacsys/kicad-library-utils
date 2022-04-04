@@ -509,28 +509,6 @@ conn_iec_din = {
         enclosing_rectangle=True,
         mirror=False,
     ),
-    "dual_row_din41612_zb_even-pins": CONNECTOR(
-        num_rows=2,
-        pin_per_row_range=[5, 8, 16],
-        odd_count=False,
-        symbol_name_format="DIN41612_02x{num_pins_per_row:02d}_ZB_EvenPins",
-        top_pin_number=["z2", lambda num_pin_per_row: "b2"],
-        pin_number_generator=[
-            num_gen_row_letter_first_by2,
-            num_gen_row_letter_first_by2,
-        ],
-        description=(
-            "DIN41612 connector, double row (ZB) even pins only,"
-            " 02x{num_pins_per_row:02d}"
-        ),
-        keywords="connector",
-        datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
-        default_footprint="",  # generic symbol, no default footprint
-        footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
-        enclosing_rectangle=True,
-        mirror=False,
-    ),
 }
 
 
