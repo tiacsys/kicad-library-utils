@@ -546,13 +546,14 @@ class Polyline(KicadSymbolBase):
         return (len(self.points) > 3) and (self.points[0] == self.points[-1])
 
     def get_boundingbox(self) -> Tuple[float, float, float, float]:
-        (minx, maxx, miny, maxy) = (0.0, 0.0, 0.0, 0.0)
-        for p in self.points:
-            minx = min(minx, p.x)
-            maxx = max(maxx, p.x)
-            miny = min(miny, p.y)
-            maxy = max(maxy, p.y)
-        return (maxx, maxy, minx, miny)
+        if self.points:
+            minx = min(p.x for p in self.points)
+            maxx = max(p.x for p in self.points)
+            miny = min(p.y for p in self.points)
+            maxy = max(p.y for p in self.points)
+            return (maxx, maxy, minx, miny)
+        else:
+            return (0, 0, 0, 0)
 
     def as_rectangle(self) -> "Rectangle":
         (maxx, maxy, minx, miny) = self.get_boundingbox()
