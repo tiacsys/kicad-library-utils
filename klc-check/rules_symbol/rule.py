@@ -20,7 +20,7 @@ def positionFormater(element) -> str:
         return "@ ({0}, {1})".format(
             mm_to_mil(element["posx"]), mm_to_mil(element["posy"])
         )
-    if "posx" in element.__dict__ and "posy" in element.__dict__:
+    if hasattr(element, "posx") and hasattr(element, "posy"):
         return "@ ({0}, {1})".format(mm_to_mil(element.posx), mm_to_mil(element.posy))
     raise Exception("input type: ", type(element), "not supported, ", element)
 

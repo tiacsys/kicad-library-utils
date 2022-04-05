@@ -192,7 +192,7 @@ for lib_name in new_libs:
                 )
             )
 
-        if not new_sym[symname].__eq__(old_sym[symname]):
+        if new_sym[symname] != old_sym[symname]:
             if args.verbose:
                 printer.yellow(
                     "Changed '{lib}:{name}'{alias_info}".format(

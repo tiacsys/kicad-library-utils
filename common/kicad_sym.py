@@ -143,14 +143,14 @@ class KicadSymbolBase:
         return json.dumps(self, default=lambda x: x.__dict__, indent=2)
 
     def compare_pos(self, x, y):
-        if "posx" in self.__dict__ and "posy" in self.__dict__:
+        if hasattr(self, "posx") and hasattr(self, "posy"):
             return round(self.posx, 6) == round(x, 6) and round(self.posy, 6) == round(
                 y, 6
             )
         return False
 
     def is_unit(self, unit, demorgan):
-        if "unit" in self.__dict__ and "demorgan" in self.__dict__:
+        if hasattr(self, "unit") and hasattr(self, "demorgan"):
             return self.unit == unit and self.demorgan == demorgan
         return False
 
@@ -543,7 +543,7 @@ class Polyline(KicadSymbolBase):
     def is_closed(self) -> bool:
         # if the last and first point are the same, we consider the polyline closed
         # a closed triangle will have 4 points (A-B-C-A) stored in the list of points
-        return len(self.points) > 3 and self.points[0].__eq__(self.points[-1])
+        return (len(self.points) > 3) and (self.points[0] == self.points[-1])
 
     def get_boundingbox(self) -> Tuple[float, float, float, float]:
         (minx, maxx, miny, maxy) = (0.0, 0.0, 0.0, 0.0)
