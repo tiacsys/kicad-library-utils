@@ -4,10 +4,9 @@ before_script:
   - python3 -V
 
 symbol_rulechecker:
-  only:
-    refs:
-      - merge_requests
-    changes:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - changes:
       - "common/*"
       - "klc-check/*"
       - "klc-check/*symbol/*"
@@ -19,10 +18,9 @@ symbol_rulechecker:
       metrics: metrics.txt
 
 footprint_rulechecker:
-  only:
-    refs:
-      - merge_requests
-    changes:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - changes:
       - "common/*"
       - "klc-check/*"
       - "klc-check/*footprint.pretty/*"
