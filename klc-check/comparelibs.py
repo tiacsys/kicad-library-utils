@@ -13,10 +13,12 @@ import sys
 from glob import glob
 
 # Path to common directory
-common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
+common = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
+)
 
 if common not in sys.path:
-    sys.path.append(common)
+    sys.path.insert(0, common)
 
 import check_symbol
 from kicad_sym import KicadLibrary

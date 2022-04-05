@@ -35,10 +35,12 @@ import re
 import sys
 import time
 
-common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
+common = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
+)
 
 if common not in sys.path:
-    sys.path.append(common)
+    sys.path.insert(0, common)
 
 # enable windows wildcards
 from glob import glob

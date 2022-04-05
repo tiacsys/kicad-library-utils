@@ -6,10 +6,12 @@ import re
 import sys
 from glob import glob
 
-common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
+common = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
+)
 
 if common not in sys.path:
-    sys.path.append(common)
+    sys.path.insert(0, common)
 
 from print_color import PrintColor
 from rulebase import logError

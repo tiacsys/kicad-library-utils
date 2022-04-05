@@ -11,9 +11,11 @@ from glob import glob  # enable windows wildcards
 from multiprocessing import JoinableQueue, Lock, Process, Queue
 from typing import List, Optional, Tuple
 
-common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
+common = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
+)
 if common not in sys.path:
-    sys.path.append(common)
+    sys.path.insert(0, common)
 
 from kicad_sym import KicadLibrary
 from print_color import PrintColor

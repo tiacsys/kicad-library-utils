@@ -10,13 +10,17 @@ from itertools import repeat
 
 from lxml import etree
 
-common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
+common = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
+)
 if common not in sys.path:
-    sys.path.append(common)
+    sys.path.insert(0, common)
 
-common = os.path.abspath(os.path.join(sys.path[0], "..", "..", "common"))
+common = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir, "common")
+)
 if common not in sys.path:
-    sys.path.append(common)
+    sys.path.insert(0, common)
 
 import kicad_sym
 from DrawingElements import Drawing, DrawingPin, DrawingRectangle, ElementFill

@@ -8,9 +8,11 @@ import traceback
 from glob import glob
 from typing import List, Tuple
 
-common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
+common = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
+)
 if common not in sys.path:
-    sys.path.append(common)
+    sys.path.insert(0, common)
 
 from kicad_mod import KicadMod
 from print_color import PrintColor
