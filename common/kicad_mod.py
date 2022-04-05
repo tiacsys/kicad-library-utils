@@ -14,7 +14,7 @@ from boundingbox import BoundingBox
 # Rotate a point by given angle (in degrees)
 def _rotatePoint(point: Dict[str, float], degrees: float) -> Dict[str, float]:
 
-    # @todo Does not copy! Only reference objects are compied but not the real object!
+    # @todo Does not copy! Only reference objects are compiled but not the real object!
     # Create a new point (copy)
     p = {}
     for key in point:
@@ -37,7 +37,7 @@ def _rotatePoint(point: Dict[str, float], degrees: float) -> Dict[str, float]:
 # Move point by certain offset
 def _movePoint(point: Dict[str, float], offset: Dict[str, float]) -> Dict[str, float]:
 
-    # @todo Does not copy! Only reference objects are compied but not the real object!
+    # @todo Does not copy! Only reference objects are compiled but not the real object!
     # Copy all points
 
     p = {}
@@ -420,7 +420,7 @@ class KicadMod(object):
                 Diff = math.atan2(p3y - ry, p3x - rx) - math.atan2(p1y - ry, p1x - rx)
                 # print ("\nangle =" , math.degrees( Diff ))
 
-                #  Diff is allways the shorter angle , ignoring Mid. Need to adjust
+                #  Diff is always the shorter angle, ignoring Mid. Need to adjust
                 if Diff < 0.0:
                     Diff = 2 * math.pi + Diff
 

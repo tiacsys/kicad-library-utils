@@ -430,7 +430,7 @@ class DrawingArc:
     def rotate(self, angle, origin={"x": 0, "y": 0}, apply_on_copy=False):
         # obj = self if not apply_on_copy else deepcopy(self)
 
-        raise NotImplementedError("Rotating arcs is not yet implementd")
+        raise NotImplementedError("Rotating arcs is not yet implemented")
         # return obj
 
     def __mirrorAngleHorizontal(angle):

@@ -246,11 +246,11 @@ class Device:
         name = self.root.get("RefName")
 
         # Get all the part names for this part
-        als = Device._name_search.search(name)
-        if als:
-            pre = als.group(1)
-            post = als.group(3)
-            s = als.group(2).split("-")
+        name_match = Device._name_search.search(name)
+        if name_match:
+            pre = name_match.group(1)
+            post = name_match.group(3)
+            s = name_match.group(2).split("-")
             self.name = pre + s[0] + post
             for a in s[1:]:
                 self.aliases.append(pre + a + post)

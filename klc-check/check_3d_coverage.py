@@ -126,7 +126,7 @@ class Config:
         parser.add_argument(
             "-r",
             "--root",
-            help="path to root KiCad folder (defalt is ../../)",
+            help="path to root KiCad folder (default is ../../)",
             type=str,
         )
         parser.add_argument(

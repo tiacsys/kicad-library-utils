@@ -67,7 +67,7 @@ class Rule(KLCRule):
         f_min = min(fh, fw)
         f_max = max(fh, fw)
 
-        # Check for presense of 'value'
+        # Check for presence of 'value'
         if val["layer"] not in ["F.Fab", "B.Fab"]:
             errors.append(
                 "Component value is on layer {lyr} but should be on F.Fab or B.Fab".format(
@@ -255,7 +255,7 @@ class Rule(KLCRule):
         self.missing_second_ref = self.checkSecondRef()
 
         if self.multiple_second_ref:
-            self.error("Mutliple RefDes markers found with text '${REFERENCE}'")
+            self.error("Multiple RefDes markers found with text '${REFERENCE}'")
 
         return any(
             [

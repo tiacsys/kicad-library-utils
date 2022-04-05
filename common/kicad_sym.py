@@ -109,7 +109,7 @@ def _get_value_ofRecursively(data, path, item_to_get=False):
     """
     # if we walked the whole path we are done. return the data
     if len(path) == 0:
-        # in some cases it is usefull to only get the 2nd item, for
+        # in some cases it is useful to only get the 2nd item, for
         # example ['lenght', 42] should just return 42
         if item_to_get != 0:
             return data[item_to_get]
@@ -200,8 +200,7 @@ class TextEffect(KicadSymbolBase):
 
     @classmethod
     def new_mil(cls, size: float) -> "TextEffect":
-        te = cls(mil_to_mm(size), mil_to_mm(size))
-        return te
+        return cls(mil_to_mm(size), mil_to_mm(size))
 
     def get_sexpr(self):
         fnt = ["font", ["size", self.sizex, self.sizey]]
@@ -389,7 +388,7 @@ class Pin(KicadSymbolBase):
             number_int = int(number)
         except ValueError:
             pass
-        # create and return a pin with the just extraced values
+        # create and return a pin with the extracted values
         return Pin(
             name,
             number,
@@ -856,7 +855,7 @@ class KicadSymbol(KicadSymbolBase):
                 candidates[dist] = pl
 
         if len(candidates) > 0:
-            # sort the list return the first (smalles) item
+            # sort the list return the first (smallest) item
             return candidates[sorted(candidates.keys())[0]]
         return None
 
@@ -1052,7 +1051,7 @@ class KicadLibrary(KicadSymbolBase):
         for item in sym_list:
             if item.pop(0) != "symbol":
                 raise ValueError("unexpected token in file")
-            # retrieving only the `partname` if formated as `libname:partname` (legacy format)
+            # retrieving only the `partname` if formatted as `libname:partname` (legacy format)
             partname = item.pop(0).split(":")[-1]
 
             # we found a new part, extract the symbol name

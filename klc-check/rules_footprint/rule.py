@@ -98,7 +98,7 @@ def graphItemString(
             x=graph["center"]["x"], y=graph["center"]["y"]
         )
 
-    # Unkown shape
+    # Unknown shape
     else:
         shapeText = "Graphical item"
 

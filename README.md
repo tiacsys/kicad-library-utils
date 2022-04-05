@@ -29,7 +29,7 @@ Contains various python libraries used by the check scripts and the generators.
 
 **example-generator.py**: An example on how to create symbols using python
 
-## tools directoy
+## tools directory
 
 **compare_sexpr_files.sh**: Normalizes and compares two sexpr files. Those can be `kicad_sym` or `kicad_mod` files.
 
@@ -99,15 +99,15 @@ How to use
     # run the following 'h'elp command to see other options
     ./comparelibs.py -h
 
-## Check before commiting
+## Check before committing
 
 Usually, you commit the footprint (or symbol) and let CI check your job.
-You can let git pass the check before actually commiting. If it's red,
+You can let git pass the check before actually committing. If it's red,
 fix your footprint (or symbol) !
 
 To automate the call, place a hook file in the footprint git's hooks directory,
 **/somewhere/kicad/kicad-footprints/.git/hooks** named **pre-commit**
-with containt:
+with the following content:
 ```
 #!/bin/bash
 

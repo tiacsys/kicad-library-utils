@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# File intented to demo some functions available in the Symbol Generator module.
+# File intended to demo some functions available in the Symbol Generator module.
 
 # add directory (common) that contains the kicad_sym lib to the path
 # you can also use a relative module path instead

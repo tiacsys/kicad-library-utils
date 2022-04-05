@@ -51,7 +51,7 @@ class Point:
             self.y: int = int(coordinates.get("y", 0))
         else:
             TypeError(
-                "unsuported type, Must be dict, point or coordinates given as number"
+                "unsupported type, Must be dict, point or coordinates given as number"
             )
 
         self.grid = grid

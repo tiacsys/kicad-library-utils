@@ -216,7 +216,7 @@ conn_generic = {
         ],
         description=(
             "Generic{extra_pin:s} connector, double row, 02x{num_pins_per_row:02d},"
-            " counter clockwise pin numbering scheme (similar to DIP packge numbering)"
+            " counter clockwise pin numbering scheme (similar to DIP package numbering)"
         ),
         keywords="connector",
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
