@@ -11,9 +11,7 @@ fi
 
 function normalize_sexpr {
 # python code --- START
-python3 << EOF
-import sys
-sys.path.append('../common')
+PYTHONPATH="$(dirname "$0")/../common" python3 << EOF
 import sexpr, re
 
 # read file
