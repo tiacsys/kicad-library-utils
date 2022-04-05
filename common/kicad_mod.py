@@ -50,7 +50,7 @@ def _movePoint(point: Dict[str, float], offset: Dict[str, float]) -> Dict[str, f
     return p
 
 
-class KicadMod(object):
+class KicadMod:
     """
     A class to parse KiCad footprint files (.kicad_mod format)
     """

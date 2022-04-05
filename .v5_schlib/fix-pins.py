@@ -15,7 +15,7 @@ from schlib import SchLib
 #      directions: U, D
 
 
-class CheckComponent(object):
+class CheckComponent:
     def __init__(self, component):
         self.component = component
         self.prerequisites_ok = False

@@ -8,7 +8,7 @@ from schlib import SchLib
 #  (1) resize field text sizes that are not 50mils
 
 
-class CheckComponent(object):
+class CheckComponent:
     def __init__(self, component):
         self.component = component
         self.prerequisites_ok = False

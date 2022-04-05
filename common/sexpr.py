@@ -77,7 +77,7 @@ def SexprItem(val: Any, key: Optional[str] = None) -> str:
     return fmt.format(val=val)
 
 
-class SexprBuilder(object):
+class SexprBuilder:
     def __init__(self, key):
         self.indent: int = 0
         self.output: str = ""

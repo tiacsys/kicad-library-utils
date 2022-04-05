@@ -5,7 +5,7 @@ Library for dealing with bounding boxes (2D areas defined by four points).
 from typing import Dict, Optional
 
 
-class BoundingBox(object):
+class BoundingBox:
     def __init__(
         self,
         xmin: Optional[float] = None,

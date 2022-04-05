@@ -138,7 +138,7 @@ def _has_value(data, lookup) -> bool:
     return False
 
 
-class KicadSymbolBase(object):
+class KicadSymbolBase:
     def as_json(self):
         return json.dumps(self, default=lambda x: x.__dict__, indent=2)
 

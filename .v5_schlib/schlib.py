@@ -5,7 +5,7 @@ import sys
 from collections import OrderedDict
 
 
-class Documentation(object):
+class Documentation:
     """
     A class to parse documentation files (dcm) of Schematic Libraries Files Format of the KiCad
     """
@@ -138,7 +138,7 @@ class Documentation(object):
             self.components[name] = doc
 
 
-class Component(object):
+class Component:
     """
     A class to parse components of Schematic Libraries Files Format of the KiCad
     """
@@ -460,7 +460,7 @@ class Component(object):
         return False
 
 
-class SchLib(object):
+class SchLib:
     """
     A class to parse Schematic Libraries Files Format of the KiCad
     """
