@@ -454,7 +454,7 @@ class Component(object):
 
         # if there is no filled rectangle as symbol outline and we have 3 or 4 pins, we assume this
         # is a small symbol
-        if len(self.pins) >= 3 and len(self.pins) <= 4 and len(filled_rects) == 0:
+        if (3 <= len(self.pins) <= 4) and (not filled_rects):
             return True
 
         return False

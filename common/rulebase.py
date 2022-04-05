@@ -65,7 +65,7 @@ def isValidName(
             continue
 
         # Alpha characters (simple set only)
-        if c >= "a" and c <= "z":
+        if "a" <= c <= "z":
             continue
 
         if c in ["_", "-", ".", "+", ","]:
