@@ -1,34 +1,33 @@
-#!/usr/bin/env bash
+#!/bin/sh
+#
+# Test whether a kicad symbol file can be read and written without being changed.
+# This is a test of the parser and the serializer.
+#
 
-# This script file is used to compare to sexpr files
-# with sexpr python file. Spaces and line positioning will be ignored
+set -eu
 
-if [[ $# -ne 1 ]]; then
+if [ $# -ne 1 ]; then
     echo "Usage: $0 dirWithkicad_sym"
     exit 1
 fi
 
-function check {
-  o1="$(mktemp)"
-  python3 ../common/kicad_sym.py $1 > $o1
+BASE_DIR=$(cd "$(dirname "$0")/.." && pwd -P)
 
-  # use git compare since it does a nice colorful output
-  ../tools/compare_sexpr_files.sh $1 $o1
-  R=$?
+INPUT_DIRECTORY="$1"
 
-  # remove temp files, forward exit code
-  rm $o1
-  return $R;
+
+check() {
+  local input_filename="$1"
+  python3 "$BASE_DIR/common/kicad_sym.py" "$input_filename" \
+    | "$BASE_DIR/tools/compare_sexpr_files.sh" "$input_filename"
 }
 
 
-for file in $1/*.kicad_sym; do
-  check $file
-  R=$?
-  if [ $R -ne 0 ]; then
-    echo "Error on file $file"
-    exit $R
+for file in "$INPUT_DIRECTORY"/*.kicad_sym; do
+  if ! check "$file"; then
+    echo >&2 "Error on file $file"
+    exit 1
   else
-    echo "Passed $file"
+    echo >&2 "Passed $file"
   fi
 done
