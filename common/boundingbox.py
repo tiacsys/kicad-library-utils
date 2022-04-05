@@ -66,10 +66,12 @@ class BoundingBox:
 
     @property
     def valid(self) -> bool:
-        if self.xmin and self.ymin and self.xmax and self.ymax:
-            return True
-
-        return False
+        return (
+            self.xmin is not None
+            and self.ymin is not None
+            and self.xmax is not None
+            and self.ymax is not None
+        )
 
     def containsPoint(self, x: Optional[float], y: Optional[float]) -> bool:
         if not self.valid:
@@ -113,14 +115,14 @@ class BoundingBox:
 
     @property
     def width(self) -> float:
-        if not self.xmin or not self.xmax:
+        if self.xmin is None or self.xmax is None:
             return 0.0
 
         return self.xmax - self.xmin
 
     @property
     def height(self) -> float:
-        if not self.ymin or not self.ymax:
+        if self.ymin is None or self.ymax is None:
             return 0.0
 
         return self.ymax - self.ymin
@@ -131,7 +133,7 @@ class BoundingBox:
 
     @property
     def center(self) -> Dict[str, float]:
-        if self.xmin and self.width and self.ymin and self.height:
+        if self.valid:
             return {"x": self.xmin + self.width / 2, "y": self.ymin + self.height / 2}
         else:
             return {"x": 0.0, "y": 0.0}
