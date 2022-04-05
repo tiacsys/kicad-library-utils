@@ -68,7 +68,7 @@ def isValidName(
         if "a" <= c <= "z":
             continue
 
-        if c in ["_", "-", ".", "+", ","]:
+        if c in "_-.+,":
             continue
 
         return False
