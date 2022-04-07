@@ -3,6 +3,7 @@
 import os
 
 from rules_footprint.rule import *
+from rulebase import isValidName
 
 
 class Rule(KLCRule):

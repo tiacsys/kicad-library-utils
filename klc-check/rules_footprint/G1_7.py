@@ -3,6 +3,7 @@
 import platform
 
 from rules_footprint.rule import *
+from rulebase import checkLineEndings
 
 
 class Rule(KLCRule):

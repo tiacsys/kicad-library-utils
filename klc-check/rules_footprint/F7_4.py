@@ -13,6 +13,7 @@
 #
 
 from typing import Any, Dict, List
+import re
 
 from kicad_mod import KicadMod
 from rules_footprint.rule import KLCRule

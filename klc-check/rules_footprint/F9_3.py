@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 from kicad_mod import KicadMod
 from rules_footprint.rule import KLCRule
+from rulebase import isValidName
 
 SYSMOD_PREFIX = "${KICAD6_3DMODEL_DIR}/"
 
