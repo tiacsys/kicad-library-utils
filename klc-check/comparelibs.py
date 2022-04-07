@@ -20,6 +20,7 @@ if not common in sys.path:
 
 from kicad_sym import *
 from print_color import *
+from rulebase import PrintColor, Verbosity
 import check_symbol
 
 
@@ -79,7 +80,7 @@ if 'footprints' in extra:
     fp = extra['footprints']
 else:
     fp = None
-sym_check = check_symbol.SymbolCheck(None, args.exclude, 2, fp, False if args.nocolor else True, silent = True)
+sym_check = check_symbol.SymbolCheck(None, args.exclude, Verbosity(2), fp, False if args.nocolor else True, silent = True)
 
 # iterate over all new libraries
 for lib_name in new_libs:
