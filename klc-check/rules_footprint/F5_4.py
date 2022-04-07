@@ -25,16 +25,16 @@ class Rule(KLCRule):
                 return True
             return False
 
-            overlap = []
-            for c in circles:
-                for c2 in circles:
-                    if c is c2:
-                        continue
-                    if is_same(c, c2):
-                        if not c in overlap:
-                            overlap.append(c)
+        overlap = []
+        for c in circles:
+            for c2 in circles:
+                if c is c2:
+                    continue
+                if is_same(c, c2):
+                    if not c in overlap:
+                        overlap.append(c)
 
-            return overlap
+        return overlap
 
     def getLinesOverlap(self, lines: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         # from https://stackoverflow.com/questions/328107/how-can-you-determine-a-point-is-between-two-other-points-on-a-line-segment
