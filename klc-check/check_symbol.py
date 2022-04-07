@@ -227,7 +227,7 @@ if __name__ == '__main__':
     # Set verbosity globally
     verbosity = Verbosity.NONE
     if args.verbose:
-        verbosity = args.verbose
+        verbosity = Verbosity(args.verbose)
     KLCRule.verbosity = verbosity
 
     # check if a footprints dir was passed

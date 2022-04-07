@@ -121,7 +121,7 @@ def do_rulecheck(module, rules, metrics) -> Tuple[int, int]:
                 first = False
 
             printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
-            rule.processOutput(printer, args.verbose, args.silent)
+            rule.processOutput(printer, verbosity, args.silent)
 
         elif rule.hasErrors():
             if args.log:

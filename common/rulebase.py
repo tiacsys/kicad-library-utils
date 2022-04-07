@@ -217,7 +217,7 @@ class KLCRuleBase():
             s = message[2] # Severity
             msg = message[0]
 
-            if v <= verbosity.value:
+            if v.value <= verbosity.value:
                 if s == Severity.INFO:
                     printer.gray(msg, indentation = 4)
                 elif s == Severity.WARNING:
