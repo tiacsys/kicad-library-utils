@@ -1,38 +1,42 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
+import sys
+from typing import List
+
+from kicad_sym import KicadSymbol, Pin
+from rules_symbol.rule import KLCRule, pinString
 
 
 class Rule(KLCRule):
     """Rules for pin stacking"""
 
-    special_power_pins = ['power_in', 'power_out', 'output']
+    SPECIAL_POWER_PINS = ['power_in', 'power_out', 'output']
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.different_names = []
-        self.different_types = []
-        self.visible_pin_not_lowest = []
-        self.NC_stacked = []
-        self.non_numeric = []
-        self.more_then_one_visible = False
+        self.different_names: List[str] = []
+        self.different_types: List[str] = []
+        self.visible_pin_not_lowest: List[str] = []
+        self.NC_stacked: List[Pin] = []
+        self.non_numeric: List[str] = []
+        self.more_then_one_visible: bool = False
 
-    def count_pin_etypes(self, pins, etyp):
+    def count_pin_etypes(self, pins: List[Pin], etyp: str) -> int:
         n = 0
         for pin in pins:
-           if pin.etype == etyp:
-               n += 1
+            if pin.etype == etyp:
+                n += 1
         return n
 
-    def get_smallest_pin_number(self, pins):
+    def get_smallest_pin_number(self, pins: List[Pin]) -> int:
         min_pin_number = sys.maxsize
         for p in pins:
-            if p.number_int != None:
+            if p.number_int is not None:
                 min_pin_number = min(p.number_int, min_pin_number)
         return min_pin_number
 
-    def check(self):
+    def check(self) -> bool:
         # no need to check this for an alias
         if self.component.extends != None:
             return False
@@ -92,7 +96,7 @@ class Rule(KLCRule):
                 if pin.etype != common_etype:
                     # this could be one of the special cases
                     # at least one of the two checked pins need to be 'special' type. if not, this is an error
-                    if pin.etype in self.special_power_pins or common_etype in self.special_power_pins:
+                    if pin.etype in self.SPECIAL_POWER_PINS or common_etype in self.SPECIAL_POWER_PINS:
                         possible_power_pin_stacks.append(pos)
                     else:
                         if not pos in self.different_types:
@@ -179,5 +183,5 @@ class Rule(KLCRule):
 
         return self.more_then_one_visible or len(self.different_types) > 0 or len(self.NC_stacked) > 0 or len(self.different_names) > 0 or special_stack_err
 
-    def fix(self):
+    def fix(self) -> None:
         self.info("FIX not supported (yet)! Please fix manually.")

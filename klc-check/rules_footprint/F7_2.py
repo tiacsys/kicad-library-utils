@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 
-from rules_footprint.rule import *
+from typing import List
+
+from kicad_mod import KicadMod
+from rules_footprint.rule import KLCRule
+
 
 class Rule(KLCRule):
     """For through-hole components, footprint anchor is set on pad 1"""
 
-    def __init__(self, component, args):
+    def __init__(self, component: KicadMod, args):
         super().__init__(component, args)
 
-        self.pin1_position = []
-        self.pin1_count = 0
+        self.pin1_position: List[float] = []
+        self.pin1_count: int = 0
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
@@ -65,10 +69,11 @@ class Rule(KLCRule):
 
         return False
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         module = self.module
         if self.check() and len(self.pin1_position)>0:
             self.info("Moved anchor position to Pin-1")

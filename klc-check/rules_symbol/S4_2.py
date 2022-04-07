@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
 import re
+
+from kicad_sym import KicadSymbol
+from rules_symbol.rule import KLCRule, pinString
 
 
 class Rule(KLCRule):
     """Pins should be grouped by function"""
 
-    def checkGroundPins(self):
+    def checkGroundPins(self) -> None:
         # Includes negative power pins
         GND = ['^[ad]*g(rou)*nd(a)*$', '^[ad]*v(ss)$']
 
@@ -23,7 +25,7 @@ class Rule(KLCRule):
                             self.warning("Ground and negative power pins should be placed at bottom of symbol")
                         self.warningExtra(pinString(pin))
 
-    def checkPowerPins(self):
+    def checkPowerPins(self) -> None:
         # Positive power pins only
         PWR = ['^[ad]*v(aa|cc|dd|bat|in)$']
 
@@ -39,7 +41,7 @@ class Rule(KLCRule):
                             self.warning("Positive power pins should be placed at top of symbol")
                         self.warningExtra(pinString(pin))
 
-    def check(self):
+    def check(self) -> bool:
         # no need to check pins on an alias
         if self.component.extends != None:
             return False
@@ -50,8 +52,9 @@ class Rule(KLCRule):
         # No errors, only warnings
         return False
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         self.info("Fixing not supported")

@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
-import re
+from kicad_sym import KicadSymbol
+from rules_symbol.rule import KLCRule
 
 
 class Rule(KLCRule):
     """Power flag symbols"""
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.makePinINVISIBLE = False
-        self.makePinPowerInput = False
-        self.fixTooManyPins = False
-        self.fixPinSignalName = False
-        self.fixNoFootprint = False
-        self.fixWrongRef = False
+        self.makePinINVISIBLE: bool = False
+        self.makePinPowerInput: bool = False
+        self.fixTooManyPins: bool = False
+        self.fixPinSignalName: bool = False
+        self.fixNoFootprint: bool = False
+        self.fixWrongRef: bool = False
 
-    def check(self):
+    def check(self) -> bool:
         fail = False
 
         if self.component.is_power_symbol():
@@ -57,10 +57,11 @@ class Rule(KLCRule):
 
         return fail
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         if self.fixTooManyPins:
             self.info("FIX for too many pins in power-symbol not supported")
         if self.makePinPowerInput:

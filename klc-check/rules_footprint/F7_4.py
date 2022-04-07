@@ -12,19 +12,23 @@
 #
 #
 
-from rules_footprint.rule import *
+from typing import Any, Dict, List
+
+from kicad_mod import KicadMod
+from rules_footprint.rule import KLCRule
+
 
 class Rule(KLCRule):
     """Pad requirements for THT footprints"""
 
-    required_layers = ["*.Cu","*.Mask"]
+    REQUIRED_LAYERS = ["*.Cu", "*.Mask"]
 
-    def __init__(self, component, args):
+    def __init__(self, component: KicadMod, args):
         super().__init__(component, args)
 
-        self.wrong_layers = []
+        self.wrong_layers: List[Dict[str, Any]] = []
 
-    def checkPads(self, pads):
+    def checkPads(self, pads: List[Dict[str, Any]]) -> bool:
 
         self.wrong_layers = []
 
@@ -102,7 +106,7 @@ class Rule(KLCRule):
             err = False
 
             # Check required layers
-            for layer in self.required_layers:
+            for layer in self.REQUIRED_LAYERS:
                 if layer not in layers and not skip:
                     errors.append("Pad '{n}' missing layer '{lyr}'".format(
                         n=pad['number'],
@@ -111,7 +115,7 @@ class Rule(KLCRule):
 
             # Check for extra layers
             for layer in layers:
-                if layer not in self.required_layers:
+                if layer not in self.REQUIRED_LAYERS:
                     errors.append("Pad '{n}' has extra layer '{lyr}'".format(
                         n = pad['number'],
                         lyr = layer))
@@ -129,24 +133,25 @@ class Rule(KLCRule):
 
         return len(self.wrong_layers) > 0
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
             * pin1_position
             * pin1_count
         """
+
         module = self.module
 
         return any([self.checkPads(module.pads)])
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         module = self.module
 
         for pad in module.filterPads('thru_hole'):
             self.info("Pad {n} - Setting required layers for THT pad".format(n=pad['number']))
-            pad['layers'] = self.required_layers
-
+            pad['layers'] = self.REQUIRED_LAYERS

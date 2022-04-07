@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from rules_footprint.rule import *
+from rules_footprint.rule import KLCRule
+
 
 class Rule(KLCRule):
     """Pad 1 should be denoted by rectangular pad"""
 
-    names = ['1', 'A', 'A1', 'P1', 'PAD1']
-    pad_1_shapes = ['rect', 'roundrect']
+    NAMES = ['1', 'A', 'A1', 'P1', 'PAD1']
+    PAD_1_SHAPES = ['rect', 'roundrect']
 
-    def check(self):
+    def check(self) -> bool:
 
         # Skip checks for non THT parts
         if not self.module.attribute == 'through_hole':
@@ -21,12 +22,12 @@ class Rule(KLCRule):
             num = pad['number']
 
             # Pin 1!
-            if str(num).upper() in self.names:
-                if not pad['shape'] in self.pad_1_shapes:
+            if str(num).upper() in self.NAMES:
+                if not pad['shape'] in self.PAD_1_SHAPES:
                     pad_1_rectangular = False
 
             else:
-                if pad['shape'] in self.pad_1_shapes:
+                if pad['shape'] in self.PAD_1_SHAPES:
                     other_pads_rectangular = True
 
         if not pad_1_rectangular and len(self.module.pads) >= 2:
@@ -38,12 +39,13 @@ class Rule(KLCRule):
 
         return False
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         module = self.module
 
         for pad in module.filterPads('thru_hole'):
             self.info("Pad {n} - Setting required layers for THT pad".format(n=pad['number']))
-            pad['layers'] = self.required_layers
+            pad['layers'] = self.required_layers # @todo required_layers does not exist

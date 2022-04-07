@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
 import re
+from typing import List
+
+from kicad_sym import KicadSymbol, Pin
+from rules_symbol.rule import KLCRule, pinString
 
 
 class Rule(KLCRule):
@@ -10,21 +13,21 @@ class Rule(KLCRule):
     # No-connect pins should be "N"
     NC_PINS = ['^nc$', '^dnc$', '^n\.c\.$']
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.invisible_errors = []
-        self.type_errors = []
+        self.invisible_errors: List[Pin] = []
+        self.type_errors: List[Pin] = []
 
     # check if a pin name fits within a list of possible pins (using regex testing)
-    def test(self, pinName, nameList):
+    def test(self, pinName: str, nameList: List[str]) -> bool:
         for name in nameList:
             if re.search(name, pinName, flags=re.IGNORECASE) is not None:
                 return True
 
         return False
 
-    def checkNCPins(self, pins):
+    def checkNCPins(self, pins: List[Pin]) -> bool:
         self.invisible_errors = []
         self.type_errors = []
 
@@ -58,13 +61,14 @@ class Rule(KLCRule):
 
         return len(self.invisible_errors) > 0 or len(self.type_errors) > 0
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
-            * probably_wrong_pin_types
-            * double_inverted_pins
+            * invisible_errors
+            * type_errors
         """
+
         # no need to check this for an alias
         if self.component.extends != None:
             return False
@@ -77,10 +81,11 @@ class Rule(KLCRule):
 
         return fail
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         self.info("Fixing...")
 
         for pin in self.invisible_errors:

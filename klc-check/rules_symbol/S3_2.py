@@ -1,24 +1,27 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
+from typing import List
 
+from kicad_sym import KicadSymbol, Pin, Property, mil_to_mm, mm_to_mil
+from rules_symbol.rule import KLCRule
 
 class Rule(KLCRule):
     """Text fields should use a common text size of 50mils"""
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.violating_pins = []
-        self.violating_properties = []
+        self.violating_pins: List[Pin] = []
+        self.violating_properties: List[Property] = []
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
             * violating_pins
             * violating_properties
         """
+
         self.violating_properties = []
         for prop in self.component.properties:
             text_size = mm_to_mil(prop.effects.sizex)
@@ -54,10 +57,11 @@ class Rule(KLCRule):
 
         return False
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         if len(self.violating_properties) > 0:
             self.info("Fixing field text size")
         for prop in self.violating_properties:

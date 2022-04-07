@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
-import re
+from kicad_sym import KicadSymbol
+from rules_symbol.rule import KLCRule
 
 
 class Rule(KLCRule):
     """Graphical symbols follow some special rules/KLC-exceptions"""
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.fixTooManyPins = False
-        self.fixNoFootprint = False
+        self.fixTooManyPins: bool = False
+        self.fixNoFootprint: bool = False
 
-    def check(self):
+    def check(self) -> bool:
         # no need to check this for an alias
         if self.component.extends != None:
             return False
-
 
         fail = False
         if self.component.is_graphic_symbol():
@@ -29,7 +28,7 @@ class Rule(KLCRule):
             # footprint field must be empty
             fp_prop = self.component.get_property("Footprint")
             if fp_prop and fp_prop.value != '':
-                self.error("Graphical symbols have no footprint association (footprint was set to '"+fp_prop.value+"')")
+                self.error("Graphical symbols have no footprint association (footprint was set to '" + fp_prop.value+"')")
                 fail = True
                 self.fixNoFootprint = True
             # FPFilters must be empty
@@ -59,10 +58,11 @@ class Rule(KLCRule):
 
         return fail
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         if self.fixTooManyPins:
             self.info("FIX for too many pins in graphical symbol")
             self.component.pins = []

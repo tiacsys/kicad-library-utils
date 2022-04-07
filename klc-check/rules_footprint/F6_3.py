@@ -1,19 +1,23 @@
 # -*- coding: utf-8 -*-
 
+from typing import Any, Dict, List
+
+from kicad_mod import KicadMod
 from rules_footprint.rule import *
+
 
 class Rule(KLCRule):
     """Pad requirements for SMD footprints"""
 
-    required_layers = ["Cu", "Paste", "Mask"]
-    sides = ["F.", "B."]
+    REQUIRED_LAYERS = ("Cu", "Paste", "Mask")
+    SIDES = ("F.", "B.")
 
-    def __init__(self, component, args):
+    def __init__(self, component: KicadMod, args):
         super().__init__(component, args)
 
-        self.stencil_pads_with_number = []
+        self.stencil_pads_with_number: List[Dict[str, Any]] = []
 
-    def checkPads(self, pads):
+    def checkPads(self, pads: List[Dict[str, Any]]) -> bool:
 
         self.stencil_pads_with_number = []
         missing_layer_errors = []
@@ -44,9 +48,9 @@ class Rule(KLCRule):
             err = False
 
             # Check that required layers are present
-            for layer in self.required_layers:
+            for layer in self.REQUIRED_LAYERS:
                 present = False
-                for side in self.sides:
+                for side in self.SIDES:
                     lyr = side + layer
                     if lyr in layers:
                         present = True
@@ -101,8 +105,8 @@ class Rule(KLCRule):
 
             # Check for extra layers
             allowed = []
-            for layer in self.required_layers:
-                for side in self.sides:
+            for layer in self.REQUIRED_LAYERS:
+                for side in self.SIDES:
                     allowed.append(side + layer)
 
             for layer in layers:
@@ -131,22 +135,19 @@ class Rule(KLCRule):
 
         return err
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
-            * pin1_position
-            * pin1_count
+            * stencil_pads_with_number
         """
-        module = self.module
 
-        return self.checkPads(module.filterPads("smd"))
+        return self.checkPads(self.module.filterPads("smd"))
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
-        module = self.module
 
         for pad in self.stencil_pads_with_number:
             self.info("Removing number '{x}' for stencil pad".format(x=pad['number']))

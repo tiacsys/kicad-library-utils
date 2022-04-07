@@ -17,29 +17,31 @@
 import math
 from copy import copy
 
+from typing import Optional
+
 class Point():
-    def __init__(self, coordinates=None, y=None, grid = None, distance = None, angle = None):
+    def __init__(self, coordinates = None, y = None, grid: Optional[float] = None, distance: Optional[float] = None, angle: Optional[float] = None):
         if distance is not None and angle is not None:
             angle = math.radians(angle)
-            self.x = int(round(distance*math.cos(angle)))
-            self.y = int(round(distance*math.sin(angle)))
+            self.x: int = int(round(distance * math.cos(angle)))
+            self.y: int = int(round(distance * math.sin(angle)))
         elif coordinates is None:
-            self.x = 0
-            self.y = 0
+            self.x: int = 0
+            self.y: int = 0
         elif type(coordinates) in [int, float]:
             if y is not None:
-                self.x = int(coordinates)
-                self.y = int(y)
+                self.x: int = int(coordinates)
+                self.y: int = int(y)
             else:
                 raise TypeError('you have to give x and y coordinates')
 
         elif isinstance(coordinates, Point):
-            self.x = coordinates.x
-            self.y = coordinates.y
+            self.x: int = coordinates.x
+            self.y: int = coordinates.y
 
         elif type(coordinates) is dict:
-            self.x = int(coordinates.get('x', 0))
-            self.y = int(coordinates.get('y', 0))
+            self.x: int = int(coordinates.get('x', 0))
+            self.y: int = int(coordinates.get('y', 0))
         else:
             TypeError('unsuported type, Must be dict, point or coordinates given as number')
 
@@ -47,7 +49,7 @@ class Point():
         if grid is not None:
             self.roundToGrid()
 
-    def rotate(self, angle, origin={'x':0, 'y':0}, **kwargs):
+    def rotate(self, angle, origin = {'x': 0, 'y': 0}, **kwargs):
         point = self if not kwargs.get('apply_on_copy', False) else copy(self)
         point.grid = kwargs.get('new_grid', point.grid)
 
@@ -63,7 +65,6 @@ class Point():
             point.roundToGrid()
         return point
 
-
     def translate(self, distance, **kwargs):
         point = self if not kwargs.get('apply_on_copy', False) else copy(self)
         point.grid = kwargs.get('new_grid', point.grid)
@@ -75,8 +76,7 @@ class Point():
             point.roundToGrid()
         return point
 
-
-    def mirrorHorizontal(self, **kwargs):
+    def mirrorHorizontal(self, **kwargs) -> 'Point':
         point = self if not kwargs.get('apply_on_copy', False) else copy(self)
         point.grid = kwargs.get('new_grid', point.grid)
 
@@ -85,7 +85,7 @@ class Point():
             point.roundToGrid()
         return point
 
-    def mirrorVertical(self, **kwargs):
+    def mirrorVertical(self, **kwargs) -> 'Point':
         point = self if not kwargs.get('apply_on_copy', False) else copy(self)
         point.grid = kwargs.get('new_grid', point.grid)
 
@@ -94,12 +94,12 @@ class Point():
             point.roundToGrid()
         return point
 
-    def roundCoordinateToGrid(value, base, apply_on_copy = False):
-    	if value >= 0:
-    		return math.floor(value/base) * base
-    	return math.ceil(value/base) * base
+    def roundCoordinateToGrid(self, value: float, base: int, apply_on_copy: bool = False):
+        if value >= 0:
+            return math.floor(value / base) * base
+        return math.ceil(value / base) * base
 
-    def roundToGrid(self, base=None):
+    def roundToGrid(self, base: Optional[float] = None):
         if base is None:
             base = self.grid
 
@@ -109,24 +109,26 @@ class Point():
         self.x = Point.roundCoordinateToGrid(self.x, base)
         self.y = Point.roundCoordinateToGrid(self.y, base)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Point ({x:d}, {y:d})'.format(x = int(self.x), y = int(self.y))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '{x:d} {y:d}'.format(x = int(self.x), y = int(self.y))
 
-    def __format__(self, format):
+    def __format__(self, format: str) -> str:
         if format == 's':
             return str(self)
         elif format == 'r':
             return repr(self)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """Overrides the default implementation"""
+
         if isinstance(self, other.__class__):
             return self.__dict__ == other.__dict__
         return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         """Overrides the default implementation (unnecessary in Python 3)"""
+
         return not self.__eq__(other)

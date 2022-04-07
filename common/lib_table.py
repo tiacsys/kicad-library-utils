@@ -1,8 +1,10 @@
 import re
 
+from typing import Dict, List
+
 class LibTable:
 
-    def __init__(self, filename):
+    def __init__(self, filename: str):
 
         RE_NAME = r'\(name "?([^\)"]*)"?\)'
         RE_TYPE = r'\(type "?([^\)"]*)"?\)'
@@ -10,8 +12,8 @@ class LibTable:
         RE_OPT  = r'\(options "?([^\)"]*)"?\)'
         RE_DESC = r'\(descr "?([^\)"]*)"?'
 
-        self.entries = []
-        self.errors = []
+        self.entries: List[Dict[str, str]] = []
+        self.errors: List[str] = []
 
         with open(filename, 'r') as lib_table_file:
 
@@ -39,5 +41,3 @@ class LibTable:
 
                 else:
                     self.errors.append(line)
-
-    

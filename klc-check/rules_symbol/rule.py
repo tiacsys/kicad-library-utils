@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import sys
 import os
+import sys
 
 common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
 
 if common not in sys.path:
     sys.path.append(common)
 
-from rulebase import *
-from kicad_sym import mm_to_mil, mil_to_mm
+from kicad_sym import KicadSymbol, Pin, mil_to_mm, mm_to_mil
+from rulebase import KLCRuleBase, Verbosity
 
-def pinString(pin, loc=True, unit=None, convert=None):
+
+def pinString(pin: Pin, loc: bool = True, unit = None, convert = None) -> str:
     return "Pin {name} ({num}){loc}{unit}".format(
         name=pin.name,
         num=pin.number,
@@ -19,7 +20,7 @@ def pinString(pin, loc=True, unit=None, convert=None):
         unit=' in unit {n}'.format(n=pin.unit) if unit else '')
 
 
-def positionFormater(element):
+def positionFormater(element) -> str:
     if type(element) == type({}):
         if(not {"posx", "posy"}.issubset(element.keys())):
             raise Exception("missing keys 'posx' and 'posy' in"+str(element))
@@ -34,8 +35,8 @@ class KLCRule(KLCRuleBase):
 
     Create the methods check and fix to use with the kicad lib files.
     """
-    verbosity = 0
+    verbosity: Verbosity = Verbosity.NONE
 
-    def __init__(self, component):
-        KLCRuleBase.__init__(self)
-        self.component = component
+    def __init__(self, component: KicadSymbol):
+        super().__init__()
+        self.component: KicadSymbol = component

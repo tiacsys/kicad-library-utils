@@ -1,49 +1,54 @@
 #!/usr/bin/env python3
 
 import argparse
-import sys
 import os
-import time
-from multiprocessing import Queue, Process, JoinableQueue, Lock
 import queue
+import sys
+import time
 import traceback
-
-from glob import glob # enable windows wildcards
+from glob import glob  # enable windows wildcards
+from multiprocessing import JoinableQueue, Lock, Process, Queue
+from typing import List, Optional, Tuple
 
 common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
 if not common in sys.path:
     sys.path.append(common)
 
-from kicad_sym import *
+from typing import List, Optional
 
+from kicad_sym import *
 from print_color import *
-from rules_symbol import __all__ as all_rules
+from rulebase import PrintColor, Verbosity
+
 from rules_symbol import *
+from rules_symbol import __all__ as all_rules
 from rules_symbol.rule import KLCRule
 
+
 class SymbolCheck():
-    def __init__(self, selected_rules = None, excluded_rules = None, verbosity = 0, footprints = None, use_color = True, no_warnings = False, silent = False, log = False):
+    def __init__(self, selected_rules: Optional[List[str]] = None, excluded_rules: Optional[List[str]] = None, verbosity: Verbosity = Verbosity.NONE, footprints = None, use_color: bool = True, no_warnings: bool = False, silent: bool = False, log: bool = False):
         self.footprints = footprints
         self.printer = PrintColor(use_color=use_color)
-        self.verbosity = verbosity
-        self.metrics = []
-        self.no_warnings = no_warnings
-        self.log = log
-        self.silent = silent
-        self.error_count = 0
-        self.warning_count = 0
+        self.verbosity: Verbosity = verbosity
+        self.metrics: List[str] = []
+        self.no_warnings: bool = no_warnings
+        self.log: bool = log
+        self.silent: bool = silent
+        self.error_count: int = 0
+        self.warning_count: int = 0
 
         # build a list of rules to work with
-        self.rules = []
+        self.rules: List[KLCRule] = []
+
         for r in all_rules:
             r_name = r.replace('_', '.')
-            if selected_rules == None or r_name in selected_rules:
-                if excluded_rules != None and r_name in excluded_rules:
+            if selected_rules is None or r_name in selected_rules:
+                if excluded_rules is not None and r_name in excluded_rules:
                     pass
                 else:
                     self.rules.append(globals()[r].Rule)
 
-    def do_unittest(self, symbol):
+    def do_unittest(self, symbol) -> Tuple[int, int]:
         error_count = 0
         m = re.match(r'(\w+)__(.+)__(.+)', symbol.name)
         if not m:
@@ -70,12 +75,12 @@ class SymbolCheck():
                     error_count += 1
                     continue
                 self.printer.green("Test '{sym}' passed".format(sym=symbol.name))
-                        
+
             else:
                continue
         return (error_count, 0)
 
-    def do_rulecheck(self, symbol):
+    def do_rulecheck(self, symbol) -> Tuple[int, int]:
         symbol_error_count = 0
         symbol_warning_count = 0
         first = True
@@ -83,7 +88,7 @@ class SymbolCheck():
             rule.footprints_dir = self.footprints
             rule = rule(symbol)
 
-            if self.verbosity > 2:
+            if self.verbosity.value > Verbosity.HIGH.value:
               self.printer.white("Checking rule " + rule.name)
             rule.check()
 
@@ -117,17 +122,17 @@ class SymbolCheck():
         self.metrics.append('{l}.{p}.errors {n}'.format(l=symbol.libname, p=symbol.name, n=symbol_error_count))
         return(symbol_error_count, symbol_warning_count)
 
-    def check_library(self, filename, component = None, pattern = None, is_unittest = False):
-        error_count  = 0
+    def check_library(self, filename: str, component = None, pattern = None, is_unittest: bool = False) -> Tuple[int, int]:
+        error_count = 0
         warning_count = 0
         libname = ""
         if not os.path.exists(filename):
             self.printer.red('File does not exist: %s' % filename)
-            return (1,0)
+            return (1, 0)
 
         if not filename.endswith('.kicad_sym'):
             self.printer.red('File is not a .kicad_sym : %s' % filename)
-            return (1,0)
+            return (1, 0)
 
         try:
             library = KicadLibrary.from_file(filename)
@@ -165,7 +170,7 @@ class SymbolCheck():
         return (error_count, warning_count)
 
 
-def worker(inp, outp, lock, selected_rules, excluded_rules, verbosity, footprints, args, i=0):
+def worker(inp, outp, lock, selected_rules, excluded_rules, verbosity: Verbosity, footprints, args, i=0):
     # have one instance of SymbolCheck per worker
     c = SymbolCheck(selected_rules, excluded_rules, verbosity, footprints, not args.nocolor, no_warnings = args.nowarnings, silent = args.silent, log = args.log)
     c.printer.buffered = True
@@ -207,8 +212,8 @@ if __name__ == '__main__':
     parser.add_argument('-j', '--multiprocess', help='use parallel processing')
     parser.add_argument('--footprints', help='Path to footprint libraries (.pretty dirs). Specify with e.g. "~/kicad/footprints/"')
     args = parser.parse_args()
-   
-    # 
+
+    #
     if args.rule:
         selected_rules = args.rule.split(",")
     else:
@@ -220,13 +225,13 @@ if __name__ == '__main__':
         excluded_rules = None
 
     # Set verbosity globally
-    verbosity = 0
+    verbosity = Verbosity.NONE
     if args.verbose:
         verbosity = args.verbose
     KLCRule.verbosity = verbosity
 
     # check if a footprints dir was passed
-    footprints = args.footprints if args.footprints else None
+    footprints = args.footprints
 
     # populate list of files
     files = []
@@ -259,7 +264,7 @@ if __name__ == '__main__':
     lock = Lock()
     for i in range(int(args.multiprocess) if args.multiprocess else 1):
         p = Process(target=worker, args=(task_queue, out_queue, lock, selected_rules, excluded_rules, verbosity, footprints, args, i))
-        jobs.append (p)
+        jobs.append(p)
         p.start()
         job_output[str(i)] = []
 
@@ -269,7 +274,7 @@ if __name__ == '__main__':
             while True:
                 try:
                     id,line = out_queue.get(block=False).split(',')
-                    job_output [id].append (line)
+                    job_output [id].append(line)
                 except queue.Empty:
                     break
             if not p.is_alive():
@@ -282,7 +287,7 @@ if __name__ == '__main__':
     # done checking all files
     error_count = 0
     if args.metrics or args.unittest:
-        metrics_file = open(r"metrics.txt","a+")
+        metrics_file = open("metrics.txt", "a+")
 
         for key in job_output:
             for line in job_output[key]:

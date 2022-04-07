@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
+from rules_symbol.rule import KLCRule
 
 
 class Rule(KLCRule):
     """Pins not connected on the footprint may be omitted from the symbol"""
 
-    def checkMissingPins(self):
+    def checkMissingPins(self) -> bool:
         int_pins = []
         for pin in self.component.pins:
             try:
@@ -28,14 +28,14 @@ class Rule(KLCRule):
                          v="are" if len(missing_pins) > 1 else "is"))
         return False
 
-    def check(self):
+    def check(self) -> bool:
         # no need to check pins on an alias
-        if self.component.extends != None:
+        if self.component.extends is not None:
             return False
 
         return self.checkMissingPins()
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """

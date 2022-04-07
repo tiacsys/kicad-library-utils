@@ -1,30 +1,31 @@
 # -*- coding: utf-8 -*-
 
 import math
-import string
-import sys, os
-import math
-import re
+import os
+import sys
+from typing import Any, Dict
 
-common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
+common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
 
-if not common in sys.path:
+if common not in sys.path:
     sys.path.append(common)
 
-from rulebase import *
+from kicad_mod import KicadMod
+from rulebase import KLCRuleBase
 
-def mapToGrid(dimension, grid):
+
+def mapToGrid(dimension: float, grid: float) -> float:
     return round(dimension / grid) * grid
 
 # Convert mm to microns
-def mmToNanoMeter(mm):
+def mmToNanoMeter(mm: float) -> float:
     return round(mm * 1E6)
 
-def getStartPoint(graph):
+def getStartPoint(graph: Dict[str, Any]):
     if 'center' in graph:
         return graph['end']
     elif 'angle' in graph:
-        # dosome magic to find the actual start point
+        # do some magic to find the actual start point
         # fetch values
         x_c = graph['start']['x']
         y_c = graph['start']['y']
@@ -49,7 +50,7 @@ def getStartPoint(graph):
     else:
         return None
 
-def getEndPoint(graph):
+def getEndPoint(graph: Dict[str, Any]):
     if 'end' in graph:
         return graph['end']
     else:
@@ -57,7 +58,7 @@ def getEndPoint(graph):
 
 # Display string for a graph item
 # Line / Arc / Circle
-def graphItemString(graph, layer=False, width=False):
+def graphItemString(graph: Dict[str, Any], layer: bool = False, width: bool = False) -> str:
 
     layerText = ""
     shapeText = ""
@@ -100,22 +101,21 @@ class KLCRule(KLCRuleBase):
     """
     A base class to represent a KLC rule
     """
-    def __init__(self, module, args):
 
-        KLCRuleBase.__init__(self)
-    
-        self.module = module
+    def __init__(self, module: KicadMod, args):
+
+        super().__init__()
+
+        self.module: KicadMod = module
         self.args = args
-        self.needsFixMore=False
+        self.needsFixMore: bool = False
 
         # Illegal chars
         self.illegal_chars = ['*', '?', ':', '/', '\\', '[', ']', ';', '|', '=', ',']
 
-    def fix(self):
+    def fix(self) -> None:
         self.info("fix not supported")
-        return
-        
-    def fixmore(self):
+
+    def fixmore(self) -> None:
         if self.needsFixMore:
             self.info("fixmore not supported")
-        return

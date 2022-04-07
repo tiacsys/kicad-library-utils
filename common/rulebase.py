@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import inspect, os, sys
+import inspect
 import json
+import os
+from enum import Enum
+from typing import List, Tuple
 
-def logError(log_file, rule_name, lib_name, item_name, warning=False):
+from print_color import PrintColor
+
+
+def logError(log_file: str, rule_name: str, lib_name: str, item_name: str, warning: bool = False) -> None:
     """
     Log KLC error output to a json file.
     The JSON file will contain a cumulative dict
@@ -42,31 +48,31 @@ def logError(log_file, rule_name, lib_name, item_name, warning=False):
         json_file.write(op)
 
 # Static functions
-def isValidName(name, checkForGraphicSymbol=False, checkForPowerSymbol=False):
-        name = str(name).lower()
-        firstChar=True
-        for c in name:
-            # first character may be '~' in some cases
-            if (checkForPowerSymbol or checkForGraphicSymbol) and firstChar and c=='~':
-                continue
+def isValidName(name, checkForGraphicSymbol: bool = False, checkForPowerSymbol: bool = False) -> bool:
+    name = str(name).lower()
+    firstChar = True
+    for c in name:
+        # first character may be '~' in some cases
+        if (checkForPowerSymbol or checkForGraphicSymbol) and firstChar and c == '~':
+            continue
 
-            firstChar=False
-            # Numeric characters check
-            if c.isalnum():
-                continue
+        firstChar=False
+        # Numeric characters check
+        if c.isalnum():
+            continue
 
-            # Alpha characters (simple set only)
-            if c >= 'a' and c <= 'z':
-                continue
+        # Alpha characters (simple set only)
+        if c >= 'a' and c <= 'z':
+            continue
 
-            if c in ['_', '-', '.', '+', ',']:
-                continue
+        if c in ['_', '-', '.', '+', ',']:
+            continue
 
-            return False
+        return False
 
-        return True
+    return True
 
-def checkLineEndings(filename):
+def checkLineEndings(filename: str):
     """
     Check for proper (Unix) line endings
     """
@@ -83,26 +89,26 @@ def checkLineEndings(filename):
 
     return True
 
-class Verbosity:
-    NONE=0
-    NORMAL=1
-    HIGH=2
+class Verbosity(Enum):
+    NONE = 0
+    NORMAL = 1
+    HIGH = 2
 
-class Severity:
-    INFO=0
-    WARNING=1
-    ERROR=2
-    SUCCESS=3
+class Severity(Enum):
+    INFO = 0
+    WARNING = 1
+    ERROR = 2
+    SUCCESS = 3
 
-class KLCRuleBase(object):
+class KLCRuleBase():
     """
     A base class to represent a KLC rule
     """
 
-    verbosity = 0
+    verbosity: Verbosity = Verbosity.NONE
 
     @property
-    def name(self):
+    def name(self) -> str:
         path = inspect.getfile(self.__class__)
         path = os.path.basename(path)
         path = "".join(path.split(".")[:-1])
@@ -126,62 +132,63 @@ class KLCRuleBase(object):
 
     def __init__(self):
         self.description = self.__doc__.strip().splitlines()[0].strip()
-        self.messageBuffer=[]
+        self.messageBuffer: List[Tuple[str, Verbosity, Severity]] = []
+
         self.resetErrorCount()
         self.resetWarningCount()
 
 
-    def resetErrorCount(self):
-        self.error_count = 0
+    def resetErrorCount(self) -> None:
+        self.error_count: int = 0
 
-    def resetWarningCount(self):
-        self.warning_count = 0
+    def resetWarningCount(self) -> None:
+        self.warning_count: int = 0
 
     @property
-    def errorCount(self):
+    def errorCount(self) -> int:
         return self.error_count
 
-    def hasErrors(self):
+    def hasErrors(self) -> bool:
         return self.error_count > 0
 
-    def warningCount(self):
+    def warningCount(self) -> int:
         return self.warning_count
 
     @property
-    def hasWarnings(self):
+    def hasWarnings(self) -> bool:
         return self.warning_count > 0
 
     #adds message into buffer only if such level of verbosity is wanted
-    def verboseOut(self, msgVerbosity, severity, message):
-        self.messageBuffer.append([message,msgVerbosity,severity])
+    def verboseOut(self, msgVerbosity: Verbosity, severity: Severity, message: str) -> None:
+        self.messageBuffer.append((message, msgVerbosity, severity))
 
-    def warning(self, msg):
+    def warning(self, msg: str) -> None:
         self.warning_count += 1
         self.verboseOut(Verbosity.NORMAL, Severity.WARNING, msg)
 
-    def warningExtra(self, msg):
+    def warningExtra(self, msg: str) -> None:
         self.verboseOut(Verbosity.HIGH, Severity.WARNING, " - " + msg)
 
-    def error(self, msg):
+    def error(self, msg: str) -> None:
         self.error_count += 1
         self.verboseOut(Verbosity.NORMAL, Severity.ERROR, msg)
 
-    def errorExtra(self, msg):
+    def errorExtra(self, msg: str) -> None:
         self.verboseOut(Verbosity.HIGH, Severity.ERROR, " - " + msg)
 
-    def info(self, msg):
+    def info(self, msg: str) -> None:
         self.verboseOut(Verbosity.NONE, Severity.INFO, "> " + msg)
 
-    def success(self, msg):
+    def success(self, msg: str) -> None:
         self.verboseOut(Verbosity.NORMAL, Severity.SUCCESS, msg)
 
-    def check(self, component):
+    def check(self, component) -> None:
         raise NotImplementedError('The check method must be implemented')
 
-    def fix(self, component):
+    def fix(self, component) -> None:
         raise NotImplementedError('The fix method must be implemented')
 
-    def recheck(self):
+    def recheck(self) -> None:
 
         self.resetErrorCount()
         self.resetWarningCount()
@@ -193,21 +200,16 @@ class KLCRuleBase(object):
         else:
             self.success("Everything fixed")
 
-    def hasOutput(self):
+    def hasOutput(self) -> bool:
         return len(self.messageBuffer) > 0
 
-    def processOutput(self, printer, verbosity=Verbosity.NONE, silent=False):
-
-        if not verbosity:
-            verbosity = 0
-        else:
-            verbosity = int(verbosity)
+    def processOutput(self, printer: PrintColor, verbosity: Verbosity = Verbosity.NONE, silent: bool = False) -> bool:
 
         # No violations
         if len(self.messageBuffer) == 0:
             return False
 
-        if verbosity > 0:
+        if verbosity.value > Verbosity.NONE.value:
             printer.light_blue(self.description, indentation=4, max_width=100)
 
         for message in self.messageBuffer:
@@ -215,14 +217,14 @@ class KLCRuleBase(object):
             s = message[2] # Severity
             msg = message[0]
 
-            if v <= verbosity:
-                if s == 0:
+            if v <= verbosity.value:
+                if s == Severity.INFO:
                     printer.gray(msg, indentation = 4)
-                elif s == 1:
+                elif s == Severity.WARNING:
                     printer.brown(msg, indentation = 4)
-                elif s == 2:
+                elif s == Severity.ERROR:
                     printer.red(msg, indentation = 4)
-                elif s == 3:
+                elif s == Severity.SUCCESS:
                     printer.green(msg, indentation = 4)
                 else:
                     printer.red("unknown severity: " + msg, indentation=4)

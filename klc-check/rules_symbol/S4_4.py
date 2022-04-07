@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
 import re
+from typing import List
+
+from kicad_sym import KicadSymbol, Pin
+from rules_symbol.rule import KLCRule, pinString
 
 
 class Rule(KLCRule):
@@ -32,15 +35,15 @@ class Rule(KLCRule):
         "bidirectional": BIDIR_PINS,
         }
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.power_errors = []
-        self.suggestions = []
-        self.inversion_errors = []
+        self.power_errors: List[Pin] = []
+        self.suggestions: List[Pin] = []
+        self.inversion_errors: List[Pin] = []
 
     # check if a pin name fits within a list of possible pins (using regex testing)
-    def test(self, pinName, nameList):
+    def test(self, pinName: str, nameList: List[str]) -> bool:
         for name in nameList:
             if re.search(name, pinName, flags=re.IGNORECASE) is not None:
                 return True
@@ -48,7 +51,7 @@ class Rule(KLCRule):
 
 
     # These pin types must be satisfied
-    def checkPowerPins(self):
+    def checkPowerPins(self) -> bool:
         self.power_errors = []
 
         for stack in self.component.get_pinstacks().values():
@@ -69,7 +72,7 @@ class Rule(KLCRule):
                     self.power_errors.append(pin)
                     self.errorExtra("{pin} is of type {t}".format(
                         pin=pinString(pin),
-                      t=etype))
+                        t=etype))
 
             if len(stack) > 1 and visible and visible[0].etype.lower() == 'power_in':
                 for pin in invisible:
@@ -80,7 +83,7 @@ class Rule(KLCRule):
         return len(self.power_errors) > 0
 
     # These pin types are suggestions
-    def checkSuggestions(self):
+    def checkSuggestions(self) -> bool:
         self.suggestions = []
 
         for pin in self.component.pins:
@@ -106,7 +109,7 @@ class Rule(KLCRule):
         # No error generated for this rule
         return False
 
-    def checkDoubleInversions(self):
+    def checkDoubleInversions(self) -> bool:
         self.inversion_errors = []
         for pin in self.component.pins:
             m = re.search('(\~{)(.+)}', pin.name)
@@ -118,17 +121,18 @@ class Rule(KLCRule):
 
         return len(self.inversion_errors) > 0
 
-    def check(self):
-        # no need to check this for an alias
-        if self.component.extends != None:
-            return False
-
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
-            * probably_wrong_pin_types
-            * double_inverted_pins
+            * power_errors
+            * suggestions
+            * inversion_errors
         """
+
+        # no need to check this for an alias
+        if self.component.extends is not None:
+            return False
 
         return any([
             self.checkPowerPins(),
@@ -136,10 +140,11 @@ class Rule(KLCRule):
             self.checkSuggestions()
             ])
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         self.info("Fixing...")
 
         for pin in self.power_errors:

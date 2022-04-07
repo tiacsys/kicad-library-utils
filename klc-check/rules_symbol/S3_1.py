@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
 import math
+from rules_symbol.rule import *
+from kicad_sym import mm_to_mil
 
 
 class Rule(KLCRule):
     """Origin is centered on the middle of the symbol"""
 
-    def check(self):
+    def check(self) -> bool:
         """
         Calculate the 'bounds' of the symbol based on rectangle (if only a
         single filled rectangle is present) or on pin positions.
         """
+
         # no need to check this for an
-        if self.component.extends != None:
+        if self.component.extends is not None:
             return False
 
         # Check units separately
@@ -60,5 +62,5 @@ class Rule(KLCRule):
 
         return False
 
-    def fix(self):
-        return False
+    def fix(self) -> None:
+        return

@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
 
-from rules_footprint.rule import *
 import os
+
+from rules_footprint.rule import *
+
 
 class Rule(KLCRule):
     """Footprint meta-data is filled in as appropriate"""
 
-    def checkDocs(self):
-        mod = self.module
+    def checkDocs(self) -> bool:
         error = False
-        if not mod.description:
+        if not self.module.description:
             self.error("Description field is empty - add footprint description")
             return True
 
         return error
 
-    def checkTags(self):
+    def checkTags(self) -> bool:
         mod = self.module
         error = False
         if not mod.tags:
@@ -33,7 +34,7 @@ class Rule(KLCRule):
 
         return error
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         """
@@ -66,10 +67,11 @@ class Rule(KLCRule):
 
         return err
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         self.info("Setting footprint value to '{name}'".format(name = self.module.name))
         self.module.name = os.path.splitext(os.path.basename(self.module.filename))[0]
         self.module.value['value'] = self.module.name

@@ -1,22 +1,25 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
+from typing import Dict
+
+from kicad_sym import KicadSymbol, mil_to_mm
+from rules_symbol.rule import KLCRule, positionFormater
 
 
 class Rule(KLCRule):
     """Check part reference, name and footprint position and alignment"""
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.recommended_ref_pos = {}
-        self.recommended_ref_alignment = ''
-        self.recommended_name_pos = {}
-        self.recommended_name_alignment = ''
-        self.recommended_fp_pos = {}
-        self.recommended_fp_alignment = ''
+        self.recommended_ref_pos: Dict[str, float] = {}
+        self.recommended_ref_alignment: str = ''
+        self.recommended_name_pos: Dict[str, float] = {}
+        self.recommended_name_alignment: str = ''
+        self.recommended_fp_pos: Dict[str, float] = {}
+        self.recommended_fp_alignment: str = ''
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
@@ -114,10 +117,11 @@ class Rule(KLCRule):
         # This entire rule only generates a WARNING (won't fail a component, only display a message)
         return False
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         self.info("Fixing...")
         fp = self.component.get_property("Footprint")
         fp.posx = self.recommended_fp_pos['posx']

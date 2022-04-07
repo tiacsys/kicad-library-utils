@@ -5,7 +5,7 @@ from rules_footprint.rule import *
 class Rule(KLCRule):
     """Minimum annular ring width"""
 
-    def checkPad(self, pad):
+    def checkPad(self, pad: Dict[str, Any]) -> bool:
         if not 'size' in pad['drill']:
             self.error("Pad {n} drill data has no 'size' attribute".format(
                 n = pad['number']))
@@ -59,19 +59,18 @@ class Rule(KLCRule):
 
         return err
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
-        The following variables will be accessible after checking:
-            * pin1_position
-            * pin1_count
         """
+
         module = self.module
 
         return any([self.checkPad(pad) for pad in module.filterPads('thru_hole')])
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         self.info("Fix - not supported for this rule")

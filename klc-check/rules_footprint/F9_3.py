@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from rules_footprint.rule import *
 import os
 import re
+from typing import Any, Dict
+
+from kicad_mod import KicadMod
+from rules_footprint.rule import KLCRule
 
 SYSMOD_PREFIX = "${KICAD6_3DMODEL_DIR}/"
 
@@ -10,7 +13,7 @@ class Rule(KLCRule):
     """Footprint 3D model requirements"""
 
     # Regular expression for suffixes that shouldn't be in the model file
-    suffix_re = (
+    SUFFIX_RE = (
         '('
         '_ThermalVias'
         '|_Pad[0-9.]*x[0-9.]*mm'
@@ -19,27 +22,27 @@ class Rule(KLCRule):
         ')'
     )
 
-    def __init__(self, component, args):
+    def __init__(self, component: KicadMod, args):
         super().__init__(component, args)
 
-        self.model3D_wrongOffset = False
-        self.model3D_wrongRotation = False
-        self.model3D_wrongScale = False
+        self.model3D_wrongOffset: bool = False
+        self.model3D_wrongRotation: bool = False
+        self.model3D_wrongScale: bool = False
 
-        self.model3D_missingSYSMOD = False
-        self.model3D_wrongLib = False
-        self.model3D_wrongName = False
-        self.model3D_wrongFiletype = False
-        self.model3D_invalidName = False
+        self.model3D_missingSYSMOD: bool = False
+        self.model3D_wrongLib: bool = False
+        self.model3D_wrongName: bool = False
+        self.model3D_wrongFiletype: bool = False
+        self.model3D_invalidName: bool = False
 
-        self.module_dir = ''
+        self.module_dir: str = ''
 
-        self.no3DModel = False
-        self.model3D_expectedDir = ''
-        self.model3D_expectedName = ''
-        self.model3D_expectedFullPath = ''
+        self.no3DModel: bool = False
+        self.model3D_expectedDir: str = ''
+        self.model3D_expectedName: str = ''
+        self.model3D_expectedFullPath: str = ''
 
-    def checkModel(self, model):
+    def checkModel(self, model: Dict[str, Any]) -> bool:
 
         error = False
 
@@ -130,7 +133,7 @@ class Rule(KLCRule):
 
         if model_file != fp_name:
             # Exception for footprints that have known suffixes
-            if re.sub(self.suffix_re, '', fp_name) == model_file:
+            if re.sub(self.SUFFIX_RE, '', fp_name) == model_file:
                 error = False
             # Exception for footprints that have unknown additions
             elif model_file in fp_name or fp_name in model_file:
@@ -145,7 +148,7 @@ class Rule(KLCRule):
                 error = True
 
         # Warn if the model filename has suffixes in it
-        for match in re.finditer(self.suffix_re, model_file):
+        for match in re.finditer(self.SUFFIX_RE, model_file):
             self.warning("3D model name contains field that does not change 3D representation (found '{}')".format(match.groups()[0]))
             self.needsFixMore = True
             self.model3D_wrongName = True
@@ -159,7 +162,7 @@ class Rule(KLCRule):
 
         return error
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
@@ -167,6 +170,7 @@ class Rule(KLCRule):
             * model_dir
             * model_file
         """
+
         module = self.module
 
         module_dir = os.path.split(os.path.dirname(os.path.realpath(module.filename)))[-1]
@@ -176,12 +180,10 @@ class Rule(KLCRule):
         self.no3DModel = False
         fp_dir = self.module_dir[0] + ".3dshapes"
         fp_name = self.module.name
-        fp_name_no_suffixes = re.sub(self.suffix_re, '', fp_name)
-        self.model3D_expectedDir = SYSMOD_PREFIX+fp_dir+'/';
-        self.model3D_expectedName = fp_name_no_suffixes+'.wrl';
-        self.model3D_expectedFullPath = self.model3D_expectedDir+self.model3D_expectedName;
-
-
+        fp_name_no_suffixes = re.sub(self.SUFFIX_RE, '', fp_name)
+        self.model3D_expectedDir = SYSMOD_PREFIX + fp_dir + '/'
+        self.model3D_expectedName = fp_name_no_suffixes + '.wrl'
+        self.model3D_expectedFullPath = self.model3D_expectedDir + self.model3D_expectedName
 
         if len(models) == 0:
             # Warning msg
@@ -208,10 +210,11 @@ class Rule(KLCRule):
 
         return model_error
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         module = self.module
 
         # ensure all variables are set correctly
@@ -241,10 +244,11 @@ class Rule(KLCRule):
         self.info("Fix not supported")
         return
 
-    def fixmore(self):
+    def fixmore(self) -> None:
         """
         Proceeds the additional fixing of the rule, if possible and if --fixmore is provided as command-line argument.
         """
+
         module = self.module
 
         # ensure all variables are set correctly

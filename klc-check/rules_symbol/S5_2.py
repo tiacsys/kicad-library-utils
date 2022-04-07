@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
 import re
+from typing import List
+
+from kicad_sym import KicadSymbol
+from rules_symbol.rule import KLCRule
 
 
 class Rule(KLCRule):
     """Footprint filters should match all appropriate footprints"""
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.bad_filters = []
+        self.bad_filters: List[str] = []
 
-    def checkFilters(self, filters):
+    def checkFilters(self, filters: List[str]) -> None:
 
         self.bad_filters = []
 
@@ -43,7 +46,7 @@ class Rule(KLCRule):
             if ('-' in filter) or ('_' in filter):
                 self.warning("Minuses and underscores in footprint filter '{filter}' should be escaped with '?' or '*'.".format(filter=filter))
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         """
@@ -57,8 +60,9 @@ class Rule(KLCRule):
 
         return len(self.bad_filters) > 0
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
+
         self.info("FIX: not supported")

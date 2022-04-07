@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
 import re
 
-import re
+from rulebase import isValidName
+from rules_symbol.rule import KLCRule
+
 
 class Rule(KLCRule):
     """Symbol and alias fields and metadata filled out as required"""
 
-    def checkReference(self):
+    def checkReference(self) -> bool:
         fail = False
         ref = self.component.get_property("Reference")
         if not ref:
@@ -27,7 +28,7 @@ class Rule(KLCRule):
 
         return fail
 
-    def checkValue(self):
+    def checkValue(self) -> bool:
         fail = False
 
         prop = self.component.get_property("Value")
@@ -60,7 +61,7 @@ class Rule(KLCRule):
 
         return fail
 
-    def checkFootprint(self):
+    def checkFootprint(self) -> bool:
         # Footprint field must be invisible
         fail = False
 
@@ -76,7 +77,7 @@ class Rule(KLCRule):
 
         return fail
 
-    def checkDatasheet(self):
+    def checkDatasheet(self) -> bool:
         # Datasheet field must be invisible
         fail = False
 
@@ -102,7 +103,7 @@ class Rule(KLCRule):
                 if any([ds.value.startswith(i) for i in links]):
                     link = True
                 elif ds.value.endswith('.pdf') or '.htm' in ds.value:
-                     link = True
+                    link = True
 
                 if not link:
                     self.warning("Datasheet entry '{ds}' does not look like a URL".format(ds=ds.value))
@@ -110,7 +111,7 @@ class Rule(KLCRule):
 
         return fail
 
-    def checkDescription(self):
+    def checkDescription(self) -> bool:
         dsc = self.component.get_property("ki_description")
         if not dsc:
             # can not do other checks, return
@@ -127,7 +128,7 @@ class Rule(KLCRule):
 
         return False
 
-    def checkKeywords(self):
+    def checkKeywords(self) -> bool:
         dsc = self.component.get_property("ki_keywords")
         if not dsc:
             # can not do other checks, return
@@ -146,7 +147,7 @@ class Rule(KLCRule):
 
         return False
 
-    def check(self):
+    def check(self) -> bool:
         # Check for extra fields. How? TODO
         extraFields = False
 
@@ -160,7 +161,7 @@ class Rule(KLCRule):
             extraFields
             ])
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """

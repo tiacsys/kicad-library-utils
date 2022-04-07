@@ -1,25 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import division
-
+from kicad_mod import KicadMod
 from rules_footprint.rule import *
 
 class Rule(KLCRule):
     """For surface-mount devices, placement type must be set to "Surface Mount" """
 
-    def __init__(self, component, args):
+    def __init__(self, component: KicadMod, args):
         super().__init__(component, args)
 
-        self.pth_count = 0
-        self.smd_count = 0
+        self.pth_count: int = 0
+        self.smd_count: int = 0
 
-    def check(self):
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:
-            * pads_bounds
-            * pads_distance
-            * right_anchor
+            * pth_count
+            * smd_count
         """
         module = self.module
 
@@ -44,7 +42,7 @@ class Rule(KLCRule):
         return error
 
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """

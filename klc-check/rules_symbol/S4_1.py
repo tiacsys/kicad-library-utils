@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 
-from rules_symbol.rule import *
+from typing import List
 
+from kicad_sym import KicadSymbol, Pin, mm_to_mil
+from rules_symbol.rule import KLCRule, pinString
 
 class Rule(KLCRule):
     """General pin requirements"""
 
-    def __init__(self, component):
+    def __init__(self, component: KicadSymbol):
         super().__init__(component)
 
-        self.violating_pins = []
+        self.violating_pins: List[Pin] = []
 
-    def checkPinOrigin(self, gridspacing=100):
+    def checkPinOrigin(self, gridspacing: int = 100) -> bool:
         self.violating_pins = []
         err = False
         for pin in self.component.pins:
@@ -26,7 +28,7 @@ class Rule(KLCRule):
 
         return len(self.violating_pins) > 0
 
-    def checkDuplicatePins(self):
+    def checkDuplicatePins(self) -> bool:
         # look for duplicate pin numbers
         duplicate = False
         test_pins = list(self.component.pins)
@@ -40,7 +42,7 @@ class Rule(KLCRule):
 
         return duplicate
 
-    def checkPinLength(self, errorPinLength=49, warningPinLength=99):
+    def checkPinLength(self, errorPinLength: int = 49, warningPinLength: int = 99) -> bool:
         self.violating_pins = []
 
         for pin in self.component.pins:
@@ -72,9 +74,9 @@ class Rule(KLCRule):
 
         return len(self.violating_pins) > 0
 
-    def check(self):
+    def check(self) -> bool:
         # no need to check pins on an alias
-        if self.component.extends != None:
+        if self.component.extends is not None:
             return False
 
         # determine pin-grid:
@@ -94,7 +96,7 @@ class Rule(KLCRule):
             self.checkDuplicatePins()
             ])
 
-    def fix(self):
+    def fix(self) -> None:
         """
         Proceeds the fixing of the rule, if possible.
         """
