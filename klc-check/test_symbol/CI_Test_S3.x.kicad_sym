@@ -9,7 +9,7 @@
     (property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" (id 2) (at 0 -11.43 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Datasheet" "http://www.example.com/" (id 3) (at 0 -1.27 0)
+    (property "Datasheet" "http://www.example.com/fail" (id 3) (at 0 -1.27 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "ki_keywords" "fail" (id 4) (at 0 0 0)
