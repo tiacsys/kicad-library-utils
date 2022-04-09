@@ -9,7 +9,7 @@ class Rule(KLCRule):
     """Hidden pins"""
 
     # No-connect pins should be "N"
-    NC_PINS = ['^nc$', '^dnc$', '^n\.c\.$']
+    NC_PINS = ["^nc$", "^dnc$", "^n\.c\.$"]
 
     def __init__(self, component: KicadSymbol):
         super().__init__(component)
@@ -34,9 +34,9 @@ class Rule(KLCRule):
             etype = pin.etype
 
             # Check NC pins
-            if self.test(name, self.NC_PINS) or etype == 'no_connect':
+            if self.test(name, self.NC_PINS) or etype == "no_connect":
                 # NC pins should be of type no_connect
-                if not etype == 'no_connect':  # Not set to NC
+                if not etype == "no_connect":  # Not set to NC
                     self.type_errors.append(pin)
 
                 # NC pins should be invisible
@@ -47,15 +47,19 @@ class Rule(KLCRule):
             self.error("NC pins are not correct pin-type:")
 
             for pin in self.type_errors:
-                self.errorExtra("{pin} should be of type NOT CONNECTED, but is of type {pintype}".format(
-                    pin=pinString(pin),
-                    pintype=etype))
+                self.errorExtra(
+                    "{pin} should be of type NOT CONNECTED, but is of type {pintype}".format(
+                        pin=pinString(pin), pintype=etype
+                    )
+                )
 
         if len(self.invisible_errors) > 0:
             self.warning("NC pins are VISIBLE (should be INVISIBLE):")
 
             for pin in self.invisible_errors:
-                self.warningExtra("{pin} should be INVISIBLE".format(pin=pinString(pin)))
+                self.warningExtra(
+                    "{pin} should be INVISIBLE".format(pin=pinString(pin))
+                )
 
         return len(self.invisible_errors) > 0 or len(self.type_errors) > 0
 
@@ -70,7 +74,6 @@ class Rule(KLCRule):
         # no need to check this for an alias
         if self.component.extends != None:
             return False
-
 
         fail = False
 
@@ -92,8 +95,8 @@ class Rule(KLCRule):
                 self.info("Setting pin {n} to INVISIBLE".format(n=pin.number))
 
         for pin in self.type_errors:
-            if not pin.etype == 'no_connect':
-                pin.etype = 'no_connect'
+            if not pin.etype == "no_connect":
+                pin.etype = "no_connect"
                 self.info("Changing pin {n} type to NO_CONNECT".format(n=pin.number))
 
         self.recheck()

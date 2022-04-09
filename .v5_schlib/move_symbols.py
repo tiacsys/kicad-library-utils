@@ -28,18 +28,18 @@ The JSON file should be formatted as such:
 
 """
 
-import shutil
-import os
 import argparse
 import fnmatch
-import sys
 import glob
 import json
+import os
+import shutil
+import sys
 
-import fnmatch
 
 def get_output_lib(pattern):
     return PATTERNS[pattern]
+
 
 def is_entire_lib(pattern):
 
@@ -49,13 +49,14 @@ def is_entire_lib(pattern):
         if type(filters) is dict:
             return True
 
-        if '*' in filters:
+        if "*" in filters:
             return True
 
 
 def get_lib_patterns(lib_name):
 
     return PATTERNS.get(lib_name, None)
+
 
 def get_entire_lib_match(lib_name):
 
@@ -103,15 +104,28 @@ def get_matches(lib_name, cmp_name):
 
     return matches
 
-parser = argparse.ArgumentParser(description='Reorganizing the KiCad libs is fun!')
-parser.add_argument('libs', help='List of source libraries', nargs='+')
-parser.add_argument('--dest', help='Path to store the output', action='store', default='output')
-parser.add_argument('--real', help='Real run (test run by default)', action='store_true')
-parser.add_argument('--silent', help='Suppress output messages', action='store_true')
-parser.add_argument('--leave', help='Leave unallocated symbols in the library they started in', action='store_true')
-parser.add_argument('--clean', help='Clean output directory before running script', action='store_true')
-parser.add_argument('-p', '--patterns', help='Path to pattern file (JSON)', action='store')
-parser.add_argument('-i', '--interactive', help='Interactive mode', action='store_true')
+
+parser = argparse.ArgumentParser(description="Reorganizing the KiCad libs is fun!")
+parser.add_argument("libs", help="List of source libraries", nargs="+")
+parser.add_argument(
+    "--dest", help="Path to store the output", action="store", default="output"
+)
+parser.add_argument(
+    "--real", help="Real run (test run by default)", action="store_true"
+)
+parser.add_argument("--silent", help="Suppress output messages", action="store_true")
+parser.add_argument(
+    "--leave",
+    help="Leave unallocated symbols in the library they started in",
+    action="store_true",
+)
+parser.add_argument(
+    "--clean", help="Clean output directory before running script", action="store_true"
+)
+parser.add_argument(
+    "-p", "--patterns", help="Path to pattern file (JSON)", action="store"
+)
+parser.add_argument("-i", "--interactive", help="Interactive mode", action="store_true")
 
 args = parser.parse_args()
 
@@ -128,7 +142,7 @@ if not os.path.isdir(dst_dir) and args.real:
     sys.exit(1)
 
 if args.real and args.clean:
-    #todo
+    # todo
     pass
 
 if args.patterns:
@@ -147,10 +161,10 @@ output_libs = {}
 
 # Find any libraries in the output directory
 if os.path.exists(args.dest) and os.path.isdir(args.dest):
-    op_libs = [x for x in os.listdir(args.dest) if x.endswith('.lib')]
+    op_libs = [x for x in os.listdir(args.dest) if x.endswith(".lib")]
 
     for op_lib in op_libs:
-        lib_name = op_lib.split(os.path.sep)[-1].replace('.lib', '')
+        lib_name = op_lib.split(os.path.sep)[-1].replace(".lib", "")
         lib = schlib.SchLib(op_lib)
 
         output_libs[lib_name] = lib
@@ -160,6 +174,7 @@ allocated_symbols = 0
 unallocated_symbols = []
 overallocated_symbols = []
 
+
 def output_lib(name):
 
     # Case insensitive to reduce mistakes
@@ -167,17 +182,20 @@ def output_lib(name):
         if name.lower() == lib.lower():
             return output_libs[lib]
 
-    output_libs[name] = schlib.SchLib(os.path.join(dst_dir, name + '.lib'), create=real_mode)
+    output_libs[name] = schlib.SchLib(
+        os.path.join(dst_dir, name + ".lib"), create=real_mode
+    )
 
     if not args.silent:
         print("Creating new library - '{n}'".format(n=name))
 
     return output_libs[name]
 
+
 # Iterate through all remaining libraries
 for src_lib in src_libs:
 
-    lib_name = src_lib.split(os.path.sep)[-1].replace('.lib', '')
+    lib_name = src_lib.split(os.path.sep)[-1].replace(".lib", "")
 
     lib = schlib.SchLib(src_lib)
 
@@ -189,9 +207,15 @@ for src_lib in src_libs:
 
     if copy_lib is not None:
         if not args.silent:
-            print("Copying entire library '{src}' -> '{dst}'".format(src=lib_name, dst=copy_lib))
+            print(
+                "Copying entire library '{src}' -> '{dst}'".format(
+                    src=lib_name, dst=copy_lib
+                )
+            )
         if not copy_lib in output_libs:
-            output_libs[copy_lib] = schlib.SchLib(os.path.join(dst_dir, copy_lib + '.lib'), create=real_mode)
+            output_libs[copy_lib] = schlib.SchLib(
+                os.path.join(dst_dir, copy_lib + ".lib"), create=real_mode
+            )
 
         out_lib = output_lib(copy_lib)
 
@@ -218,14 +242,18 @@ for src_lib in src_libs:
                 out_lib.addComponent(cmp)
 
                 if not args.silent:
-                    print("No match found for '{cmp}' - leaving in library '{lib}'".format(cmp = cmp.name, lib=lib_name))
+                    print(
+                        "No match found for '{cmp}' - leaving in library '{lib}'".format(
+                            cmp=cmp.name, lib=lib_name
+                        )
+                    )
 
-            unallocated_symbols.append(lib_name + ' : ' + cmp.name)
+            unallocated_symbols.append(lib_name + " : " + cmp.name)
             continue
 
         # Too many matches!
         if len(matches) > 1:
-            overallocated_symbols.append(lib_name + ' : ' + cmp.name)
+            overallocated_symbols.append(lib_name + " : " + cmp.name)
             continue
 
         match = matches[0]
@@ -236,7 +264,9 @@ for src_lib in src_libs:
         allocated_symbols += 1
 
         if not args.silent:
-            print("{lib} : {name} -> {out}".format(lib=lib_name, name=cmp.name, out=match))
+            print(
+                "{lib} : {name} -> {out}".format(lib=lib_name, name=cmp.name, out=match)
+            )
 
 
 # Save the converted libraries

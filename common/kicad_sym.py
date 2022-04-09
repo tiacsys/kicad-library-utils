@@ -2,35 +2,44 @@
 Library for processing KiCad's symbol files.
 """
 
-from dataclasses import dataclass, field
-from optparse import Option
 import math
-from pathlib import Path
+import pprint
 import re
 import sys
+from dataclasses import dataclass, field
+from optparse import Option
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import sexpr
-import pprint
 
 
 def mil_to_mm(mil: float) -> float:
     return round(mil * 0.0254, 6)
 
+
 def mm_to_mil(mm: float) -> float:
     return round(mm / 0.0254)
 
+
 def _parse_at(i):
-    sexpr_at = _get_array(i, 'at')[0]
+    sexpr_at = _get_array(i, "at")[0]
     posx = sexpr_at[1]
     posy = sexpr_at[2]
     if len(sexpr_at) == 4:
-      rot = sexpr_at[3]
+        rot = sexpr_at[3]
     else:
-      rot = None
+        rot = None
     return (posx, posy, rot)
 
-def _get_array(data, value, result: Optional[List[Any]] = None, level: int = 0, max_level: Optional[int] = None):
+
+def _get_array(
+    data,
+    value,
+    result: Optional[List[Any]] = None,
+    level: int = 0,
+    max_level: Optional[int] = None,
+):
     """return the array which has value as first element"""
     if result is None:
         result = []
@@ -48,6 +57,7 @@ def _get_array(data, value, result: Optional[List[Any]] = None, level: int = 0, 
                 result.append(data)
     return result
 
+
 def _get_array2(data, value):
     ret = []
     for i in data:
@@ -55,33 +65,36 @@ def _get_array2(data, value):
             ret.append(i)
     return ret
 
-def _get_color(sexpr) -> Optional['Color']:
+
+def _get_color(sexpr) -> Optional["Color"]:
     col = None
     for i in sexpr:
-        if type(i) == type([]) and i[0] == 'color':
+        if type(i) == type([]) and i[0] == "color":
             col = Color(i[1], i[2], i[3], i[4])
     return col
 
 
-def _get_stroke(sexpr) -> Tuple[Optional[int], Optional['Color']]:
+def _get_stroke(sexpr) -> Tuple[Optional[int], Optional["Color"]]:
     width = None
     col = None
     for i in sexpr:
-        if type(i) == type([]) and i[0] == 'stroke':
-            width = _get_value_of(i, 'width')
+        if type(i) == type([]) and i[0] == "stroke":
+            width = _get_value_of(i, "width")
             col = _get_color(i)
             break
     return (width, col)
 
-def _get_fill(sexpr) -> Tuple[Optional[Any], Optional['Color']]:
+
+def _get_fill(sexpr) -> Tuple[Optional[Any], Optional["Color"]]:
     fill = None
     col = None
     for i in sexpr:
-        if type(i) == type([]) and i[0] == 'fill':
-            fill = _get_value_of(i, 'type')
+        if type(i) == type([]) and i[0] == "fill":
+            fill = _get_value_of(i, "type")
             col = _get_color(i)
             break
     return (fill, col)
+
 
 def _get_xy(sexpr, lookup) -> Tuple[float, float]:
     for i in sexpr:
@@ -89,10 +102,11 @@ def _get_xy(sexpr, lookup) -> Tuple[float, float]:
             return (i[1], i[2])
     return (0.0, 0.0)
 
+
 def _get_value_ofRecursively(data, path, item_to_get=False):
     """return the array which has value as first element, but recursively
 
-        if item_to_get is != 0, return the array element with that index
+    if item_to_get is != 0, return the array element with that index
     """
     # if we walked the whole path we are done. return the data
     if len(path) == 0:
@@ -108,12 +122,14 @@ def _get_value_ofRecursively(data, path, item_to_get=False):
         if type(i) == type([]) and i[0] == path[0]:
             return _get_value_ofRecursively(i, path[1:], item_to_get)
 
+
 def _get_value_of(data, lookup, default=None):
     """find the array which has lookup as first element, return its 2nd element"""
     for i in data:
         if type(i) == type([]) and i[0] == lookup:
             return i[1]
     return default
+
 
 def _has_value(data, lookup) -> bool:
     """return true if the lookup item exists"""
@@ -122,49 +138,54 @@ def _has_value(data, lookup) -> bool:
             return True
     return False
 
+
 class KicadSymbolBase(object):
     def as_json(self):
-      return json.dumps(self, default=lambda x: x.__dict__, indent=2)
+        return json.dumps(self, default=lambda x: x.__dict__, indent=2)
 
     def compare_pos(s, x, y):
-        if 'posx' in s.__dict__ and 'posy' in s.__dict__:
+        if "posx" in s.__dict__ and "posy" in s.__dict__:
             return round(s.posx, 6) == round(x, 6) and round(s.posy, 6) == round(y, 6)
         return False
 
     def is_unit(s, unit, demorgan):
-        if 'unit' in s.__dict__ and 'demorgan' in s.__dict__:
-              return s.unit == unit and s.demorgan == demorgan
+        if "unit" in s.__dict__ and "demorgan" in s.__dict__:
+            return s.unit == unit and s.demorgan == demorgan
         return False
 
     @classmethod
     def quoted_string(cls, s: str) -> str:
-        s = re.sub(r'\n', r'\\n', s)
+        s = re.sub(r"\n", r"\\n", s)
         return '"' + s + '"'
 
     @classmethod
     def dir_to_rotation(cls, d: str) -> int:
-        if d == 'R':
+        if d == "R":
             return 0
-        if d == 'U':
+        if d == "U":
             return 90
-        if d == 'L':
+        if d == "L":
             return 180
-        if d == 'D':
+        if d == "D":
             return 270
 
         raise NotImplemented()
 
+
 @dataclass
 class Color(KicadSymbolBase):
     """Encode the color of an entiry. Currently not used in the kicad_sym format"""
+
     r: int
     g: int
     b: int
     a: int
 
+
 @dataclass
 class TextEffect(KicadSymbolBase):
     """Encode the text effect of an entiry"""
+
     sizex: float
     sizey: float
     is_italic: bool = False
@@ -177,22 +198,29 @@ class TextEffect(KicadSymbolBase):
     font: Optional[str] = None
 
     @classmethod
-    def new_mil(cls, size: float) -> 'TextEffect':
+    def new_mil(cls, size: float) -> "TextEffect":
         te = cls(mil_to_mm(size), mil_to_mm(size))
         return te
 
     def get_sexpr(s):
-        fnt = ['font', ['size', s.sizex, s.sizey]]
-        if s.is_italic: fnt.append('italic')
-        if s.is_bold: fnt.append('bold')
-        sx = ['effects', fnt]
-        if s.is_mirrored: sx.append('mirror')
-        if s.color: sx.append(s.color.get_sexpr())
-        if s.is_hidden: sx.append('hide')
+        fnt = ["font", ["size", s.sizex, s.sizey]]
+        if s.is_italic:
+            fnt.append("italic")
+        if s.is_bold:
+            fnt.append("bold")
+        sx = ["effects", fnt]
+        if s.is_mirrored:
+            sx.append("mirror")
+        if s.color:
+            sx.append(s.color.get_sexpr())
+        if s.is_hidden:
+            sx.append("hide")
 
-        justify = ['justify']
-        if s.h_justify and s.h_justify != 'center': justify.append(s.h_justify)
-        if s.v_justify and s.v_justify != 'center': justify.append(s.v_justify)
+        justify = ["justify"]
+        if s.h_justify and s.h_justify != "center":
+            justify.append(s.h_justify)
+        if s.v_justify and s.v_justify != "center":
+            justify.append(s.v_justify)
 
         if len(justify) > 1:
             sx.append(justify)
@@ -201,37 +229,52 @@ class TextEffect(KicadSymbolBase):
     @classmethod
     def from_sexpr(cls, sexpr):
         sexpr_orig = sexpr.copy()
-        if (sexpr.pop(0) != 'effects'):
+        if sexpr.pop(0) != "effects":
             return None
-        font = _get_array(sexpr, 'font')[0]
-        (sizex, sizey) = _get_xy(font, 'size')
-        is_italic = 'italic' in font
-        is_bold = 'bold' in font
-        is_hidden = 'hide' in sexpr
-        is_mirrored = 'mirror' in sexpr
-        justify = _get_array2(sexpr, 'justify')
+        font = _get_array(sexpr, "font")[0]
+        (sizex, sizey) = _get_xy(font, "size")
+        is_italic = "italic" in font
+        is_bold = "bold" in font
+        is_hidden = "hide" in sexpr
+        is_mirrored = "mirror" in sexpr
+        justify = _get_array2(sexpr, "justify")
         h_justify = "center"
         v_justify = "center"
         if justify:
-            if 'top' in justify[0]: v_justify = 'top'
-            if 'bottom' in justify[0]: v_justify = 'bottom'
-            if 'left' in justify[0]: h_justify = 'left'
-            if 'right' in justify[0]: h_justify = 'right'
-        return cls(sizex, sizey, is_italic, is_bold, is_hidden, is_mirrored, h_justify, v_justify)
+            if "top" in justify[0]:
+                v_justify = "top"
+            if "bottom" in justify[0]:
+                v_justify = "bottom"
+            if "left" in justify[0]:
+                h_justify = "left"
+            if "right" in justify[0]:
+                h_justify = "right"
+        return cls(
+            sizex,
+            sizey,
+            is_italic,
+            is_bold,
+            is_hidden,
+            is_mirrored,
+            h_justify,
+            v_justify,
+        )
+
 
 @dataclass
 class AltFunction(KicadSymbolBase):
     name: str
     etype: str
-    shape: str = 'line'
+    shape: str = "line"
 
     def get_sexpr(self) -> List[str]:
-        return ['alternate', self.quoted_string(self.name), self.etype, self.shape]
+        return ["alternate", self.quoted_string(self.name), self.etype, self.shape]
 
     @classmethod
-    def from_sexpr(cls, sexpr) -> 'AltFunction':
+    def from_sexpr(cls, sexpr) -> "AltFunction":
         (id, name, etype, shape) = sexpr
         return AltFunction(name, etype, shape)
+
 
 @dataclass
 class Pin(KicadSymbolBase):
@@ -241,7 +284,7 @@ class Pin(KicadSymbolBase):
     posx: float = 0.0
     posy: float = 0.0
     rotation: int = 0
-    shape: str = 'line'
+    shape: str = "line"
     length: float = 2.54
     is_global: bool = False
     is_hidden: bool = False
@@ -254,7 +297,7 @@ class Pin(KicadSymbolBase):
 
     def __post_init__(self):
         # try to parse the pin_number into an integer if possible
-        if self.number_int == None and re.match(r'^\d+$', self.number):
+        if self.number_int == None and re.match(r"^\d+$", self.number):
             self.number_int = int(self.number)
         # there is some weird thing going on with the instance creation of name_effect and number_effect
         # when creating lots of pins from scratch, the id() of their name_effect member is the same
@@ -266,24 +309,27 @@ class Pin(KicadSymbolBase):
             self.number_effect = TextEffect(1.27, 1.27)
 
     @classmethod
-    def _parse_name_or_number(cls, i, typ='name'):
-        """ Convert a sexpr pin-name or pin-number into a python dict """
+    def _parse_name_or_number(cls, i, typ="name"):
+        """Convert a sexpr pin-name or pin-number into a python dict"""
         sexpr_n = _get_array(i, typ)[0]
         name = sexpr_n[1]
-        effects = TextEffect.from_sexpr(_get_array(sexpr_n, 'effects')[0])
+        effects = TextEffect.from_sexpr(_get_array(sexpr_n, "effects")[0])
         return (name, effects)
 
     def get_sexpr(s):
         sx = [
-            'pin', s.etype, s.shape, ['at', s.posx, s.posy, s.rotation],
+            "pin",
+            s.etype,
+            s.shape,
+            ["at", s.posx, s.posy, s.rotation],
         ]
         if s.is_global:
-            sx.append( 'global')
-        sx.append(['length', s.length])
+            sx.append("global")
+        sx.append(["length", s.length])
         if s.is_hidden:
-            sx.append('hide')
-        sx.append(['name', s.quoted_string(s.name), s.name_effect.get_sexpr()])
-        sx.append(['number', s.quoted_string(s.number), s.number_effect.get_sexpr()])
+            sx.append("hide")
+        sx.append(["name", s.quoted_string(s.name), s.name_effect.get_sexpr()])
+        sx.append(["number", s.quoted_string(s.number), s.number_effect.get_sexpr()])
         for altfn in s.altfuncs:
             sx.append(altfn.get_sexpr())
 
@@ -291,40 +337,44 @@ class Pin(KicadSymbolBase):
 
     def get_direction(self) -> str:
         if self.rotation == 0:
-            return 'R'
+            return "R"
         elif self.rotation == 90:
-            return 'U'
+            return "U"
         elif self.rotation == 180:
-            return 'L'
+            return "L"
         elif self.rotation == 270:
-            return 'D'
+            return "D"
 
         raise NotImplemented
 
-    def is_duplicate(self, p: 'Pin') -> bool:
-        if p.number == self.number and p.unit == self.unit and p.demorgan == self.demorgan:
-           return True
+    def is_duplicate(self, p: "Pin") -> bool:
+        if (
+            p.number == self.number
+            and p.unit == self.unit
+            and p.demorgan == self.demorgan
+        ):
+            return True
         return False
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> 'Pin':
+    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> "Pin":
         sexpr_orig = sexpr.copy()
         is_global = False
         # The first 3 items are pin, type and shape
-        if (sexpr.pop(0) != 'pin'):
+        if sexpr.pop(0) != "pin":
             return None
         etype = sexpr.pop(0)
         shape = sexpr.pop(0)
         # the 4th item (global) is optional
-        if sexpr[0] == 'global':
+        if sexpr[0] == "global":
             sexpr.pop(0)
             is_global = True
         # fetch more properties
-        is_hidden = 'hide' in sexpr
-        length = _get_value_of(sexpr, 'length')
+        is_hidden = "hide" in sexpr
+        length = _get_value_of(sexpr, "length")
         (posx, posy, rotation) = _parse_at(sexpr)
         (name, name_effect) = cls._parse_name_or_number(sexpr)
-        (number, number_effect) = cls._parse_name_or_number(sexpr, typ='number')
+        (number, number_effect) = cls._parse_name_or_number(sexpr, typ="number")
 
         altfuncs = []
         alt_n = _get_array(sexpr, "alternate")
@@ -338,22 +388,25 @@ class Pin(KicadSymbolBase):
         except ValueError:
             pass
         # create and return a pin with the just extraced values
-        return Pin(name,
-                   number,
-                   etype,
-                   posx,
-                   posy,
-                   rotation,
-                   shape,
-                   length,
-                   is_global,
-                   is_hidden,
-                   number_int,
-                   name_effect,
-                   number_effect,
-                   altfuncs = altfuncs,
-                   unit = unit,
-                   demorgan = demorgan)
+        return Pin(
+            name,
+            number,
+            etype,
+            posx,
+            posy,
+            rotation,
+            shape,
+            length,
+            is_global,
+            is_hidden,
+            number_int,
+            name_effect,
+            number_effect,
+            altfuncs=altfuncs,
+            unit=unit,
+            demorgan=demorgan,
+        )
+
 
 @dataclass
 class Circle(KicadSymbolBase):
@@ -362,16 +415,18 @@ class Circle(KicadSymbolBase):
     radius: float
     stroke_width: float = 0.254
     stroke_color: Optional[Color] = None
-    fill_type: str = 'none'
+    fill_type: str = "none"
     fill_color: Optional[Color] = None
     unit: int = 0
     demorgan: int = 0
 
     def get_sexpr(self) -> List[Any]:
         sx = [
-            'circle', ['center', self.centerx, self.centery], ['radius', self.radius],
-            ['stroke', ['width', self.stroke_width]],
-            ['fill', ['type', self.fill_type]]
+            "circle",
+            ["center", self.centerx, self.centery],
+            ["radius", self.radius],
+            ["stroke", ["width", self.stroke_width]],
+            ["fill", ["type", self.fill_type]],
         ]
         return sx
 
@@ -379,14 +434,25 @@ class Circle(KicadSymbolBase):
     def from_sexpr(cls, sexpr, unit: int, demorgan: int):
         sexpr_orig = sexpr.copy()
         # The first 3 items are pin, type and shape
-        if (sexpr.pop(0) != 'circle'):
+        if sexpr.pop(0) != "circle":
             return None
         # the 1st element
-        (centerx, centery) = _get_xy(sexpr, 'center')
-        radius = _get_value_of(sexpr, 'radius')
+        (centerx, centery) = _get_xy(sexpr, "center")
+        radius = _get_value_of(sexpr, "radius")
         (stroke, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
-        return Circle(centerx, centery, radius, stroke, scolor, fill, fcolor, unit = unit, demorgan = demorgan)
+        return Circle(
+            centerx,
+            centery,
+            radius,
+            stroke,
+            scolor,
+            fill,
+            fcolor,
+            unit=unit,
+            demorgan=demorgan,
+        )
+
 
 @dataclass
 class Arc(KicadSymbolBase):
@@ -399,28 +465,47 @@ class Arc(KicadSymbolBase):
     midy: float
     stroke_width: float = 0.254
     stroke_color: Optional[Color] = None
-    fill_type: str = 'none'
+    fill_type: str = "none"
     fill_color: Optional[Color] = None
     unit: int = 0
     demorgan: int = 0
 
     def get_sexpr(s) -> List[Any]:
-        sx = [ 'arc', ['start', s.startx, s.starty], ['mid', s.midx, s.midy], ['end', s.endx, s.endy]]
-        sx.append(['stroke', ['width', s.stroke_width]])
-        sx.append(['fill', ['type', s.fill_type]])
+        sx = [
+            "arc",
+            ["start", s.startx, s.starty],
+            ["mid", s.midx, s.midy],
+            ["end", s.endx, s.endy],
+        ]
+        sx.append(["stroke", ["width", s.stroke_width]])
+        sx.append(["fill", ["type", s.fill_type]])
         return sx
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional['Arc']:
+    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Arc"]:
         sexpr_orig = sexpr.copy()
-        if (sexpr.pop(0) != 'arc'):
+        if sexpr.pop(0) != "arc":
             return None
-        (startx, starty) = _get_xy(sexpr, 'start')
-        (endx, endy) = _get_xy(sexpr, 'end')
-        (midx, midy) = _get_xy(sexpr, 'mid')
+        (startx, starty) = _get_xy(sexpr, "start")
+        (endx, endy) = _get_xy(sexpr, "end")
+        (midx, midy) = _get_xy(sexpr, "mid")
         (stroke, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
-        return Arc(startx, starty, endx, endy, midx, midy, stroke, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
+        return Arc(
+            startx,
+            starty,
+            endx,
+            endy,
+            midx,
+            midy,
+            stroke,
+            scolor,
+            fill,
+            fcolor,
+            unit=unit,
+            demorgan=demorgan,
+        )
+
 
 @dataclass
 class Point(KicadSymbolBase):
@@ -428,29 +513,31 @@ class Point(KicadSymbolBase):
     y: float
 
     @classmethod
-    def new_mil(c, x: float, y: float) -> 'Point':
+    def new_mil(c, x: float, y: float) -> "Point":
         return c(mil_to_mm(x), mil_to_mm(y))
 
     def get_sexpr(s):
-      return ['xy', s.x, s.y]
+        return ["xy", s.x, s.y]
+
 
 @dataclass
 class Polyline(KicadSymbolBase):
     points: List[Point]
     stroke_width: float = 0.254
     stroke_color: Optional[Color] = None
-    fill_type: str = 'none'
+    fill_type: str = "none"
     fill_color: Optional[Color] = None
     unit: int = 0
     demorgan: int = 0
 
     def get_sexpr(s):
         pts_list = list(map(lambda x: x.get_sexpr(), s.points))
-        pts_list.insert(0, 'pts')
+        pts_list.insert(0, "pts")
         sx = [
-            'polyline', pts_list,
-            ['stroke', ['width', s.stroke_width]],
-            ['fill', ['type', s.fill_type]]
+            "polyline",
+            pts_list,
+            ["stroke", ["width", s.stroke_width]],
+            ["fill", ["type", s.fill_type]],
         ]
         return sx
 
@@ -466,11 +553,22 @@ class Polyline(KicadSymbolBase):
             maxx = max(maxx, p.x)
             miny = min(miny, p.y)
             maxy = max(maxy, p.y)
-        return(maxx, maxy, minx, miny)
+        return (maxx, maxy, minx, miny)
 
-    def as_rectangle(s) -> 'Rectangle':
+    def as_rectangle(s) -> "Rectangle":
         (maxx, maxy, minx, miny) = s.get_boundingbox()
-        return Rectangle(minx, maxy, maxx, miny, s.stroke_width, s.stroke_color, s.fill_type, s.fill_color, unit=s.unit, demorgan=s.demorgan)
+        return Rectangle(
+            minx,
+            maxy,
+            maxx,
+            miny,
+            s.stroke_width,
+            s.stroke_color,
+            s.fill_type,
+            s.fill_color,
+            unit=s.unit,
+            demorgan=s.demorgan,
+        )
 
     def get_center_of_boundingbox(s) -> Tuple[float, float]:
         (maxx, maxy, minx, miny) = s.get_boundingbox()
@@ -497,17 +595,18 @@ class Polyline(KicadSymbolBase):
         return True
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional['Polyline']:
+    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Polyline"]:
         pts = []
-        if (sexpr.pop(0) != 'polyline'):
+        if sexpr.pop(0) != "polyline":
             return None
-        for p in _get_array(sexpr, 'pts')[0]:
-            if 'xy' in p:
-              pts.append(Point(p[1], p[2]))
+        for p in _get_array(sexpr, "pts")[0]:
+            if "xy" in p:
+                pts.append(Point(p[1], p[2]))
 
         (stroke, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
         return Polyline(pts, stroke, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
+
 
 @dataclass
 class Text(KicadSymbolBase):
@@ -521,20 +620,22 @@ class Text(KicadSymbolBase):
 
     def get_sexpr(s) -> List[Any]:
         sx = [
-            'text', s.quoted_string(s.text),
-            ['at', s.posx, s.posy, s.rotation],
-            s.effects.get_sexpr()
+            "text",
+            s.quoted_string(s.text),
+            ["at", s.posx, s.posy, s.rotation],
+            s.effects.get_sexpr(),
         ]
         return sx
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan:int ) -> Optional['Text']:
-        if (sexpr.pop(0) != 'text'):
+    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Text"]:
+        if sexpr.pop(0) != "text":
             return None
         text = sexpr.pop(0)
         (posx, posy, rotation) = _parse_at(sexpr)
-        effects = TextEffect.from_sexpr(_get_array(sexpr, 'effects')[0])
-        return Text(text, posx, posy, rotation, effects, unit = unit, demorgan = demorgan)
+        effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
+        return Text(text, posx, posy, rotation, effects, unit=unit, demorgan=demorgan)
+
 
 @dataclass
 class Rectangle(KicadSymbolBase):
@@ -549,23 +650,27 @@ class Rectangle(KicadSymbolBase):
     endy: float
     stroke_width: float = 0.254
     stroke_color: Optional[Color] = None
-    fill_type: str = 'background'
+    fill_type: str = "background"
     fill_color: Optional[Color] = None
     unit: int = 0
     demorgan: int = 0
 
     @classmethod
-    def new_mil(cls, sx: float, sy: float, ex: float, ey: float, fill: str = 'background') -> 'Rectangle':
+    def new_mil(
+        cls, sx: float, sy: float, ex: float, ey: float, fill: str = "background"
+    ) -> "Rectangle":
         r = cls(mil_to_mm(sx), mil_to_mm(sy), mil_to_mm(ex), mil_to_mm(ey))
-        if fill in ['none', 'outline', 'background']:
+        if fill in ["none", "outline", "background"]:
             r.fill_type = fill
         return r
 
     def get_sexpr(s) -> List[Any]:
         sx = [
-            'rectangle', ['start', s.startx, s.starty], ['end', s.endx, s.endy],
-            ['stroke', ['width', s.stroke_width]],
-            ['fill', ['type', s.fill_type]]
+            "rectangle",
+            ["start", s.startx, s.starty],
+            ["end", s.endx, s.endy],
+            ["stroke", ["width", s.stroke_width]],
+            ["fill", ["type", s.fill_type]],
         ]
         return sx
 
@@ -577,7 +682,15 @@ class Rectangle(KicadSymbolBase):
             Point(s.startx, s.endy),
             Point(s.startx, s.starty),
         ]
-        return Polyline(pts, s.stroke_width, s.stroke_color, s.fill_type, s.fill_color, unit=s.unit, demorgan=s.demorgan)
+        return Polyline(
+            pts,
+            s.stroke_width,
+            s.stroke_color,
+            s.fill_type,
+            s.fill_color,
+            unit=s.unit,
+            demorgan=s.demorgan,
+        )
 
     def get_center(s) -> Tuple[float, float]:
         x = (s.endx + s.startx) / 2.0
@@ -585,15 +698,27 @@ class Rectangle(KicadSymbolBase):
         return (x, y)
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional['Rectangle']:
-        if (sexpr.pop(0) != 'rectangle'):
+    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Rectangle"]:
+        if sexpr.pop(0) != "rectangle":
             return None
         # the 1st element
-        (startx, starty) = _get_xy(sexpr, 'start')
-        (endx, endy) = _get_xy(sexpr, 'end')
+        (startx, starty) = _get_xy(sexpr, "start")
+        (endx, endy) = _get_xy(sexpr, "end")
         (stroke, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
-        return Rectangle(startx, starty, endx, endy, stroke, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
+        return Rectangle(
+            startx,
+            starty,
+            endx,
+            endy,
+            stroke,
+            scolor,
+            fill,
+            fcolor,
+            unit=unit,
+            demorgan=demorgan,
+        )
+
 
 @dataclass
 class Property(KicadSymbolBase):
@@ -613,9 +738,12 @@ class Property(KicadSymbolBase):
 
     def get_sexpr(s) -> List[Any]:
         sx = [
-            'property', s.quoted_string(s.name), s.quoted_string(s.value), ['id', s.idd],
-            ['at', s.posx, s.posy, s.rotation],
-            s.effects.get_sexpr()
+            "property",
+            s.quoted_string(s.name),
+            s.quoted_string(s.value),
+            ["id", s.idd],
+            ["at", s.posx, s.posy, s.rotation],
+            s.effects.get_sexpr(),
         ]
         return sx
 
@@ -626,15 +754,16 @@ class Property(KicadSymbolBase):
             self.rotation = rot
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int = 0) -> Optional['Property']:
-        if (sexpr.pop(0) != 'property'):
+    def from_sexpr(cls, sexpr, unit: int = 0) -> Optional["Property"]:
+        if sexpr.pop(0) != "property":
             return None
         name = sexpr.pop(0)
         value = sexpr.pop(0)
-        idd = _get_value_of(sexpr, 'id')
+        idd = _get_value_of(sexpr, "id")
         (posx, posy, rotation) = _parse_at(sexpr)
-        effects = TextEffect.from_sexpr(_get_array(sexpr, 'effects')[0])
+        effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
         return Property(name, value, idd, posx, posy, rotation, effects)
+
 
 @dataclass
 class KicadSymbol(KicadSymbolBase):
@@ -666,30 +795,26 @@ class KicadSymbol(KicadSymbolBase):
     def get_sexpr(s) -> List[str]:
         # add header
         full_name = s.quoted_string("{}".format(s.name))
-        sx = [
-            'symbol', full_name
-        ]
+        sx = ["symbol", full_name]
         if s.extends:
-            sx.append(['extends', s.quoted_string(s.extends)])
+            sx.append(["extends", s.quoted_string(s.extends)])
 
-        pn = ['pin_names']
+        pn = ["pin_names"]
         if s.pin_names_offset != 0.508:
-            pn.append(['offset', s.pin_names_offset])
+            pn.append(["offset", s.pin_names_offset])
         if s.hide_pin_names:
-            pn.append('hide')
+            pn.append("hide")
         if len(pn) > 1:
             sx.append(pn)
 
         if s.in_bom:
-            sx.append(['in_bom', 'yes'])
+            sx.append(["in_bom", "yes"])
         if s.on_board:
-            sx.append(['on_board', 'yes'])
+            sx.append(["on_board", "yes"])
         if s.is_power:
-            sx.append(['power'])
+            sx.append(["power"])
         if s.hide_pin_numbers:
-            sx.append(['pin_numbers', 'hide'])
-
-
+            sx.append(["pin_numbers", "hide"])
 
         # add properties
         for prop in s.properties:
@@ -699,13 +824,15 @@ class KicadSymbol(KicadSymbolBase):
         for d in range(0, s.demorgan_count + 1):
             for u in range(0, s.unit_count + 1):
                 hdr = s.quoted_string("{}_{}_{}".format(s.name, u, d))
-                sx_i = ['symbol', hdr]
-                for pin in s.arcs + s.circles + s.texts + s.rectangles + s.polylines + s.pins:
+                sx_i = ["symbol", hdr]
+                for pin in (
+                    s.arcs + s.circles + s.texts + s.rectangles + s.polylines + s.pins
+                ):
                     if pin.is_unit(u, d):
                         sx_i.append(pin.get_sexpr())
 
                 if len(sx_i) > 2:
-                  sx.append(sx_i)
+                    sx.append(sx_i)
 
         return sx
 
@@ -715,13 +842,13 @@ class KicadSymbol(KicadSymbolBase):
         candidates = {}
         # building a dict with floats as keys.. there needs to be a rule against that^^
         pl_rects = [i.as_polyline() for i in s.rectangles]
-        pl_rects.extend(filter(lambda pl : pl.is_rectangle(), s.polylines))
+        pl_rects.extend(filter(lambda pl: pl.is_rectangle(), s.polylines))
         for pl in pl_rects:
-          if pl.unit in units:
-            # extract the center, calculate the distance to origin
-            (x, y) = pl.get_center_of_boundingbox()
-            dist = math.sqrt(x*x + y*y)
-            candidates[dist] = pl
+            if pl.unit in units:
+                # extract the center, calculate the distance to origin
+                (x, y) = pl.get_center_of_boundingbox()
+                dist = math.sqrt(x * x + y * y)
+                candidates[dist] = pl
 
         if len(candidates) > 0:
             # sort the list return the first (smalles) item
@@ -744,7 +871,9 @@ class KicadSymbol(KicadSymbolBase):
             # add the pin to the correct stack
             for demorgan in demorgan_list:
                 for unit in unit_list:
-                    loc = "x{0}_y{1}_u{2}_d{3}".format(pin.posx, pin.posy, unit, demorgan)
+                    loc = "x{0}_y{1}_u{2}_d{3}".format(
+                        pin.posx, pin.posy, unit, demorgan
+                    )
                     if loc in stacks:
                         stacks[loc].append(pin)
                     else:
@@ -760,51 +889,63 @@ class KicadSymbol(KicadSymbolBase):
 
     def add_default_properties(self) -> None:
         defaults = [
-            {'i': 0, 'n': "Reference", 'v': "U", 'h': False},
-            {'i': 1, 'n': "Value", 'v': self.name, 'h': False},
-            {'i': 2, 'n': "Footprint", 'v': "", 'h': True},
-            {'i': 3, 'n': "Datasheet", 'v': "", 'h': True},
-            {'i': 4, 'n': "ki_locked", 'v': "", 'h': True},
-            {'i': 5, 'n': "ki_keywords", 'v': "", 'h': True},
-            {'i': 6, 'n': "ki_description", 'v': "", 'h': True},
-            {'i': 7, 'n': "ki_fp_filters", 'v': "", 'h': False}
+            {"i": 0, "n": "Reference", "v": "U", "h": False},
+            {"i": 1, "n": "Value", "v": self.name, "h": False},
+            {"i": 2, "n": "Footprint", "v": "", "h": True},
+            {"i": 3, "n": "Datasheet", "v": "", "h": True},
+            {"i": 4, "n": "ki_locked", "v": "", "h": True},
+            {"i": 5, "n": "ki_keywords", "v": "", "h": True},
+            {"i": 6, "n": "ki_description", "v": "", "h": True},
+            {"i": 7, "n": "ki_fp_filters", "v": "", "h": False},
         ]
 
         for prop in defaults:
-            if self.get_property(prop['n']) is None:
-                p = Property(prop['n'], prop['v'], prop['i'])
-                p.effects.is_hidden = prop['h']
+            if self.get_property(prop["n"]) is None:
+                p = Property(prop["n"], prop["v"], prop["i"])
+                p.effects.is_hidden = prop["h"]
                 self.properties.append(p)
 
     @classmethod
-    def new(cls, name: str, libname: str, reference: str = "U", footprint: str = "", datasheet: str = "", keywords: str = "", description: str = "", fp_filters: str = ""):
+    def new(
+        cls,
+        name: str,
+        libname: str,
+        reference: str = "U",
+        footprint: str = "",
+        datasheet: str = "",
+        keywords: str = "",
+        description: str = "",
+        fp_filters: str = "",
+    ):
         sym = cls(name, libname, libname + ".kicad_sym")
         sym.add_default_properties()
-        sym.get_property('Reference').value = reference
-        sym.get_property('Footprint').value = footprint
-        sym.get_property('Datasheet').value = datasheet
-        sym.get_property('ki_keywords').value = keywords
-        sym.get_property('ki_description').value = description
+        sym.get_property("Reference").value = reference
+        sym.get_property("Footprint").value = footprint
+        sym.get_property("Datasheet").value = datasheet
+        sym.get_property("ki_keywords").value = keywords
+        sym.get_property("ki_description").value = description
         if type(fp_filters) is list:
             fp_filters = " ".join(fp_filters)
-        sym.get_property('ki_fp_filters').value = fp_filters
+        sym.get_property("ki_fp_filters").value = fp_filters
         return sym
 
     def get_fp_filters(self) -> List[str]:
-        filters = self.get_property('ki_fp_filters')
+        filters = self.get_property("ki_fp_filters")
         if filters:
             return filters.value.split(" ")
         else:
             return []
 
     def is_graphic_symbol(self) -> bool:
-        return self.extends is None and (len(self.pins) == 0 or self.get_property('Reference').value == '#SYM')
+        return self.extends is None and (
+            len(self.pins) == 0 or self.get_property("Reference").value == "#SYM"
+        )
 
     def is_power_symbol(self) -> bool:
         return self.is_power
 
     def is_locked(self) -> bool:
-      return self.get_property('ki_locked') != None
+        return self.get_property("ki_locked") != None
 
     def does_extend(self):
         # @todo Not defined
@@ -824,16 +965,21 @@ class KicadSymbol(KicadSymbolBase):
                 return pin
         return None
 
-    def filter_pins(self, name: Optional[str] = None, direction: Optional[str] = None, electrical_type: Optional[str] = None) -> List[Pin]:
+    def filter_pins(
+        self,
+        name: Optional[str] = None,
+        direction: Optional[str] = None,
+        electrical_type: Optional[str] = None,
+    ) -> List[Pin]:
         pins = []
         for pin in self.pins:
-            if ((name and pin.name == name)
-                    or (direction and pin.rotation == self.dir_to_rotation(direction))
-                    or (electrical_type
-                        and pin.etype == electrical_type)):
+            if (
+                (name and pin.name == name)
+                or (direction and pin.rotation == self.dir_to_rotation(direction))
+                or (electrical_type and pin.etype == electrical_type)
+            ):
                 pins.append(pin)
         return pins
-
 
     # heuristics, which tries to determine whether this is a "small" component (resistor, capacitor, LED, diode, transistor, ...)
     def is_small_component_heuristics(self) -> bool:
@@ -858,98 +1004,97 @@ class KicadLibrary(KicadSymbolBase):
 
     filename: str
     symbols: List[KicadSymbol] = field(default_factory=list)
-    generator: str = 'kicad-library-utils'
-    version: str = '20211218'
+    generator: str = "kicad-library-utils"
+    version: str = "20211218"
 
     def write(s) -> None:
         lib_file = open(s.filename, "w")
         lib_file.write(s.get_sexpr())
         lib_file.close()
 
-
     def get_sexpr(s) -> str:
-        sx = [
-            'kicad_symbol_lib', ['version', s.version], ['generator', s.generator]
-        ]
+        sx = ["kicad_symbol_lib", ["version", s.version], ["generator", s.generator]]
         for sym in s.symbols:
             sx.append(sym.get_sexpr())
         return sexpr.format_sexp(sexpr.build_sexp(sx), max_nesting=4)
 
     @classmethod
-    def from_file(cls, filename: str) -> 'KicadLibrary':
+    def from_file(cls, filename: str) -> "KicadLibrary":
         library = KicadLibrary(filename)
 
         # read the s-expression data
         f_name = open(filename)
-        lines = ''.join(f_name.readlines())
+        lines = "".join(f_name.readlines())
 
         # parse s-expr
         sexpr_data = sexpr.parse_sexp(lines)
-        sym_list = _get_array(sexpr_data, 'symbol', max_level=2)
+        sym_list = _get_array(sexpr_data, "symbol", max_level=2)
         f_name.close()
 
         # Because of the various file format changes in the development of kicad v6 and v7, we want
         # to ensure that this parser is only used with v6 files. Any other version will most likely
         # not work as expected. So just don't load them at all.
-        version = _get_value_of(sexpr_data, 'version')
-        generator = _get_value_of(sexpr_data, 'generator')
+        version = _get_value_of(sexpr_data, "version")
+        generator = _get_value_of(sexpr_data, "generator")
         if str(version) != "20211014":
             raise ValueError('Version of symbol file is not "20211014"')
 
         # itertate over symbol
         for item in sym_list:
-            if item.pop(0) != 'symbol':
-                raise ValueError('unexpected token in file')
+            if item.pop(0) != "symbol":
+                raise ValueError("unexpected token in file")
             # retrieving only the `partname` if formated as `libname:partname` (legacy format)
-            partname = item.pop(0).split(':')[-1]
+            partname = item.pop(0).split(":")[-1]
 
             # we found a new part, extract the symbol name
-            symbol = KicadSymbol(str(partname), libname = filename, filename = filename)
+            symbol = KicadSymbol(str(partname), libname=filename, filename=filename)
 
             # extract extends property
-            extends = _get_array2(item, 'extends')
+            extends = _get_array2(item, "extends")
             if len(extends) > 0:
-              symbol.extends = extends[0][1]
+                symbol.extends = extends[0][1]
 
             # extract properties
-            for prop in _get_array(item, 'property'):
+            for prop in _get_array(item, "property"):
                 symbol.properties.append(Property.from_sexpr(prop))
 
             # get flags
-            if _has_value(item, 'in_bom'):
+            if _has_value(item, "in_bom"):
                 symbol.in_bom = True
-            if _has_value(item, 'power'):
+            if _has_value(item, "power"):
                 symbol.is_power = True
-            if _has_value(item, 'on_board'):
+            if _has_value(item, "on_board"):
                 symbol.on_board = True
 
             # get pin-numbers properties
-            pin_numbers_info = _get_array2(item, 'pin_numbers')
+            pin_numbers_info = _get_array2(item, "pin_numbers")
             if pin_numbers_info:
-                if 'hide' in pin_numbers_info[0]:
+                if "hide" in pin_numbers_info[0]:
                     symbol.hide_pin_numbers = True
 
             # get pin-name properties
-            pin_names_info = _get_array2(item, 'pin_names')
+            pin_names_info = _get_array2(item, "pin_names")
             if pin_names_info:
-                if 'hide' in pin_names_info[0]:
+                if "hide" in pin_names_info[0]:
                     symbol.hide_pin_names = True
                 # sometimes the pin_name_offset value does not exist, then use 20mil as default
-                symbol.pin_names_offset = _get_value_of(pin_names_info[0], 'offset', 0.508)
+                symbol.pin_names_offset = _get_value_of(
+                    pin_names_info[0], "offset", 0.508
+                )
 
             # get the actual geometry information
             # it is split over units
-            subsymbols = _get_array2(item, 'symbol')
+            subsymbols = _get_array2(item, "symbol")
             for unit_data in subsymbols:
                 # we found a new 'subpart' (no clue how to call it properly)
-                if unit_data.pop(0) != 'symbol':
-                    raise ValueError('unexpected token in file')
+                if unit_data.pop(0) != "symbol":
+                    raise ValueError("unexpected token in file")
                 name = unit_data.pop(0)
 
                 # split the name
-                m1 = re.match(r'^'+re.escape(partname)+'_(\d+?)_(\d+?)$', name)
+                m1 = re.match(r"^" + re.escape(partname) + "_(\d+?)_(\d+?)$", name)
                 if not m1:
-                    raise ValueError('failed to parse subsymbol')
+                    raise ValueError("failed to parse subsymbol")
 
                 (unit_idx, demorgan_idx) = (m1.group(1), m1.group(2))
                 unit_idx = int(unit_idx)
@@ -960,18 +1105,24 @@ class KicadLibrary(KicadSymbolBase):
                 symbol.demorgan_count = max(demorgan_idx, symbol.demorgan_count)
 
                 # extract pins and graphical items
-                for pin in _get_array(unit_data, 'pin'):
+                for pin in _get_array(unit_data, "pin"):
                     symbol.pins.append(Pin.from_sexpr(pin, unit_idx, demorgan_idx))
-                for circle in _get_array(unit_data, 'circle'):
-                    symbol.circles.append(Circle.from_sexpr(circle, unit_idx, demorgan_idx))
-                for arc in _get_array(unit_data, 'arc'):
+                for circle in _get_array(unit_data, "circle"):
+                    symbol.circles.append(
+                        Circle.from_sexpr(circle, unit_idx, demorgan_idx)
+                    )
+                for arc in _get_array(unit_data, "arc"):
                     symbol.arcs.append(Arc.from_sexpr(arc, unit_idx, demorgan_idx))
-                for rect in _get_array(unit_data, 'rectangle'):
-                    #symbol.polylines.append(Rectangle.from_sexpr(rect, unit, demorgan).as_polyline())
-                    symbol.rectangles.append(Rectangle.from_sexpr(rect, unit_idx, demorgan_idx))
-                for poly in _get_array(unit_data, 'polyline'):
-                    symbol.polylines.append(Polyline.from_sexpr(poly, unit_idx, demorgan_idx))
-                for text in _get_array(unit_data, 'text'):
+                for rect in _get_array(unit_data, "rectangle"):
+                    # symbol.polylines.append(Rectangle.from_sexpr(rect, unit, demorgan).as_polyline())
+                    symbol.rectangles.append(
+                        Rectangle.from_sexpr(rect, unit_idx, demorgan_idx)
+                    )
+                for poly in _get_array(unit_data, "polyline"):
+                    symbol.polylines.append(
+                        Polyline.from_sexpr(poly, unit_idx, demorgan_idx)
+                    )
+                for text in _get_array(unit_data, "text"):
                     symbol.texts.append(Text.from_sexpr(text, unit_idx, demorgan_idx))
 
             # add it to the list of symbols
@@ -979,11 +1130,12 @@ class KicadLibrary(KicadSymbolBase):
 
         return library
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     if len(sys.argv) >= 2:
         a = KicadLibrary.from_file(sys.argv[1])
-        a.generator = 'kicad_symbol_editor'
-        a.version = '20200908'
+        a.generator = "kicad_symbol_editor"
+        a.version = "20200908"
         print(a.get_sexpr())
     else:
         print("pass a .kicad_sym file please")

@@ -3,26 +3,25 @@
 import argparse
 import logging
 import math
+import multiprocessing
 import os
 import re
 import sys
-import multiprocessing
 from itertools import repeat
 
 from lxml import etree
 
-common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
+common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 if not common in sys.path:
     sys.path.append(common)
 
-common = os.path.abspath(os.path.join(sys.path[0], '..', '..', 'common'))
+common = os.path.abspath(os.path.join(sys.path[0], "..", "..", "common"))
 if not common in sys.path:
     sys.path.append(common)
 
 import kicad_sym
-
-from Point import *
 from DrawingElements import *
+from Point import *
 
 
 class DataPin:
@@ -33,7 +32,7 @@ class DataPin:
         "Boot": DrawingPin.PinElectricalType.EL_TYPE_INPUT,
         "MonoIO": DrawingPin.PinElectricalType.EL_TYPE_BIDIR,
         "NC": DrawingPin.PinElectricalType.EL_TYPE_NC,
-        "Clock": DrawingPin.PinElectricalType.EL_TYPE_INPUT
+        "Clock": DrawingPin.PinElectricalType.EL_TYPE_INPUT,
     }
 
     def __init__(self, number, name, pintype):
@@ -51,15 +50,22 @@ class DataPin:
         else:
             visibility = DrawingPin.PinVisibility.VISIBLE
         # Make the DrawingPin
-        return DrawingPin(Point(0, 0), self.num, name=self.name,
-                el_type=el_type, visibility=visibility, altfuncs=self.altfuncs, **kwargs)
+        return DrawingPin(
+            Point(0, 0),
+            self.num,
+            name=self.name,
+            el_type=el_type,
+            visibility=visibility,
+            altfuncs=self.altfuncs,
+            **kwargs,
+        )
 
 
 class Device:
     _name_search = re.compile(r"^(.+)\((.+)\)(.+)$")
     _number_findall = re.compile(r"\d+")
     _pincount_search = re.compile(r"^[a-zA-Z]+([0-9]+)$")
-    _pinname_split = re.compile('[ /-]+')
+    _pinname_split = re.compile("[ /-]+")
     _pkgname_sub = re.compile(r"([a-zA-Z]+)([0-9]+)(-.*|)")
 
     _SPECIAL_PIN_MAPPING = {
@@ -69,17 +75,10 @@ class Device:
         "OSC_IN": [""],
         "OSC_OUT": [""],
         "VREF-": ["VREF-"],
-        "VREFSD-": ["VREFSD-"]
+        "VREFSD-": ["VREFSD-"],
     }
-    _SPECIAL_TYPES_MAPPING = {
-        "RCC_OSC_IN": "Clock",
-        "RCC_OSC_OUT": "Clock"
-    }
-    _POWER_PAD_FIX_PACKAGES = {
-        "UFQFPN32",
-        "UFQFPN48",
-        "VFQFPN36"
-    }
+    _SPECIAL_TYPES_MAPPING = {"RCC_OSC_IN": "Clock", "RCC_OSC_OUT": "Clock"}
+    _POWER_PAD_FIX_PACKAGES = {"UFQFPN32", "UFQFPN48", "VFQFPN36"}
     _FOOTPRINT_MAPPING = {
         "EWLCSP49-DIE447": "Package_CSP:ST_WLCSP-49_Die447",
         "EWLCSP66-DIE411": "Package_CSP:ST_WLCSP-66_Die411",
@@ -151,7 +150,7 @@ class Device:
         "WLCSP143-DIE449": "Package_CSP:ST_WLCSP-143_Die449",
         "WLCSP144-DIE470": "Package_CSP:ST_WLCSP-144_Die470",
         "WLCSP168-DIE434": "Package_CSP:ST_WLCSP-168_Die434",
-        "WLCSP180-DIE451": "Package_CSP:ST_WLCSP-180_Die451"
+        "WLCSP180-DIE451": "Package_CSP:ST_WLCSP-180_Die451",
     }
     _FPFILTER_MAPPING = {
         "EWLCSP49-DIE447": "ST_WLCSP*Die447*",
@@ -222,7 +221,7 @@ class Device:
         "WLCSP143-DIE449": "ST_WLCSP*Die449*",
         "WLCSP144-DIE470": "ST_WLCSP*Die470*",
         "WLCSP168-DIE434": "ST_WLCSP*Die434*",
-        "WLCSP180-DIE451": "ST_WLCSP*Die451*"
+        "WLCSP180-DIE451": "ST_WLCSP*Die451*",
     }
 
     pdfinfo = {}
@@ -267,28 +266,38 @@ class Device:
             self.package += f"-{die}"
         # Pick the right size of UFBGA144
         if self.package == "UFBGA144":
-            if self.name in {"STM32F412ZEJx", "STM32F413ZGJx", "STM32F423ZHJx",
-                    "STM32F446ZCJx", "STM32L4R9ZGJx", "STM32L4S9ZIJx"}:
+            if self.name in {
+                "STM32F412ZEJx",
+                "STM32F413ZGJx",
+                "STM32F423ZHJx",
+                "STM32F446ZCJx",
+                "STM32L4R9ZGJx",
+                "STM32L4S9ZIJx",
+            }:
                 self.package += "-10X10"
-            elif self.name in {"STM32F446ZCHx", "STM32F723ZCIx",
-                    "STM32F733ZEIx"}:
+            elif self.name in {"STM32F446ZCHx", "STM32F723ZCIx", "STM32F733ZEIx"}:
                 self.package += "-7X7"
             else:
-                logging.warning(f"Unable to determine package variant for "
-                        f"device {self.name}, package {self.package}")
+                logging.warning(
+                    f"Unable to determine package variant for "
+                    f"device {self.name}, package {self.package}"
+                )
 
         # Get the footprint for this package
         try:
             self.footprint = Device._FOOTPRINT_MAPPING[self.package]
         except KeyError:
-            logging.warning(f"No footprint found for device {self.name}, "
-                    f"package {self.package}")
+            logging.warning(
+                f"No footprint found for device {self.name}, " f"package {self.package}"
+            )
             self.footprint = ""
 
         # Read the information for each pin
         for child in self.root.xpath("a:Pin", namespaces=self.ns):
             # Create object and read attributes
-            newpin = DataPin(child.get("Position"), child.get("Name"), child.get("Type"))
+            newpin = DataPin(
+                child.get("Position"), child.get("Name"), child.get("Type")
+            )
 
             if newpin.name in Device._SPECIAL_PIN_MAPPING:
                 newpin.name = Device._SPECIAL_PIN_MAPPING[newpin.name][0]
@@ -303,7 +312,9 @@ class Device:
             for signal in child.xpath("a:Signal", namespaces=self.ns):
                 altfunction = signal.get("Name")
                 if altfunction not in ["GPIO"]:
-                    newpin.altfuncs.append(kicad_sym.AltFunction(altfunction, "bidirectional", "line"))
+                    newpin.altfuncs.append(
+                        kicad_sym.AltFunction(altfunction, "bidirectional", "line")
+                    )
                 # If the pin doesn't have a name, use the first alt function
                 if not newpin.name:
                     newpin.name = altfunction
@@ -313,12 +324,16 @@ class Device:
             self.pins.append(newpin)
 
         # If this part has a power pad, we have to add it manually
-        if (self.root.get("HasPowerPad") == "true"
-                or self.package in Device._POWER_PAD_FIX_PACKAGES):
+        if (
+            self.root.get("HasPowerPad") == "true"
+            or self.package in Device._POWER_PAD_FIX_PACKAGES
+        ):
             # Read pin count from package name
             packPinCountR = Device._pincount_search.search(self.package)
             powerpinnumber = str(int(packPinCountR.group(1)) + 1)
-            logging.info(f"Device {name} with powerpad, package {self.package}, power pin: {powerpinnumber}")
+            logging.info(
+                f"Device {name} with powerpad, package {self.package}, power pin: {powerpinnumber}"
+            )
             # Create power pad pin
             powerpadpin = DataPin(powerpinnumber, "VSS", "Power")
             self.pins.append(powerpadpin)
@@ -337,7 +352,14 @@ class Device:
         self.io = self.root.xpath("a:IONb", namespaces=self.ns)[0].text
         self.flash = [f.text for f in self.root.xpath("a:Flash", namespaces=self.ns)]
         try:
-            self.voltage = [self.root.xpath("a:Voltage", namespaces=self.ns)[0].get("Min", default="--"), self.root.xpath("a:Voltage", namespaces=self.ns)[0].get("Max", default="--")]
+            self.voltage = [
+                self.root.xpath("a:Voltage", namespaces=self.ns)[0].get(
+                    "Min", default="--"
+                ),
+                self.root.xpath("a:Voltage", namespaces=self.ns)[0].get(
+                    "Max", default="--"
+                ),
+            ]
         except:
             # Not all chips have a voltage specification
             logging.info("Unknown voltage")
@@ -353,69 +375,98 @@ class Device:
         # Make strings for DCM entries
         freqstr = f"{self.freq}MHz, " if self.freq else ""
         voltstr = f"{self.voltage[0]}-{self.voltage[1]}V, " if self.voltage else ""
-        pkgstr = self._pkgname_sub.sub(r'\1-\2', self.package)
-        desc_fmt = (f"{self.core} MCU, {{flash}}KB flash, "
-                f"{{ram}}KB RAM, {freqstr}{voltstr}{self.io} GPIO, "
-                f"{pkgstr}")
+        pkgstr = self._pkgname_sub.sub(r"\1-\2", self.package)
+        desc_fmt = (
+            f"{self.core} MCU, {{flash}}KB flash, "
+            f"{{ram}}KB RAM, {freqstr}{voltstr}{self.io} GPIO, "
+            f"{pkgstr}"
+        )
         keywords = f"{self.core} {self.family} {self.line}"
-        datasheet = "" if self.pdf is None else (f"https://www.st.com/"
-                f"resource/en/datasheet/{self.pdf}")
+        datasheet = (
+            ""
+            if self.pdf is None
+            else (f"https://www.st.com/" f"resource/en/datasheet/{self.pdf}")
+        )
 
         # Get footprint filters
         try:
             footprint_filters = Device._FPFILTER_MAPPING[self.package]
         except KeyError:
-            footprint_filters = ''
-            logging.warning(f"No footprint filters found for device "
-                    f"{self.name}, package {self.package}")
+            footprint_filters = ""
+            logging.warning(
+                f"No footprint filters found for device "
+                f"{self.name}, package {self.package}"
+            )
 
         libname = os.path.basename(lib.filename)
         libname = os.path.splitext(libname)[0]
 
         # Make the symbol
-        self.symbol = kicad_sym.KicadSymbol.new (self.name, libname, 'U', self.footprint, datasheet, keywords, 
-            desc_fmt.format(flash=self.flash[0], ram=self.ram[0]), footprint_filters)
+        self.symbol = kicad_sym.KicadSymbol.new(
+            self.name,
+            libname,
+            "U",
+            self.footprint,
+            datasheet,
+            keywords,
+            desc_fmt.format(flash=self.flash[0], ram=self.ram[0]),
+            footprint_filters,
+        )
 
-        lib.symbols.append (self.symbol)
+        lib.symbols.append(self.symbol)
 
         # Draw the symbol
         self.draw_symbol()
 
         # Add derived symbols (fka aliases)
         for i, alias in enumerate(self.aliases):
-            f = 0 if len(self.flash) == 1 else i+1
-            r = 0 if len(self.ram) == 1 else i+1
+            f = 0 if len(self.flash) == 1 else i + 1
+            r = 0 if len(self.ram) == 1 else i + 1
 
             description = desc_fmt.format(flash=self.flash[f], ram=self.ram[r])
 
-            derived_symbol = kicad_sym.KicadSymbol.new (alias, libname, 'U', self.footprint, datasheet, keywords, 
-                description, footprint_filters)
+            derived_symbol = kicad_sym.KicadSymbol.new(
+                alias,
+                libname,
+                "U",
+                self.footprint,
+                datasheet,
+                keywords,
+                description,
+                footprint_filters,
+            )
 
             derived_symbol.extends = self.symbol.name
 
-            parent_property = self.symbol.get_property('Reference')
-            derived_symbol.get_property('Reference').posx = parent_property.posx
-            derived_symbol.get_property('Reference').posy = parent_property.posy
-            derived_symbol.get_property('Reference').effects.h_justify = parent_property.effects.h_justify
+            parent_property = self.symbol.get_property("Reference")
+            derived_symbol.get_property("Reference").posx = parent_property.posx
+            derived_symbol.get_property("Reference").posy = parent_property.posy
+            derived_symbol.get_property(
+                "Reference"
+            ).effects.h_justify = parent_property.effects.h_justify
 
-            parent_property = self.symbol.get_property('Value')
-            derived_symbol.get_property('Value').posx = parent_property.posx
-            derived_symbol.get_property('Value').posy = parent_property.posy
-            derived_symbol.get_property('Value').effects.h_justify = parent_property.effects.h_justify
+            parent_property = self.symbol.get_property("Value")
+            derived_symbol.get_property("Value").posx = parent_property.posx
+            derived_symbol.get_property("Value").posy = parent_property.posy
+            derived_symbol.get_property(
+                "Value"
+            ).effects.h_justify = parent_property.effects.h_justify
 
-            parent_property = self.symbol.get_property('Footprint')
-            derived_symbol.get_property('Footprint').posx = parent_property.posx
-            derived_symbol.get_property('Footprint').posy = parent_property.posy
-            derived_symbol.get_property('Footprint').effects.h_justify = parent_property.effects.h_justify
-            derived_symbol.get_property('Footprint').effects.is_hidden = parent_property.effects.is_hidden
+            parent_property = self.symbol.get_property("Footprint")
+            derived_symbol.get_property("Footprint").posx = parent_property.posx
+            derived_symbol.get_property("Footprint").posy = parent_property.posy
+            derived_symbol.get_property(
+                "Footprint"
+            ).effects.h_justify = parent_property.effects.h_justify
+            derived_symbol.get_property(
+                "Footprint"
+            ).effects.is_hidden = parent_property.effects.is_hidden
 
-            lib.symbols.append (derived_symbol)
-
-
+            lib.symbols.append(derived_symbol)
 
     def xcompare(self, x, y):
         for a, b in zip(x, y):
-            if a != b and a != 'x' and b != 'x':
+            if a != b and a != "x" and b != "x":
                 return False
         return True
 
@@ -431,7 +482,7 @@ class Device:
                 line = line.strip()
                 if line.find("STM32") >= 0:
                     # Remove commas and then split string
-                    candidatenames = line.translate(str.maketrans(","," ")).split()
+                    candidatenames = line.translate(str.maketrans(",", " ")).split()
                     for candidatename in candidatenames:
                         # Associate file with every device name
                         cls.pdfinfo[candidatename] = pdf
@@ -445,8 +496,8 @@ class Device:
             Device.readpdfinfo(self.pdfdir)
 
         s = self.name
-        #logging.debug("NEW: " + s)
-        #logging.debug(Device.pdfinfo)
+        # logging.debug("NEW: " + s)
+        # logging.debug(Device.pdfinfo)
         winners = set()
         for key, value in Device.pdfinfo.items():
             # Some heuristic here
@@ -458,21 +509,24 @@ class Device:
                 suffix = ""
             strings = [suffix + variants[0]]
             for var in variants[1:]:
-                strings.append(strings[0][:-len(var)] + var + suffix)
+                strings.append(strings[0][: -len(var)] + var + suffix)
             for string in strings:
                 if self.xcompare(s, string):
                     winners.add(value)
 
-        #logging.debug(winners)
+        # logging.debug(winners)
         if len(winners) == 1:
             return winners.pop()[:-4]
         else:
             if winners:
-                logging.warning(f"Multiple datasheets determined for device "
-                        f"{self.name} ({winners})")
+                logging.warning(
+                    f"Multiple datasheets determined for device "
+                    f"{self.name} ({winners})"
+                )
             else:
-                logging.warning(f"Datasheet could not be determined for "
-                        f"device {self.name}")
+                logging.warning(
+                    f"Datasheet could not be determined for " f"device {self.name}"
+                )
             return None
 
     def merge_duplicate_pins(self):
@@ -510,53 +564,82 @@ class Device:
         # Classify pins
         for pin in self.pins:
             # I/O pins - uncertain orientation
-            if ((pin.pintype == "I/O" or pin.pintype == "Clock")
-                    and pin.name.startswith("P")):
+            if (pin.pintype == "I/O" or pin.pintype == "Clock") and pin.name.startswith(
+                "P"
+            ):
                 port = pin.name[1]
                 pin_num = int(Device._number_findall.findall(pin.name)[0])
                 try:
-                    ports[port][pin_num] = pin.to_drawing_pin(
-                            pin_length=pin_length)
+                    ports[port][pin_num] = pin.to_drawing_pin(pin_length=pin_length)
                 except KeyError:
                     ports[port] = {}
-                    ports[port][pin_num] = pin.to_drawing_pin(
-                            pin_length=pin_length)
+                    ports[port][pin_num] = pin.to_drawing_pin(pin_length=pin_length)
             # Clock pins go on the left
             elif pin.pintype == "Clock":
-                clockPins.append(pin.to_drawing_pin(pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT))
+                clockPins.append(
+                    pin.to_drawing_pin(
+                        pin_length=pin_length,
+                        orientation=DrawingPin.PinOrientation.RIGHT,
+                    )
+                )
             # Power pins
             elif pin.pintype == "Power" or pin.name.startswith("VREF"):
                 # Positive pins go on the top
                 if pin.name.startswith("VDD") or pin.name.startswith("VBAT"):
-                    topPins.append(pin.to_drawing_pin(
+                    topPins.append(
+                        pin.to_drawing_pin(
                             pin_length=pin_length,
-                            orientation=DrawingPin.PinOrientation.DOWN))
+                            orientation=DrawingPin.PinOrientation.DOWN,
+                        )
+                    )
                 # Negative pins go on the bottom
                 elif pin.name.startswith("VSS"):
-                    bottomPins.append(pin.to_drawing_pin(
+                    bottomPins.append(
+                        pin.to_drawing_pin(
                             pin_length=pin_length,
-                            orientation=DrawingPin.PinOrientation.UP))
+                            orientation=DrawingPin.PinOrientation.UP,
+                        )
+                    )
                 # Other pins go on the left
                 else:
-                    powerPins.append(pin.to_drawing_pin(pin_length=pin_length,
-                            orientation=DrawingPin.PinOrientation.RIGHT))
+                    powerPins.append(
+                        pin.to_drawing_pin(
+                            pin_length=pin_length,
+                            orientation=DrawingPin.PinOrientation.RIGHT,
+                        )
+                    )
             # Reset pins go on the left
             elif pin.pintype == "Reset":
-                resetPins.append(pin.to_drawing_pin(pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT))
+                resetPins.append(
+                    pin.to_drawing_pin(
+                        pin_length=pin_length,
+                        orientation=DrawingPin.PinOrientation.RIGHT,
+                    )
+                )
             # Boot pins go on the left
             elif pin.pintype == "Boot":
-                bootPins.append(pin.to_drawing_pin(pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT))
+                bootPins.append(
+                    pin.to_drawing_pin(
+                        pin_length=pin_length,
+                        orientation=DrawingPin.PinOrientation.RIGHT,
+                    )
+                )
             # NC pins go in their own group
             elif pin.pintype == "NC":
-                ncPins.append(pin.to_drawing_pin(pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT))
+                ncPins.append(
+                    pin.to_drawing_pin(
+                        pin_length=pin_length,
+                        orientation=DrawingPin.PinOrientation.RIGHT,
+                    )
+                )
             # Other pins go on the left
             else:
-                otherPins.append(pin.to_drawing_pin(pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT))
+                otherPins.append(
+                    pin.to_drawing_pin(
+                        pin_length=pin_length,
+                        orientation=DrawingPin.PinOrientation.RIGHT,
+                    )
+                )
 
         # Apply pins to sides
         leftGroups = []
@@ -617,8 +700,9 @@ class Device:
         round_up = lambda x, y: (x + y - 1) // y * y
         pin_name_width = lambda p: len(p.name) * 47
         pin_group_max_width = lambda g: max(map(pin_name_width, g))
-        left_width = round_up(max(map(pin_group_max_width,
-                leftGroups + movedGroups)), 100)
+        left_width = round_up(
+            max(map(pin_group_max_width, leftGroups + movedGroups)), 100
+        )
         right_width = round_up(max(map(pin_group_max_width, rightGroups)), 100)
         top_width = len(topPins) * 100
         bottom_width = len(bottomPins) * 100
@@ -628,9 +712,14 @@ class Device:
         drawing = Drawing()
 
         # Add the body rectangle
-        drawing.append(DrawingRectangle(Point(0, 0),
-                Point(box_width, box_height), unit_idx=0,
-                fill=ElementFill.FILL_BACKGROUND))
+        drawing.append(
+            DrawingRectangle(
+                Point(0, 0),
+                Point(box_width, box_height),
+                unit_idx=0,
+                fill=ElementFill.FILL_BACKGROUND,
+            )
+        )
 
         # Add the moved pins (bottom left)
         y = 100
@@ -689,27 +778,29 @@ class Device:
         y += 100
 
         # Center the symbol
-        translate_center = Point(-box_width//2//100*100,
-                -box_height//2//100*100)
+        translate_center = Point(
+            -box_width // 2 // 100 * 100, -box_height // 2 // 100 * 100
+        )
         drawing.translate(translate_center)
 
-        property = self.symbol.get_property('Reference')
+        property = self.symbol.get_property("Reference")
         pos = Point(0, box_height + 50).translate(translate_center)
         property.set_pos_mil(pos.x, pos.y, 0)
         property.effects.h_justify = "left"
 
-        property = self.symbol.get_property('Value')
+        property = self.symbol.get_property("Value")
         pos = Point(last_top_x, box_height + 50).translate(translate_center)
         property.set_pos_mil(pos.x, pos.y, 0)
         property.effects.h_justify = "left"
 
-        property = self.symbol.get_property('Footprint')
+        property = self.symbol.get_property("Footprint")
         pos = translate_center
         property.set_pos_mil(pos.x, pos.y, 0)
         property.effects.h_justify = "right"
         property.effects.is_hidden = True
 
         drawing.appendToSymbol(self.symbol)
+
 
 def run_pdf2txt(pdffile, pdfdir):
     pdffile = os.path.join(pdfdir, pdffile)
@@ -718,15 +809,18 @@ def run_pdf2txt(pdffile, pdfdir):
         logging.info(f"Converting: {pdffile}")
         os.system("pdf2txt.py -o " + pdfparsedfile + " " + pdffile)
 
+
 def main():
     parser = argparse.ArgumentParser(
-            description='Generator for STM32 microcontroller symbols')
-    parser.add_argument('xmldir',
-            help='Directory containing ONLY valid STM32 XML files')
-    parser.add_argument('pdfdir',
-            help='Directory containing STM32 datasheet PDFs')
-    parser.add_argument('-v', '--verbose', action='count', default=0,
-            help='Print more information')
+        description="Generator for STM32 microcontroller symbols"
+    )
+    parser.add_argument(
+        "xmldir", help="Directory containing ONLY valid STM32 XML files"
+    )
+    parser.add_argument("pdfdir", help="Directory containing STM32 datasheet PDFs")
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0, help="Print more information"
+    )
 
     args = parser.parse_args()
 
@@ -740,7 +834,7 @@ def main():
     elif args.verbose >= 2:
         loglevel = logging.DEBUG
 
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel)
+    logging.basicConfig(format="%(levelname)s:%(message)s", level=loglevel)
 
     # Parse text from PDFs
     for _, _, filenames in os.walk(args.pdfdir):
@@ -758,7 +852,9 @@ def main():
                 mcu = Device(os.path.join(args.xmldir, xmlfile), args.pdfdir)
                 # If there isn't a SymbolGenerator for this family yet, make one
                 if mcu.family not in libraries:
-                    libraries[mcu.family] = kicad_sym.KicadLibrary(f"MCU_ST_{mcu.family}.kicad_sym")
+                    libraries[mcu.family] = kicad_sym.KicadLibrary(
+                        f"MCU_ST_{mcu.family}.kicad_sym"
+                    )
                 # If the part has a datasheet PDF, make a symbol for it
                 if mcu.pdf is not None:
                     mcu.create_symbol(libraries[mcu.family])
@@ -767,6 +863,7 @@ def main():
     # Write libraries
     for gen in libraries.values():
         gen.write()
+
 
 if __name__ == "__main__":
     main()

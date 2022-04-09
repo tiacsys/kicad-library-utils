@@ -39,19 +39,36 @@ Library replacements and footprint replacements can be defined therein.
 """
 
 import argparse
-import sys, os
-import re
 import json
+import os
+import re
+import sys
 
 parser = argparse.ArgumentParser(description="Check symbols for footprint errors")
 
-parser.add_argument('-l', '--lib', nargs='+', help='Symbol libraries (.lib files)', action='store')
-parser.add_argument('-p', '--pretty', nargs='+', help='Footprint libraries (.pretty dirs)')
-parser.add_argument('-r', '--replace', help='Path to JSON file containing replacement information')
-parser.add_argument('-v', '--verbose', help='Verbosity level', action='count')
-parser.add_argument('-f', '--fix', help='Fix errors', action='store_true')
-parser.add_argument('-i', '--interactive', help='Ask user for input when no match found', action='store_true')
-parser.add_argument('-m', '--missing', help='Try to assign libraries to footprints which do not specify a library prefix', action='store_true')
+parser.add_argument(
+    "-l", "--lib", nargs="+", help="Symbol libraries (.lib files)", action="store"
+)
+parser.add_argument(
+    "-p", "--pretty", nargs="+", help="Footprint libraries (.pretty dirs)"
+)
+parser.add_argument(
+    "-r", "--replace", help="Path to JSON file containing replacement information"
+)
+parser.add_argument("-v", "--verbose", help="Verbosity level", action="count")
+parser.add_argument("-f", "--fix", help="Fix errors", action="store_true")
+parser.add_argument(
+    "-i",
+    "--interactive",
+    help="Ask user for input when no match found",
+    action="store_true",
+)
+parser.add_argument(
+    "-m",
+    "--missing",
+    help="Try to assign libraries to footprints which do not specify a library prefix",
+    action="store_true",
+)
 
 args = parser.parse_args()
 
@@ -67,7 +84,7 @@ if args.replace:
 else:
     replacements = {}
 
-KEYS = ['library', 'footprint', 'prefix', "replace"]
+KEYS = ["library", "footprint", "prefix", "replace"]
 
 # Ensure correct keys
 for key in KEYS:
@@ -78,24 +95,24 @@ symbol_libs = []
 footprint_libs = {}
 
 for lib in args.lib:
-    if not os.path.exists(lib) or not lib.endswith('.lib'):
+    if not os.path.exists(lib) or not lib.endswith(".lib"):
         continue
 
     symbol_libs.append(lib)
 
 for lib in args.pretty:
-    if not os.path.isdir(lib) or not lib.endswith('.pretty'):
+    if not os.path.isdir(lib) or not lib.endswith(".pretty"):
         continue
 
-    name = os.path.basename(lib).replace('.pretty', '')
+    name = os.path.basename(lib).replace(".pretty", "")
 
     footprints = []
 
     for f in os.listdir(lib):
-        if not f.endswith('.kicad_mod'):
+        if not f.endswith(".kicad_mod"):
             continue
 
-        fp = f.replace('.kicad_mod', '')
+        fp = f.replace(".kicad_mod", "")
 
         footprints.append(fp)
 
@@ -109,7 +126,7 @@ try:
 
         output = []
 
-        with open(lib, 'r') as lib_file:
+        with open(lib, "r") as lib_file:
             for line in lib_file:
                 result = re.search(FP, line)
 
@@ -127,7 +144,7 @@ try:
                 fplib = ""
                 fpname = ""
 
-                colon_count = footprint.count(':')
+                colon_count = footprint.count(":")
 
                 # Associated footprint is not in the correct format.
                 # Skip empty libs
@@ -136,22 +153,32 @@ try:
 
                     if args.missing:
                         # Can we find a prefix for this footprint name?
-                        if fpname in replacements['prefix']:
-                            fplib = replacements['prefix'][fpname]
+                        if fpname in replacements["prefix"]:
+                            fplib = replacements["prefix"][fpname]
 
                             if args.verbose:
-                                print("Prefixing library '{lib}' to '{fp}'".format(
-                                    lib=fplib,
-                                    fp=fpname))
+                                print(
+                                    "Prefixing library '{lib}' to '{fp}'".format(
+                                        lib=fplib, fp=fpname
+                                    )
+                                )
                         # No default library found for this footprint, ask user?
                         else:
                             if args.verbose > 1:
-                                print("No library specified for footprint '{fp}'".format(fp=footprint))
+                                print(
+                                    "No library specified for footprint '{fp}'".format(
+                                        fp=footprint
+                                    )
+                                )
                             if args.interactive:
-                                newlib = raw_input("Enter library for footprint '{fp}' (leave blank to skip): ".format(fp=footprint))
+                                newlib = raw_input(
+                                    "Enter library for footprint '{fp}' (leave blank to skip): ".format(
+                                        fp=footprint
+                                    )
+                                )
 
                                 # Keep track of this for next time
-                                replacements['prefix'][fplib] = newlib
+                                replacements["prefix"][fplib] = newlib
 
                                 if newlib:
                                     fplib = newlib
@@ -175,8 +202,8 @@ try:
                 # If the footprint lib is not found
                 if fplib and not fplib in footprint_libs:
                     # Try to find a replacement name for the footprint lib
-                    if fplib in replacements['library']:
-                        newlib = replacements['library'][fplib]
+                    if fplib in replacements["library"]:
+                        newlib = replacements["library"][fplib]
 
                         # Empty means skip
                         if newlib:
@@ -184,11 +211,17 @@ try:
 
                     else:
                         if args.verbose:
-                            print("No match found for library '{lib}'".format(lib=fplib))
+                            print(
+                                "No match found for library '{lib}'".format(lib=fplib)
+                            )
                         if args.interactive:
-                            newlib = raw_input("Enter new name for library '{lib}' (leave blank to skip): ".format(lib=fplib))
+                            newlib = raw_input(
+                                "Enter new name for library '{lib}' (leave blank to skip): ".format(
+                                    lib=fplib
+                                )
+                            )
 
-                            replacements['library'][fplib] = newlib
+                            replacements["library"][fplib] = newlib
 
                             if newlib:
                                 fplib = newlib
@@ -203,8 +236,8 @@ try:
                     if not fpname in footprint_lib:
 
                         # Try to replace the fpname
-                        if fpname in replacements['footprint']:
-                            newname = replacements['footprint'][fpname]
+                        if fpname in replacements["footprint"]:
+                            newname = replacements["footprint"][fpname]
 
                             # Blank means it has been skipped
                             if newname:
@@ -212,19 +245,27 @@ try:
 
                         # Still nothing? Try to augment the name
                         if not fpname in footprint_lib:
-                            for a in replacements['replace']:
-                                b = replacements['replace'][a]
+                            for a in replacements["replace"]:
+                                b = replacements["replace"][a]
                                 fpname = fpname.replace(a, b)
 
                         # Has the footprint still not been found?
                         if not fpname in footprint_lib:
                             if args.verbose:
-                                print("Footprint '{f}' not found in library '{l}'".format(f=fpname, l=fplib))
+                                print(
+                                    "Footprint '{f}' not found in library '{l}'".format(
+                                        f=fpname, l=fplib
+                                    )
+                                )
 
                             if args.interactive:
-                                newname = raw_input("Enter new name for footprint '{fp}' (leave blank to skip): ".format(fp=fpname))
+                                newname = raw_input(
+                                    "Enter new name for footprint '{fp}' (leave blank to skip): ".format(
+                                        fp=fpname
+                                    )
+                                )
 
-                                replacements['footprint'][fpname] = newname
+                                replacements["footprint"][fpname] = newname
 
                                 # Only override if not blank
                                 if newname:
@@ -245,7 +286,7 @@ try:
                 output.append(line)
 
         if args.fix:
-            with open(lib, 'w') as lib_file:
+            with open(lib, "w") as lib_file:
                 for line in output:
                     lib_file.write(line)
 
@@ -262,5 +303,7 @@ for key in KEYS:
 
 # Save the JSON data if there has been changes from user
 if args.interactive and args.replace:
-    with open(args.replace, 'w') as json_file:
-        json_file.write(json.dumps(replacements, indent=4, sort_keys=True, separators=(',', ':')))
+    with open(args.replace, "w") as json_file:
+        json_file.write(
+            json.dumps(replacements, indent=4, sort_keys=True, separators=(",", ":"))
+        )

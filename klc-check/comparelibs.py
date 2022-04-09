@@ -5,38 +5,66 @@ This is to be used to compare an updated library file with a previous version to
 """
 
 import argparse
-import sys
-import os
-from glob import glob
-import fnmatch
 import filecmp
+import fnmatch
+import os
+import sys
+from glob import glob
 
 # Path to common directory
-common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
+common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 
 if not common in sys.path:
     sys.path.append(common)
 
+import check_symbol
 from kicad_sym import *
 from print_color import *
 from rulebase import PrintColor, Verbosity
-import check_symbol
 
 
 def ExitError(msg):
     print(msg)
     sys.exit(-1)
 
-parser = argparse.ArgumentParser( description= "Compare two .kicad_sym files to determine which symbols have changed")
-parser.add_argument("--new", help="New (updated) .lib file(s), or folder of .kicad_sym files", nargs='+')
-parser.add_argument("--old", help= "Old (original) .lib file(s), or folder of .kicad_sym files for comparison", nargs='+')
-parser.add_argument("-v", "--verbose", help="Enable extra verbose output", action="store_true") 
-parser.add_argument("--check", help="Perform KLC check on updated/added components", action='store_true')
-parser.add_argument("--nocolor", help="Does not use colors to show the output", action='store_true')
-parser.add_argument( "--design-breaking-changes", help= "Checks if there have been changes made that would break existing designs using a particular symbol.", action='store_true')
-parser.add_argument("--check-aliases", help="Do not only check symbols but also aliases.", action='store_true')
-parser.add_argument("--shownochanges", help="Show libraries that have not changed", action="store_true")
-parser.add_argument("--exclude", help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"')
+
+parser = argparse.ArgumentParser(
+    description="Compare two .kicad_sym files to determine which symbols have changed"
+)
+parser.add_argument(
+    "--new", help="New (updated) .lib file(s), or folder of .kicad_sym files", nargs="+"
+)
+parser.add_argument(
+    "--old",
+    help="Old (original) .lib file(s), or folder of .kicad_sym files for comparison",
+    nargs="+",
+)
+parser.add_argument(
+    "-v", "--verbose", help="Enable extra verbose output", action="store_true"
+)
+parser.add_argument(
+    "--check", help="Perform KLC check on updated/added components", action="store_true"
+)
+parser.add_argument(
+    "--nocolor", help="Does not use colors to show the output", action="store_true"
+)
+parser.add_argument(
+    "--design-breaking-changes",
+    help="Checks if there have been changes made that would break existing designs using a particular symbol.",
+    action="store_true",
+)
+parser.add_argument(
+    "--check-aliases",
+    help="Do not only check symbols but also aliases.",
+    action="store_true",
+)
+parser.add_argument(
+    "--shownochanges", help="Show libraries that have not changed", action="store_true"
+)
+parser.add_argument(
+    "--exclude",
+    help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"',
+)
 
 (args, extra) = parser.parse_known_args()
 printer = PrintColor(use_color=not args.nocolor)
@@ -49,6 +77,7 @@ if not args.old:
     ExitError("Original file(s) not supplied")
     # TODO print help
 
+
 def build_library_dict(filelist):
     """Take a list of files, expand globs if required. Build a dict in for form {'libname': filename}"""
     libs = {}
@@ -58,11 +87,12 @@ def build_library_dict(filelist):
         for l in flibs:
             if os.path.isdir(l):
                 for root, dirnames, filenames in os.walk(l):
-                    for filename in fnmatch.filter(filenames, '*.kicad_sym'):
+                    for filename in fnmatch.filter(filenames, "*.kicad_sym"):
                         libs[os.path.basename(filename)] = os.path.abspath(
-                            os.path.join(root, filename))
+                            os.path.join(root, filename)
+                        )
 
-            elif l.endswith('.kicad_sym') and os.path.exists(l):
+            elif l.endswith(".kicad_sym") and os.path.exists(l):
                 libs[os.path.basename(l)] = os.path.abspath(l)
     return libs
 
@@ -75,11 +105,13 @@ design_breaking_changes = 0
 
 # create a SymbolCheck instance
 # add footprints dir if possible
-if 'footprints' in extra:
-    fp = extra['footprints']
+if "footprints" in extra:
+    fp = extra["footprints"]
 else:
     fp = None
-sym_check = check_symbol.SymbolCheck(None, args.exclude, Verbosity(2), fp, False if args.nocolor else True, silent = True)
+sym_check = check_symbol.SymbolCheck(
+    None, args.exclude, Verbosity(2), fp, False if args.nocolor else True, silent=True
+)
 
 # iterate over all new libraries
 for lib_name in new_libs:
@@ -90,8 +122,7 @@ for lib_name in new_libs:
     if lib_name in old_libs:
         if filecmp.cmp(old_libs[lib_name], lib_path) == True:
             if args.verbose and args.shownochanges:
-                printer.yellow(
-                    "No changes to library '{lib}'".format(lib=lib_name))
+                printer.yellow("No changes to library '{lib}'".format(lib=lib_name))
             continue
 
     # New library has been created!
@@ -125,14 +156,17 @@ for lib_name in new_libs:
 
     for symname in new_sym:
         # Component is 'new' (not in old library)
-        alias_info = ''
+        alias_info = ""
         if new_sym[symname].extends:
-            alias_info = ' alias of {}'.format(new_sym[symname].extends)
+            alias_info = " alias of {}".format(new_sym[symname].extends)
 
         if not symname in old_sym:
             if args.verbose:
-                printer.light_green("New '{lib}:{name}'{alias_info}".format(
-                    lib=lib_name, name=symname, alias_info=alias_info))
+                printer.light_green(
+                    "New '{lib}:{name}'{alias_info}".format(
+                        lib=lib_name, name=symname, alias_info=alias_info
+                    )
+                )
 
             if args.check:
                 # only check new components
@@ -143,13 +177,19 @@ for lib_name in new_libs:
             continue
 
         if new_sym[symname].extends != old_sym[symname].extends and args.verbose:
-            printer.white("Changed alias state of '{lib}:{name}'".format(
-                lib=lib_name, name=symname))
+            printer.white(
+                "Changed alias state of '{lib}:{name}'".format(
+                    lib=lib_name, name=symname
+                )
+            )
 
         if not new_sym[symname].__eq__(old_sym[symname]):
             if args.verbose:
-                printer.yellow("Changed '{lib}:{name}'{alias_info}".format(
-                    lib=lib_name, name=symname, alias_info=alias_info))
+                printer.yellow(
+                    "Changed '{lib}:{name}'{alias_info}".format(
+                        lib=lib_name, name=symname, alias_info=alias_info
+                    )
+                )
             if args.design_breaking_changes:
                 pins_moved = 0
                 nc_pins_moved = 0
@@ -158,14 +198,17 @@ for lib_name in new_libs:
                 for pin_old in old_sym[symname].pins:
                     pin_new = new_sym[symname].get_pin_by_number(pin_old.num)
                     if pin_new is None:
-                        if pin_old.etype == 'no_connect':
+                        if pin_old.etype == "no_connect":
                             nc_pins_missing += 1
                         else:
                             pins_missing += 1
                         continue
 
                     if pin_old.posx != pin_new.posx or pin_old.posy != pin_new.posy:
-                        if pin_old.etype == 'no_connect' and pin_new.etype == 'no_connect':
+                        if (
+                            pin_old.etype == "no_connect"
+                            and pin_new.etype == "no_connect"
+                        ):
                             nc_pins_moved += 1
                         else:
                             pins_moved += 1
@@ -173,17 +216,17 @@ for lib_name in new_libs:
                 if pins_moved > 0 or pins_missing > 0:
                     design_breaking_changes += 1
                     printer.light_purple(
-                        "Pins have been moved, renumbered or removed in symbol '{lib}:{name}'{alias_info}"
-                        .format(lib=lib_name,
-                                name=symname,
-                                alias_info=alias_info))
+                        "Pins have been moved, renumbered or removed in symbol '{lib}:{name}'{alias_info}".format(
+                            lib=lib_name, name=symname, alias_info=alias_info
+                        )
+                    )
                 elif nc_pins_moved > 0 or nc_pins_missing > 0:
                     design_breaking_changes += 1
                     printer.purple(
-                        "Normal pins ok but NC pins have been moved, renumbered or removed in symbol '{lib}:{name}'{alias_info}"
-                        .format(lib=lib_name,
-                                name=symname,
-                                alias_info=alias_info))
+                        "Normal pins ok but NC pins have been moved, renumbered or removed in symbol '{lib}:{name}'{alias_info}".format(
+                            lib=lib_name, name=symname, alias_info=alias_info
+                        )
+                    )
 
             if args.check:
                 (ec, wc) = sym_check.do_rulecheck(new_sym[symname])
@@ -193,14 +236,16 @@ for lib_name in new_libs:
     for symname in old_sym:
         # Component has been deleted from library
         if not symname in new_sym:
-            alias_info = ''
+            alias_info = ""
             if old_sym[symname].extends:
-                alias_info = ' was an alias of {}'.format(
-                    old_sym[symname].extends)
+                alias_info = " was an alias of {}".format(old_sym[symname].extends)
 
             if args.verbose:
-                printer.red("Removed '{lib}:{name}'{alias_info}".format(
-                    lib=lib_name, name=symname, alias_info=alias_info))
+                printer.red(
+                    "Removed '{lib}:{name}'{alias_info}".format(
+                        lib=lib_name, name=symname, alias_info=alias_info
+                    )
+                )
             if args.design_breaking_changes:
                 design_breaking_changes += 1
 

@@ -1,21 +1,23 @@
 from rules_footprint.rule import *
 
+
 class Rule(KLCRule):
     """Minimum annular ring width"""
 
     def checkPad(self, pad: Dict[str, Any]) -> bool:
-        if not 'size' in pad['drill']:
-            self.error("Pad {n} drill data has no 'size' attribute".format(
-                n = pad['number']))
+        if not "size" in pad["drill"]:
+            self.error(
+                "Pad {n} drill data has no 'size' attribute".format(n=pad["number"])
+            )
             return True
 
-        drill_size = pad['drill']['size']
-        drill_x = drill_size['x']
-        drill_y = drill_size['y']
+        drill_size = pad["drill"]["size"]
+        drill_x = drill_size["x"]
+        drill_y = drill_size["y"]
 
-        pad_size = pad['size']
-        pad_x = pad_size['x']
-        pad_y = pad_size['y']
+        pad_size = pad["size"]
+        pad_x = pad_size["x"]
+        pad_y = pad_size["y"]
 
         err = False
 
@@ -27,10 +29,11 @@ class Rule(KLCRule):
             ring = round((pad_x - drill_x) / 2, 5)
 
             if ring < MIN_RING:
-                self.error("Pad {n} annular ring ({d}mm) is below minimum ({mr}mm)".format(
-                    n = pad['number'],
-                    d = ring,
-                    mr = MIN_RING))
+                self.error(
+                    "Pad {n} annular ring ({d}mm) is below minimum ({mr}mm)".format(
+                        n=pad["number"], d=ring, mr=MIN_RING
+                    )
+                )
                 err = True
 
         # Non circular pad
@@ -39,20 +42,22 @@ class Rule(KLCRule):
             ring_x = round((pad_x - drill_x) / 2, 5)
 
             if ring_x < MIN_RING:
-                self.error("Pad {n} x-dimension annular ring ({d}mm) is below minimum ({mr}mm)".format(
-                    n = pad['number'],
-                    d = ring_x,
-                    mr = MIN_RING))
+                self.error(
+                    "Pad {n} x-dimension annular ring ({d}mm) is below minimum ({mr}mm)".format(
+                        n=pad["number"], d=ring_x, mr=MIN_RING
+                    )
+                )
                 err = True
 
             # Round the number to 5 decimal places to prevent floating-point errors
             ring_y = round((pad_y - drill_y) / 2, 5)
 
             if ring_y < MIN_RING:
-                self.error("Pad {n} y-dimension annular ring ({d}mm) is below minimum ({mr}mm)".format(
-                    n = pad['number'],
-                    d = ring_y,
-                    mr = MIN_RING))
+                self.error(
+                    "Pad {n} y-dimension annular ring ({d}mm) is below minimum ({mr}mm)".format(
+                        n=pad["number"], d=ring_y, mr=MIN_RING
+                    )
+                )
                 err = True
 
         return err
@@ -64,7 +69,7 @@ class Rule(KLCRule):
 
         module = self.module
 
-        return any([self.checkPad(pad) for pad in module.filterPads('thru_hole')])
+        return any([self.checkPad(pad) for pad in module.filterPads("thru_hole")])
 
     def fix(self) -> None:
         """

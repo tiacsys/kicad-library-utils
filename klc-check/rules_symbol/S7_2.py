@@ -19,14 +19,18 @@ class Rule(KLCRule):
         fail = False
         if self.component.is_graphic_symbol():
             # no pins in graphical symbol
-            if (len(self.component.pins) != 0):
+            if len(self.component.pins) != 0:
                 self.error("Graphical symbols have no pins")
                 fail = True
                 self.fixTooManyPins = True
             # footprint field must be empty
             fp_prop = self.component.get_property("Footprint")
-            if fp_prop and fp_prop.value != '':
-                self.error("Graphical symbols have no footprint association (footprint was set to '" + fp_prop.value+"')")
+            if fp_prop and fp_prop.value != "":
+                self.error(
+                    "Graphical symbols have no footprint association (footprint was set to '"
+                    + fp_prop.value
+                    + "')"
+                )
                 fail = True
                 self.fixNoFootprint = True
             # FPFilters must be empty
@@ -39,7 +43,7 @@ class Rule(KLCRule):
             if not ref_prop:
                 self.error("Graphical symbols have a Reference property")
             else:
-                if ref_prop.value != '#SYM':
+                if ref_prop.value != "#SYM":
                     self.error("Graphical symbols have Reference set to '#SYM' ")
                     fail = True
                 if ref_prop.effects.is_hidden != True:

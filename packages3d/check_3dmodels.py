@@ -9,13 +9,18 @@ to ensure that the directory structure matches the
 """
 
 import argparse
-import sys, os
+import os
+import sys
 
-parser = argparse.ArgumentParser(description='Check 3D model paths')
+parser = argparse.ArgumentParser(description="Check 3D model paths")
 
-parser.add_argument('--pretty', nargs='+', help='List of .pretty footprint directories', action='store')
-parser.add_argument('--models', nargs='+', help='List of .3dshapes 3D model directories', action='store')
-parser.add_argument('-v', '--verbose', action='count')
+parser.add_argument(
+    "--pretty", nargs="+", help="List of .pretty footprint directories", action="store"
+)
+parser.add_argument(
+    "--models", nargs="+", help="List of .3dshapes 3D model directories", action="store"
+)
+parser.add_argument("-v", "--verbose", action="count")
 
 args = parser.parse_args()
 
@@ -27,17 +32,17 @@ pretty = {}
 models = {}
 
 for lib in args.pretty:
-    if os.path.exists(lib) and lib.endswith('.pretty') and os.path.isdir(lib):
-        name = os.path.basename(lib).replace('.pretty', '')
+    if os.path.exists(lib) and lib.endswith(".pretty") and os.path.isdir(lib):
+        name = os.path.basename(lib).replace(".pretty", "")
         pretty[name] = os.path.abspath(lib)
 
 for lib in args.models:
-    if os.path.exists(lib) and lib.endswith('.3dshapes') and os.path.isdir(lib):
-        name = os.path.basename(lib).replace('.3dshapes', '')
+    if os.path.exists(lib) and lib.endswith(".3dshapes") and os.path.isdir(lib):
+        name = os.path.basename(lib).replace(".3dshapes", "")
         models[name] = os.path.abspath(lib)
 
 if len(pretty) == 0:
-    print('No .pretty directories supplied')
+    print("No .pretty directories supplied")
     sys.exit(1)
 
 if len(models) == 0:
@@ -56,14 +61,18 @@ for m in models:
         continue
 
     # We have a matching repo!
-    pretty_dir = pretty.get(m, '')
+    pretty_dir = pretty.get(m, "")
 
     if not pretty_dir:
         continue
 
-    pretty_files = [f.replace('.kicad_mod', '') for f in os.listdir(pretty_dir) if f.endswith('.kicad_mod')]
+    pretty_files = [
+        f.replace(".kicad_mod", "")
+        for f in os.listdir(pretty_dir)
+        if f.endswith(".kicad_mod")
+    ]
 
-    ext = ['.step', '.stp', '.wrl']
+    ext = [".step", ".stp", ".wrl"]
 
     model_dir = models[m]
 
@@ -75,7 +84,7 @@ for m in models:
             continue
 
         # Remove file extension
-        m_name = '.'.join(f.split('.')[:-1])
+        m_name = ".".join(f.split(".")[:-1])
         if not m_name in model_files:
             model_files.append(m_name)
 

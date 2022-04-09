@@ -3,7 +3,7 @@ import os
 import sys
 from typing import Any, Dict
 
-common = os.path.abspath(os.path.join(sys.path[0], '..', 'common'))
+common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 
 if common not in sys.path:
     sys.path.append(common)
@@ -15,21 +15,23 @@ from rulebase import KLCRuleBase
 def mapToGrid(dimension: float, grid: float) -> float:
     return round(dimension / grid) * grid
 
+
 # Convert mm to microns
 def mmToNanoMeter(mm: float) -> float:
-    return round(mm * 1E6)
+    return round(mm * 1e6)
+
 
 def getStartPoint(graph: Dict[str, Any]):
-    if 'center' in graph:
-        return graph['end']
-    elif 'angle' in graph:
+    if "center" in graph:
+        return graph["end"]
+    elif "angle" in graph:
         # do some magic to find the actual start point
         # fetch values
-        x_c = graph['start']['x']
-        y_c = graph['start']['y']
-        x_e = graph['end']['x']
-        y_e = graph['end']['y']
-        a_arc = graph['angle']
+        x_c = graph["start"]["x"]
+        y_c = graph["start"]["y"]
+        x_e = graph["end"]["x"]
+        y_e = graph["end"]["y"]
+        a_arc = graph["angle"]
         # calculate radius
         dx = x_c - x_e
         dy = y_c - y_e
@@ -42,21 +44,25 @@ def getStartPoint(graph: Dict[str, Any]):
         a_s = math.radians(a + a_arc)
         x_s = x_c - math.cos(a_s) * r
         y_s = y_c - math.sin(a_s) * r
-        return {'x': x_s, 'y': y_s}
-    elif 'start' in graph:
-        return graph['start']
+        return {"x": x_s, "y": y_s}
+    elif "start" in graph:
+        return graph["start"]
     else:
         return None
 
+
 def getEndPoint(graph: Dict[str, Any]):
-    if 'end' in graph:
-        return graph['end']
+    if "end" in graph:
+        return graph["end"]
     else:
         return None
+
 
 # Display string for a graph item
 # Line / Arc / Circle
-def graphItemString(graph: Dict[str, Any], layer: bool = False, width: bool = False) -> str:
+def graphItemString(
+    graph: Dict[str, Any], layer: bool = False, width: bool = False
+) -> str:
 
     layerText = ""
     shapeText = ""
@@ -64,36 +70,40 @@ def graphItemString(graph: Dict[str, Any], layer: bool = False, width: bool = Fa
 
     try:
         if layer:
-            layerText = " on layer '{layer}'".format(layer=graph['layer'])
+            layerText = " on layer '{layer}'".format(layer=graph["layer"])
 
         if width:
-            widthText = " has width '{width}'".format(width=graph['width'])
+            widthText = " has width '{width}'".format(width=graph["width"])
     except:
         pass
 
     # Line or Arc
-    if 'start' in graph and 'end' in graph:
+    if "start" in graph and "end" in graph:
         # Arc item
-        if 'angle' in graph:
-            shape = 'Arc'
+        if "angle" in graph:
+            shape = "Arc"
         else:
-            shape = 'Line'
+            shape = "Line"
         shapeText = "{shape} ({x1},{y1}) -> ({x2},{y2})".format(
-            shape = shape,
-            x1 = graph['start']['x'],
-            y1 = graph['start']['y'],
-            x2 = graph['end']['x'],
-            y2 = graph['end']['y'])
+            shape=shape,
+            x1=graph["start"]["x"],
+            y1=graph["start"]["y"],
+            x2=graph["end"]["x"],
+            y2=graph["end"]["y"],
+        )
 
     # Circle
-    elif 'center' in graph and 'end' in graph:
-        shapeText = "Circle @ ({x},{y})".format(x=graph['center']['x'],y=graph['center']['y'])
+    elif "center" in graph and "end" in graph:
+        shapeText = "Circle @ ({x},{y})".format(
+            x=graph["center"]["x"], y=graph["center"]["y"]
+        )
 
     # Unkown shape
     else:
         shapeText = "Graphical item"
 
     return shapeText + layerText + widthText
+
 
 class KLCRule(KLCRuleBase):
     """
@@ -109,7 +119,7 @@ class KLCRule(KLCRuleBase):
         self.needsFixMore: bool = False
 
         # Illegal chars
-        self.illegal_chars = ['*', '?', ':', '/', '\\', '[', ']', ';', '|', '=', ',']
+        self.illegal_chars = ["*", "?", ":", "/", "\\", "[", "]", ";", "|", "=", ","]
 
     def fix(self) -> None:
         self.info("fix not supported")

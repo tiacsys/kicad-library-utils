@@ -3,6 +3,7 @@ from typing import List
 from kicad_sym import KicadSymbol, Pin, Property, mil_to_mm, mm_to_mil
 from rules_symbol.rule import KLCRule
 
+
 class Rule(KLCRule):
     """Text fields should use a common text size of 50mils"""
 
@@ -23,9 +24,11 @@ class Rule(KLCRule):
         self.violating_properties = []
         for prop in self.component.properties:
             text_size = mm_to_mil(prop.effects.sizex)
-            if (text_size != 50):
+            if text_size != 50:
                 self.violating_properties.append(prop)
-                message = ("{0} at posx {1} posy {2}".format(prop.name, mm_to_mil(prop.posx), mm_to_mil(prop.posy)))
+                message = "{0} at posx {1} posy {2}".format(
+                    prop.name, mm_to_mil(prop.posx), mm_to_mil(prop.posy)
+                )
                 self.error(" - Field {0} size {1}".format(message, text_size))
 
         self.violating_pins = []
@@ -40,17 +43,33 @@ class Rule(KLCRule):
             name_text_size = mm_to_mil(pin.name_effect.sizex)
             num_text_size = mm_to_mil(pin.number_effect.sizex)
 
-            if (name_text_size < 20) or (name_text_size > 50) or (num_text_size < 20) or (num_text_size > 50):
+            if (
+                (name_text_size < 20)
+                or (name_text_size > 50)
+                or (num_text_size < 20)
+                or (num_text_size > 50)
+            ):
                 self.violating_pins.append(pin)
-                self.error(' - Pin {0} ({1}), text size {2}, number size {3}'.format(pin.name, pin.number, name_text_size, num_text_size))
+                self.error(
+                    " - Pin {0} ({1}), text size {2}, number size {3}".format(
+                        pin.name, pin.number, name_text_size, num_text_size
+                    )
+                )
             else:
                 if name_text_size != 50:
-                    self.warning("Pin {0} ({1}) name text size should be 50mils (or 20...50mils if required by the symbol geometry)".format(pin.name, pin.number))
+                    self.warning(
+                        "Pin {0} ({1}) name text size should be 50mils (or 20...50mils if required by the symbol geometry)".format(
+                            pin.name, pin.number
+                        )
+                    )
                 if num_text_size != 50:
-                    self.warning("Pin {0} ({1}) number text size should be 50mils (or 20...50mils if required by the symbol geometry)".format(pin.name, pin.number))
+                    self.warning(
+                        "Pin {0} ({1}) number text size should be 50mils (or 20...50mils if required by the symbol geometry)".format(
+                            pin.name, pin.number
+                        )
+                    )
 
-        if (len(self.violating_properties) > 0 or
-            len(self.violating_pins) > 0):
+        if len(self.violating_properties) > 0 or len(self.violating_pins) > 0:
             return True
 
         return False

@@ -15,13 +15,17 @@ class Rule(KLCRule):
             # can not do other checks, return
             return True
 
-        if (not self.component.is_graphic_symbol()) and (not self.component.is_power_symbol()):
+        if (not self.component.is_graphic_symbol()) and (
+            not self.component.is_power_symbol()
+        ):
             if ref.effects.is_hidden:
                 self.error("Reference field must be VISIBLE")
                 fail = True
         else:
             if not ref.effects.is_hidden:
-                self.error("Reference field must be INVISIBLE in graphic symbols or power-symbols")
+                self.error(
+                    "Reference field must be INVISIBLE in graphic symbols or power-symbols"
+                )
                 fail = True
 
         return fail
@@ -39,22 +43,37 @@ class Rule(KLCRule):
         if name.startswith('"') and name.endswith('"'):
             name = name[1:-1]
 
-        if (not self.component.is_graphic_symbol()) and (not self.component.is_power_symbol()):
+        if (not self.component.is_graphic_symbol()) and (
+            not self.component.is_power_symbol()
+        ):
             if not name == self.component.name:
-                self.error("Value {val} does not match component name.".format(val=name))
+                self.error(
+                    "Value {val} does not match component name.".format(val=name)
+                )
                 fail = True
             # name field must be visible!
             if prop.effects.is_hidden:
                 self.error("Value field must be VISIBLE")
                 fail = True
         else:
-            if (not ('~'+name) == self.component.name) and (not name == self.component.name):
-                self.error("Value {val} does not match component name.".format(val=name))
+            if (not ("~" + name) == self.component.name) and (
+                not name == self.component.name
+            ):
+                self.error(
+                    "Value {val} does not match component name.".format(val=name)
+                )
                 fail = True
 
-        if not isValidName(self.component.name, self.component.is_graphic_symbol(), self.component.is_power_symbol()):
-            self.error("Symbol name '{val}' contains invalid characters as per KLC 1.7".format(
-                val=self.component.name))
+        if not isValidName(
+            self.component.name,
+            self.component.is_graphic_symbol(),
+            self.component.is_power_symbol(),
+        ):
+            self.error(
+                "Symbol name '{val}' contains invalid characters as per KLC 1.7".format(
+                    val=self.component.name
+                )
+            )
             fail = True
 
         return fail
@@ -90,21 +109,27 @@ class Rule(KLCRule):
             fail = True
 
         # more checks for non power or non graphics symbol
-        if (not self.component.is_graphic_symbol()) and (not self.component.is_power_symbol()):
+        if (not self.component.is_graphic_symbol()) and (
+            not self.component.is_power_symbol()
+        ):
             # Datasheet field must not be empty
             if ds.value == "":
                 self.error("Datasheet field must not be EMPTY")
                 fail = True
             if ds.value and len(ds.value) > 2:
                 link = False
-                links = ['http', 'www', 'ftp']
+                links = ["http", "www", "ftp"]
                 if any([ds.value.startswith(i) for i in links]):
                     link = True
-                elif ds.value.endswith('.pdf') or '.htm' in ds.value:
+                elif ds.value.endswith(".pdf") or ".htm" in ds.value:
                     link = True
 
                 if not link:
-                    self.warning("Datasheet entry '{ds}' does not look like a URL".format(ds=ds.value))
+                    self.warning(
+                        "Datasheet entry '{ds}' does not look like a URL".format(
+                            ds=ds.value
+                        )
+                    )
                     fail = True
 
         return fail
@@ -138,9 +163,13 @@ class Rule(KLCRule):
         else:
             # find special chars.
             # a dot followed by a non-word char is also considered a violation. This allows 3.3V but prevents 'foobar. buzz'
-            forbidden_matches = re.findall('\.\W|\.$|[,:;?!<>]', dsc.value)
+            forbidden_matches = re.findall("\.\W|\.$|[,:;?!<>]", dsc.value)
             if forbidden_matches:
-                self.error("Symbol keywords contain forbidden characters: {}".format(forbidden_matches))
+                self.error(
+                    "Symbol keywords contain forbidden characters: {}".format(
+                        forbidden_matches
+                    )
+                )
                 return True
 
         return False
@@ -149,15 +178,17 @@ class Rule(KLCRule):
         # Check for extra fields. How? TODO
         extraFields = False
 
-        return any([
-            self.checkReference(),
-            self.checkValue(),
-            self.checkFootprint(),
-            self.checkDatasheet(),
-            self.checkDescription(),
-            self.checkKeywords(),
-            extraFields
-            ])
+        return any(
+            [
+                self.checkReference(),
+                self.checkValue(),
+                self.checkFootprint(),
+                self.checkDatasheet(),
+                self.checkDescription(),
+                self.checkKeywords(),
+                extraFields,
+            ]
+        )
 
     def fix(self) -> None:
         """

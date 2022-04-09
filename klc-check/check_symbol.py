@@ -10,7 +10,7 @@ from glob import glob  # enable windows wildcards
 from multiprocessing import JoinableQueue, Lock, Process, Queue
 from typing import List, Optional, Tuple
 
-common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
+common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 if not common in sys.path:
     sys.path.append(common)
 
@@ -19,14 +19,23 @@ from typing import List, Optional
 from kicad_sym import *
 from print_color import *
 from rulebase import PrintColor, Verbosity
-
 from rules_symbol import *
 from rules_symbol import __all__ as all_rules
 from rules_symbol.rule import KLCRule
 
 
-class SymbolCheck():
-    def __init__(self, selected_rules: Optional[List[str]] = None, excluded_rules: Optional[List[str]] = None, verbosity: Verbosity = Verbosity.NONE, footprints = None, use_color: bool = True, no_warnings: bool = False, silent: bool = False, log: bool = False):
+class SymbolCheck:
+    def __init__(
+        self,
+        selected_rules: Optional[List[str]] = None,
+        excluded_rules: Optional[List[str]] = None,
+        verbosity: Verbosity = Verbosity.NONE,
+        footprints=None,
+        use_color: bool = True,
+        no_warnings: bool = False,
+        silent: bool = False,
+        log: bool = False,
+    ):
         self.footprints = footprints
         self.printer = PrintColor(use_color=use_color)
         self.verbosity: Verbosity = verbosity
@@ -41,7 +50,7 @@ class SymbolCheck():
         self.rules: List[KLCRule] = []
 
         for r in all_rules:
-            r_name = r.replace('_', '.')
+            r_name = r.replace("_", ".")
             if selected_rules is None or r_name in selected_rules:
                 if excluded_rules is not None and r_name in excluded_rules:
                     pass
@@ -50,7 +59,7 @@ class SymbolCheck():
 
     def do_unittest(self, symbol) -> Tuple[int, int]:
         error_count = 0
-        m = re.match(r'(\w+)__(.+)__(.+)', symbol.name)
+        m = re.match(r"(\w+)__(.+)__(.+)", symbol.name)
         if not m:
             self.printer.red("Test '{sym}' could not be parsed".format(sym=symbol.name))
             return (1, 0)
@@ -62,22 +71,24 @@ class SymbolCheck():
             rule = rule(symbol)
             if unittest_rule == rule.name:
                 rule.check()
-                if unittest_result == 'Fail' and rule.errorCount == 0:
+                if unittest_result == "Fail" and rule.errorCount == 0:
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
                     continue
-                if unittest_result == 'Warn' and rule.warningCount() == 0:
+                if unittest_result == "Warn" and rule.warningCount() == 0:
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
                     continue
-                if unittest_result == 'Pass' and (rule.warningCount() != 0 or rule.errorCount != 0):
+                if unittest_result == "Pass" and (
+                    rule.warningCount() != 0 or rule.errorCount != 0
+                ):
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
                     continue
                 self.printer.green("Test '{sym}' passed".format(sym=symbol.name))
 
             else:
-               continue
+                continue
         return (error_count, 0)
 
     def do_rulecheck(self, symbol) -> Tuple[int, int]:
@@ -89,7 +100,7 @@ class SymbolCheck():
             rule = rule(symbol)
 
             if self.verbosity.value > Verbosity.HIGH.value:
-              self.printer.white("Checking rule " + rule.name)
+                self.printer.white("Checking rule " + rule.name)
             rule.check()
 
             if self.no_warnings and not rule.hasErrors():
@@ -97,10 +108,16 @@ class SymbolCheck():
 
             if rule.hasOutput():
                 if first:
-                    self.printer.green("Checking symbol '{lib}:{sym}':".format(lib=symbol.libname, sym=symbol.name))
+                    self.printer.green(
+                        "Checking symbol '{lib}:{sym}':".format(
+                            lib=symbol.libname, sym=symbol.name
+                        )
+                    )
                     first = False
 
-                self.printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
+                self.printer.yellow(
+                    "Violating " + rule.name + " - " + rule.url, indentation=2
+                )
                 rule.processOutput(self.printer, self.verbosity, self.silent)
 
             if rule.hasErrors():
@@ -114,34 +131,48 @@ class SymbolCheck():
         # No messages?
         if first:
             if not self.silent:
-                self.printer.green("Checking symbol '{lib}:{sym}':".format(lib=symbol.libname, sym=symbol.name))
+                self.printer.green(
+                    "Checking symbol '{lib}:{sym}':".format(
+                        lib=symbol.libname, sym=symbol.name
+                    )
+                )
 
         # done checking the symbol
         # count errors and update metrics
-        self.metrics.append('{l}.{p}.warnings {n}'.format(l=symbol.libname, p=symbol.name, n=symbol_warning_count))
-        self.metrics.append('{l}.{p}.errors {n}'.format(l=symbol.libname, p=symbol.name, n=symbol_error_count))
-        return(symbol_error_count, symbol_warning_count)
+        self.metrics.append(
+            "{l}.{p}.warnings {n}".format(
+                l=symbol.libname, p=symbol.name, n=symbol_warning_count
+            )
+        )
+        self.metrics.append(
+            "{l}.{p}.errors {n}".format(
+                l=symbol.libname, p=symbol.name, n=symbol_error_count
+            )
+        )
+        return (symbol_error_count, symbol_warning_count)
 
-    def check_library(self, filename: str, component = None, pattern = None, is_unittest: bool = False) -> Tuple[int, int]:
+    def check_library(
+        self, filename: str, component=None, pattern=None, is_unittest: bool = False
+    ) -> Tuple[int, int]:
         error_count = 0
         warning_count = 0
         libname = ""
         if not os.path.exists(filename):
-            self.printer.red('File does not exist: %s' % filename)
+            self.printer.red("File does not exist: %s" % filename)
             return (1, 0)
 
-        if not filename.endswith('.kicad_sym'):
-            self.printer.red('File is not a .kicad_sym : %s' % filename)
+        if not filename.endswith(".kicad_sym"):
+            self.printer.red("File is not a .kicad_sym : %s" % filename)
             return (1, 0)
 
         try:
             library = KicadLibrary.from_file(filename)
         except Exception as e:
-            self.printer.red('Could not parse library: %s. (%s)' % (filename, e))
+            self.printer.red("Could not parse library: %s. (%s)" % (filename, e))
             if self.verbosity:
                 self.printer.red("Error: " + str(e))
                 traceback.print_exc()
-            return (1,0)
+            return (1, 0)
 
         for symbol in library.symbols:
             if component:
@@ -163,16 +194,37 @@ class SymbolCheck():
             libname = symbol.libname
 
         # done checking the lib
-        self.metrics.append('{lib}.total_errors {n}'.format(lib=libname, n=error_count))
-        self.metrics.append('{lib}.total_warnings {n}'.format(lib=libname, n=warning_count))
+        self.metrics.append("{lib}.total_errors {n}".format(lib=libname, n=error_count))
+        self.metrics.append(
+            "{lib}.total_warnings {n}".format(lib=libname, n=warning_count)
+        )
         self.error_count += error_count
         self.warning_count += warning_count
         return (error_count, warning_count)
 
 
-def worker(inp, outp, lock, selected_rules, excluded_rules, verbosity: Verbosity, footprints, args, i=0):
+def worker(
+    inp,
+    outp,
+    lock,
+    selected_rules,
+    excluded_rules,
+    verbosity: Verbosity,
+    footprints,
+    args,
+    i=0,
+):
     # have one instance of SymbolCheck per worker
-    c = SymbolCheck(selected_rules, excluded_rules, verbosity, footprints, not args.nocolor, no_warnings = args.nowarnings, silent = args.silent, log = args.log)
+    c = SymbolCheck(
+        selected_rules,
+        excluded_rules,
+        verbosity,
+        footprints,
+        not args.nocolor,
+        no_warnings=args.nowarnings,
+        silent=args.silent,
+        log=args.log,
+    )
     c.printer.buffered = True
 
     while True:
@@ -191,26 +243,73 @@ def worker(inp, outp, lock, selected_rules, excluded_rules, verbosity: Verbosity
 
     # output all the metrics at once
     for line in c.metrics:
-        outp.put("{},{}".format (i, line))
+        outp.put("{},{}".format(i, line))
     return
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Checks KiCad library files (.kicad_sym) against KiCad Library Convention (KLC) rules. You can find the KLC at https://kicad.org/libraries/klc/')
-    parser.add_argument('kicad_sym_files', nargs='+')
-    parser.add_argument('-c', '--component', help='check only a specific component', action='store')
-    parser.add_argument('-p', '--pattern', help='Check multiple components by matching a regular expression', action='store')
-    parser.add_argument('-r','--rule',help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r S3.1,EC02"')
-    parser.add_argument('-e','--exclude',help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"')
-    #parser.add_argument('--fix', help='fix the violations if possible', action='store_true') # currently there is no write support for a kicad symbol
-    parser.add_argument('--nocolor', help='does not use colors to show the output', action='store_true')
-    parser.add_argument('-v', '--verbose', help='Enable verbose output. -v shows brief information, -vv shows complete information', action='count')
-    parser.add_argument('-s', '--silent', help='skip output for symbols passing all checks', action='store_true')
-    parser.add_argument('-l', '--log', help="Path to JSON file to log error information")
-    parser.add_argument('-w', '--nowarnings', help='Hide warnings (only show errors)', action='store_true')
-    parser.add_argument('-m', '--metrics', help='generate a metrics.txt file', action='store_true')
-    parser.add_argument('-u', '--unittest', help='unit test mode (to be used with test-symbols)', action='store_true')
-    parser.add_argument('-j', '--multiprocess', help='use parallel processing')
-    parser.add_argument('--footprints', help='Path to footprint libraries (.pretty dirs). Specify with e.g. "~/kicad/footprints/"')
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Checks KiCad library files (.kicad_sym) against KiCad Library Convention (KLC) rules. You can find the KLC at https://kicad.org/libraries/klc/"
+    )
+    parser.add_argument("kicad_sym_files", nargs="+")
+    parser.add_argument(
+        "-c", "--component", help="check only a specific component", action="store"
+    )
+    parser.add_argument(
+        "-p",
+        "--pattern",
+        help="Check multiple components by matching a regular expression",
+        action="store",
+    )
+    parser.add_argument(
+        "-r",
+        "--rule",
+        help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r S3.1,EC02"',
+    )
+    parser.add_argument(
+        "-e",
+        "--exclude",
+        help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e S3.1,EC02"',
+    )
+    # parser.add_argument('--fix', help='fix the violations if possible', action='store_true') # currently there is no write support for a kicad symbol
+    parser.add_argument(
+        "--nocolor", help="does not use colors to show the output", action="store_true"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Enable verbose output. -v shows brief information, -vv shows complete information",
+        action="count",
+    )
+    parser.add_argument(
+        "-s",
+        "--silent",
+        help="skip output for symbols passing all checks",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-l", "--log", help="Path to JSON file to log error information"
+    )
+    parser.add_argument(
+        "-w",
+        "--nowarnings",
+        help="Hide warnings (only show errors)",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-m", "--metrics", help="generate a metrics.txt file", action="store_true"
+    )
+    parser.add_argument(
+        "-u",
+        "--unittest",
+        help="unit test mode (to be used with test-symbols)",
+        action="store_true",
+    )
+    parser.add_argument("-j", "--multiprocess", help="use parallel processing")
+    parser.add_argument(
+        "--footprints",
+        help='Path to footprint libraries (.pretty dirs). Specify with e.g. "~/kicad/footprints/"',
+    )
     args = parser.parse_args()
 
     #
@@ -263,7 +362,20 @@ if __name__ == '__main__':
     # create the workers
     lock = Lock()
     for i in range(int(args.multiprocess) if args.multiprocess else 1):
-        p = Process(target=worker, args=(task_queue, out_queue, lock, selected_rules, excluded_rules, verbosity, footprints, args, i))
+        p = Process(
+            target=worker,
+            args=(
+                task_queue,
+                out_queue,
+                lock,
+                selected_rules,
+                excluded_rules,
+                verbosity,
+                footprints,
+                args,
+                i,
+            ),
+        )
         jobs.append(p)
         p.start()
         job_output[str(i)] = []
@@ -273,14 +385,14 @@ if __name__ == '__main__':
         for p in jobs:
             while True:
                 try:
-                    id,line = out_queue.get(block=False).split(',')
-                    job_output [id].append(line)
+                    id, line = out_queue.get(block=False).split(",")
+                    job_output[id].append(line)
                 except queue.Empty:
                     break
             if not p.is_alive():
-                jobs.remove (p)
+                jobs.remove(p)
 
-    out_queue.put('STOP')
+    out_queue.put("STOP")
 
     time.sleep(1)
 
@@ -292,10 +404,9 @@ if __name__ == '__main__':
         for key in job_output:
             for line in job_output[key]:
                 metrics_file.write(line + "\n")
-                if '.total_errors' in line:
+                if ".total_errors" in line:
                     error_count += int(line.split()[-1])
 
         metrics_file.close()
     out_queue.close()
     sys.exit(0 if error_count == 0 else -1)
-

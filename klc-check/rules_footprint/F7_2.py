@@ -22,15 +22,15 @@ class Rule(KLCRule):
         """
 
         # List of potential names for pad-1
-        names = ['1', 'A', 'A1', 'P1', 'PAD1']
+        names = ["1", "A", "A1", "P1", "PAD1"]
         pads = []
 
         module = self.module
 
-        num = ''
+        num = ""
 
         # check if module is through-hole
-        if module.attribute == 'through_hole':
+        if module.attribute == "through_hole":
 
             for name in names:
                 pads = module.getPadsByNumber(name)
@@ -45,13 +45,13 @@ class Rule(KLCRule):
             self.pin1_count = len(pads)
 
             for pad in pads:
-                pos = pad['pos']
+                pos = pad["pos"]
 
                 if len(self.pin1_position) == 0:
-                    self.pin1_position = [pos['x'], pos['y']]
+                    self.pin1_position = [pos["x"], pos["y"]]
 
                 # Pad is located at origin
-                if pos['x'] == 0 and pos['y'] == 0:
+                if pos["x"] == 0 and pos["y"] == 0:
                     return False
 
             # More than one pad-1? Only a warning...
@@ -73,6 +73,6 @@ class Rule(KLCRule):
         """
 
         module = self.module
-        if self.check() and len(self.pin1_position)>0:
+        if self.check() and len(self.pin1_position) > 0:
             self.info("Moved anchor position to Pin-1")
             module.setAnchor(self.pin1_position)

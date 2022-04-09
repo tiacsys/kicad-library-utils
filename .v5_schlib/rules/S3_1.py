@@ -1,13 +1,17 @@
-from rules.rule import *
 import math
+
+from rules.rule import *
 
 
 class Rule(KLCRule):
     """
     Create the methods check and fix to use with the kicad lib files.
     """
+
     def __init__(self, component):
-        super(Rule, self).__init__(component, 'Origin is centered on the middle of the symbol')
+        super(Rule, self).__init__(
+            component, "Origin is centered on the middle of the symbol"
+        )
 
     def check(self):
         """
@@ -16,30 +20,37 @@ class Rule(KLCRule):
         """
 
         # Check units separately if they have different drawing ("units_locked")
-        units_locked = self.component.definition['units_locked'] == 'L'
-        unit_count = int(self.component.definition['unit_count']) if units_locked else 1
+        units_locked = self.component.definition["units_locked"] == "L"
+        unit_count = int(self.component.definition["unit_count"]) if units_locked else 1
 
-        for unit in range(1, unit_count+1):
+        for unit in range(1, unit_count + 1):
             # If there is only a single filled rectangle, we assume that it is the
             # main symbol outline.
             drawing = self.component.draw
-            filled_rects = [rect for rect in drawing['rectangles']
-                            if ((not units_locked) or (int(rect['unit']) == unit)) and (rect['fill'] == 'f')]
+            filled_rects = [
+                rect
+                for rect in drawing["rectangles"]
+                if ((not units_locked) or (int(rect["unit"]) == unit))
+                and (rect["fill"] == "f")
+            ]
             if len(filled_rects) == 1:
                 # We now find it's center
                 rect = filled_rects[0]
-                x = (int(rect['startx']) + int(rect['endx'])) // 2
-                y = (int(rect['starty']) + int(rect['endy'])) // 2
+                x = (int(rect["startx"]) + int(rect["endx"])) // 2
+                y = (int(rect["starty"]) + int(rect["endy"])) // 2
             else:
-                pins = [pin for pin in self.component.pins
-                        if (not units_locked) or (int(pin['unit']) == unit)]
+                pins = [
+                    pin
+                    for pin in self.component.pins
+                    if (not units_locked) or (int(pin["unit"]) == unit)
+                ]
 
                 # No pins? Ignore check.
                 # This can be improved to include graphical items too...
                 if len(pins) == 0:
                     continue
-                x_pos = [int(pin['posx']) for pin in pins]
-                y_pos = [int(pin['posy']) for pin in pins]
+                x_pos = [int(pin["posx"]) for pin in pins]
+                y_pos = [int(pin["posy"]) for pin in pins]
                 x_min = min(x_pos)
                 x_max = max(x_pos)
                 y_min = min(y_pos)
@@ -56,7 +67,9 @@ class Rule(KLCRule):
                 self.info("Symbol unit {unit} slightly off-center".format(unit=unit))
                 self.info("  Center calculated @ ({x}, {y})".format(x=x, y=y))
             else:
-                self.warning("Symbol unit {unit} not centered on origin".format(unit=unit))
+                self.warning(
+                    "Symbol unit {unit} not centered on origin".format(unit=unit)
+                )
                 self.warningExtra("Center calculated @ ({x}, {y})".format(x=x, y=y))
 
         return False

@@ -16,33 +16,39 @@ class Rule(KLCRule):
         For most other components (LEDs, molded packages, ...) this test will yield usable results.
         """
         module = self.module
-        if module.attribute != 'smd':
+        if module.attribute != "smd":
             # Ignore non-smd parts
             return False
 
         center_pads = module.padMiddlePosition()
-        center_fab  = module.geometricBoundingBox("F.Fab").center
+        center_fab = module.geometricBoundingBox("F.Fab").center
 
         err = False
 
         # calculate the distance from origin for the pads and fab
-        diff_pads = sqrt(center_pads['x']**2 + center_pads['y']**2)
-        diff_fab  = sqrt(center_fab['x']**2 +  center_fab['y']**2)
+        diff_pads = sqrt(center_pads["x"] ** 2 + center_pads["y"] ** 2)
+        diff_fab = sqrt(center_fab["x"] ** 2 + center_fab["y"] ** 2)
         # select the xy coordinates that are closest to the center
         if diff_pads > diff_fab:
-            (x, y) = (center_fab['x'], center_fab['y'])
+            (x, y) = (center_fab["x"], center_fab["y"])
         else:
-            (x, y) = (center_pads['x'], center_pads['y'])
+            (x, y) = (center_pads["x"], center_pads["y"])
 
         THRESHOLD = 0.001
         if abs(x) > THRESHOLD or abs(y) > THRESHOLD:
-            self.error("Footprint anchor does not match calculated center of Pads or F.Fab")
-            self.errorExtra("calculated center for Pads [{xp},{yp}mm]".format(
-                xp = round(center_pads['x'], 5),
-                yp = round(center_pads['y'], 5)))
-            self.errorExtra("calculated center for F.Fab [{xf},{yf}mm]".format(
-                xf = round(center_fab['x'], 5),
-                yf = round(center_fab['y'], 5)))
+            self.error(
+                "Footprint anchor does not match calculated center of Pads or F.Fab"
+            )
+            self.errorExtra(
+                "calculated center for Pads [{xp},{yp}mm]".format(
+                    xp=round(center_pads["x"], 5), yp=round(center_pads["y"], 5)
+                )
+            )
+            self.errorExtra(
+                "calculated center for F.Fab [{xf},{yf}mm]".format(
+                    xf=round(center_fab["x"], 5), yf=round(center_fab["y"], 5)
+                )
+            )
 
             err = True
 
@@ -59,4 +65,4 @@ class Rule(KLCRule):
 
             center = module.padMiddlePosition()
 
-            module.setAnchor([center['x'], center['y']])
+            module.setAnchor([center["x"], center["y"]])

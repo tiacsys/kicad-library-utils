@@ -7,18 +7,20 @@ from typing import List, Tuple
 from print_color import PrintColor
 
 
-def logError(log_file: str, rule_name: str, lib_name: str, item_name: str, warning: bool = False) -> None:
+def logError(
+    log_file: str, rule_name: str, lib_name: str, item_name: str, warning: bool = False
+) -> None:
     """
     Log KLC error output to a json file.
     The JSON file will contain a cumulative dict
     of the errors and the library items that do not comply.
     """
 
-    if not log_file.endswith('.json'):
-        log_file += '.json'
+    if not log_file.endswith(".json"):
+        log_file += ".json"
 
     if os.path.exists(log_file) and os.path.isfile(log_file):
-        with open(log_file, 'r') as json_file:
+        with open(log_file, "r") as json_file:
             try:
                 log_data = json.loads(json_file.read())
             except:
@@ -28,12 +30,12 @@ def logError(log_file: str, rule_name: str, lib_name: str, item_name: str, warni
     else:
         log_data = {}
 
-    key = 'warnings' if warning else 'errors'
+    key = "warnings" if warning else "errors"
 
     if not key in log_data:
         log_data[key] = {}
 
-    log_entry = {'library': lib_name, 'item': item_name}
+    log_entry = {"library": lib_name, "item": item_name}
 
     if not rule_name in log_data[key]:
         log_data[key][rule_name] = []
@@ -41,40 +43,44 @@ def logError(log_file: str, rule_name: str, lib_name: str, item_name: str, warni
     log_data[key][rule_name].append(log_entry)
 
     # Write the log data back to file
-    with open(log_file, 'w') as json_file:
-        op = json.dumps(log_data, indent=4, sort_keys=True, separators=(',', ':'))
+    with open(log_file, "w") as json_file:
+        op = json.dumps(log_data, indent=4, sort_keys=True, separators=(",", ":"))
         json_file.write(op)
 
+
 # Static functions
-def isValidName(name, checkForGraphicSymbol: bool = False, checkForPowerSymbol: bool = False) -> bool:
+def isValidName(
+    name, checkForGraphicSymbol: bool = False, checkForPowerSymbol: bool = False
+) -> bool:
     name = str(name).lower()
     firstChar = True
     for c in name:
         # first character may be '~' in some cases
-        if (checkForPowerSymbol or checkForGraphicSymbol) and firstChar and c == '~':
+        if (checkForPowerSymbol or checkForGraphicSymbol) and firstChar and c == "~":
             continue
 
-        firstChar=False
+        firstChar = False
         # Numeric characters check
         if c.isalnum():
             continue
 
         # Alpha characters (simple set only)
-        if c >= 'a' and c <= 'z':
+        if c >= "a" and c <= "z":
             continue
 
-        if c in ['_', '-', '.', '+', ',']:
+        if c in ["_", "-", ".", "+", ","]:
             continue
 
         return False
 
     return True
 
+
 def checkLineEndings(filename: str):
     """
     Check for proper (Unix) line endings
     """
-    filecontentsraw = open(filename, 'rb').readline()
+    filecontentsraw = open(filename, "rb").readline()
 
     LE1 = ord(chr(filecontentsraw[-2]))
     LE2 = ord(chr(filecontentsraw[-1]))
@@ -87,10 +93,12 @@ def checkLineEndings(filename: str):
 
     return True
 
+
 class Verbosity(Enum):
     NONE = 0
     NORMAL = 1
     HIGH = 2
+
 
 class Severity(Enum):
     INFO = 0
@@ -98,7 +106,8 @@ class Severity(Enum):
     ERROR = 2
     SUCCESS = 3
 
-class KLCRuleBase():
+
+class KLCRuleBase:
     """
     A base class to represent a KLC rule
     """
@@ -110,21 +119,16 @@ class KLCRuleBase():
         path = inspect.getfile(self.__class__)
         path = os.path.basename(path)
         path = "".join(path.split(".")[:-1])
-        return path.replace('_', '.')
+        return path.replace("_", ".")
 
     @property
     def url(self) -> str:
-        categories = {
-            'F': 'footprint',
-            'G': 'general',
-            'M': 'model',
-            'S': 'symbol'
-        }
+        categories = {"F": "footprint", "G": "general", "M": "model", "S": "symbol"}
 
         category = categories[self.name[0]]
         name = self.name.lower()
-        group = name.split('.')[0]
-        url = f'https://klc.kicad.org/{category}/{group}/{name}/'
+        group = name.split(".")[0]
+        url = f"https://klc.kicad.org/{category}/{group}/{name}/"
 
         return url
 
@@ -134,7 +138,6 @@ class KLCRuleBase():
 
         self.resetErrorCount()
         self.resetWarningCount()
-
 
     def resetErrorCount(self) -> None:
         self.error_count: int = 0
@@ -156,8 +159,10 @@ class KLCRuleBase():
     def hasWarnings(self) -> bool:
         return self.warning_count > 0
 
-    #adds message into buffer only if such level of verbosity is wanted
-    def verboseOut(self, msgVerbosity: Verbosity, severity: Severity, message: str) -> None:
+    # adds message into buffer only if such level of verbosity is wanted
+    def verboseOut(
+        self, msgVerbosity: Verbosity, severity: Severity, message: str
+    ) -> None:
         self.messageBuffer.append((message, msgVerbosity, severity))
 
     def warning(self, msg: str) -> None:
@@ -181,10 +186,10 @@ class KLCRuleBase():
         self.verboseOut(Verbosity.NORMAL, Severity.SUCCESS, msg)
 
     def check(self, component) -> None:
-        raise NotImplementedError('The check method must be implemented')
+        raise NotImplementedError("The check method must be implemented")
 
     def fix(self, component) -> None:
-        raise NotImplementedError('The fix method must be implemented')
+        raise NotImplementedError("The fix method must be implemented")
 
     def recheck(self) -> None:
 
@@ -201,7 +206,12 @@ class KLCRuleBase():
     def hasOutput(self) -> bool:
         return len(self.messageBuffer) > 0
 
-    def processOutput(self, printer: PrintColor, verbosity: Verbosity = Verbosity.NONE, silent: bool = False) -> bool:
+    def processOutput(
+        self,
+        printer: PrintColor,
+        verbosity: Verbosity = Verbosity.NONE,
+        silent: bool = False,
+    ) -> bool:
 
         # No violations
         if len(self.messageBuffer) == 0:
@@ -211,19 +221,19 @@ class KLCRuleBase():
             printer.light_blue(self.description, indentation=4, max_width=100)
 
         for message in self.messageBuffer:
-            v = message[1] # Verbosity
-            s = message[2] # Severity
+            v = message[1]  # Verbosity
+            s = message[2]  # Severity
             msg = message[0]
 
             if v.value <= verbosity.value:
                 if s == Severity.INFO:
-                    printer.gray(msg, indentation = 4)
+                    printer.gray(msg, indentation=4)
                 elif s == Severity.WARNING:
-                    printer.brown(msg, indentation = 4)
+                    printer.brown(msg, indentation=4)
                 elif s == Severity.ERROR:
-                    printer.red(msg, indentation = 4)
+                    printer.red(msg, indentation=4)
                 elif s == Severity.SUCCESS:
-                    printer.green(msg, indentation = 4)
+                    printer.green(msg, indentation=4)
                 else:
                     printer.red("unknown severity: " + msg, indentation=4)
 

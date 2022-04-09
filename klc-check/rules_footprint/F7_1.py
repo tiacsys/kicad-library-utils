@@ -21,23 +21,26 @@ class Rule(KLCRule):
 
         module = self.module
 
-        self.pth_count = len(module.filterPads('thru_hole'))
-        self.smd_count = len(module.filterPads('smd'))
+        self.pth_count = len(module.filterPads("thru_hole"))
+        self.smd_count = len(module.filterPads("smd"))
 
         error = False
 
-        if self.pth_count > 0 and module.attribute != 'through_hole':
-            if module.attribute == 'virtual':
-                self.warning("Footprint placement type set to 'virtual' - ensure this is correct!")
+        if self.pth_count > 0 and module.attribute != "through_hole":
+            if module.attribute == "virtual":
+                self.warning(
+                    "Footprint placement type set to 'virtual' - ensure this is correct!"
+                )
             # Only THT pads
             elif self.smd_count == 0:
                 self.error("Through Hole attribute not set")
-                self.errorExtra("For THT footprints, 'Placement type' must be set to 'Through hole'")
+                self.errorExtra(
+                    "For THT footprints, 'Placement type' must be set to 'Through hole'"
+                )
                 error = True
             # A mix of THT and SMD pads - probably a SMD footprint
 
         return error
-
 
     def fix(self) -> None:
         """
@@ -47,4 +50,4 @@ class Rule(KLCRule):
         module = self.module
         if self.check():
             self.info("Setting placement type to 'Through hole'")
-            module.attribute = 'through_hole'
+            module.attribute = "through_hole"

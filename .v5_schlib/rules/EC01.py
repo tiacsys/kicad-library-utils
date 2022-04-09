@@ -1,25 +1,31 @@
-from rules.rule import *
 import re
+
+from rules.rule import *
 
 
 class Rule(KLCRule):
     """
     Create the methods check and fix to use with the kicad lib files.
     """
+
     def __init__(self, component):
-        super(Rule, self).__init__(component, 'General pin number checking')
+        super(Rule, self).__init__(component, "General pin number checking")
 
     def checkPinNames(self):
         self.wrong_pin_numbers = []
         for pin in self.component.pins:
             try:
-                num = int(pin['num'])
+                num = int(pin["num"])
             except ValueError:
                 nums = map(str, range(10))
 
-                if not any([num in pin['num'] for num in nums]):
+                if not any([num in pin["num"] for num in nums]):
                     self.wrong_pin_numbers.append(pin)
-                    self.error("pin: {0} number {1} is not valid, should contain at least 1 number".format(pin['name'], pin['num']))
+                    self.error(
+                        "pin: {0} number {1} is not valid, should contain at least 1 number".format(
+                            pin["name"], pin["num"]
+                        )
+                    )
 
         return len(self.wrong_pin_numbers) > 0
 
@@ -33,7 +39,7 @@ class Rule(KLCRule):
         # - Be in the same unit
         # - Be in the same "convert"
 
-        keys = ['num', 'unit', 'convert']
+        keys = ["num", "unit", "convert"]
 
         for pin in self.component.pins:
 
@@ -59,7 +65,7 @@ class Rule(KLCRule):
             # Look for duplicate groups
             if len(pin_list) > 1:
                 duplicate = True
-                self.error("Pin {n} is duplicated:".format(n=pin_list[0]['num']))
+                self.error("Pin {n} is duplicated:".format(n=pin_list[0]["num"]))
 
                 for pin in pin_list:
                     self.errorExtra(pinString(pin))
@@ -74,7 +80,7 @@ class Rule(KLCRule):
         int_pins = []
         for pin in self.component.pins:
             try:
-                int_pins.append(int(pin['num']))
+                int_pins.append(int(pin["num"]))
             except:
                 pass
 
@@ -87,10 +93,7 @@ class Rule(KLCRule):
 
     def check(self):
 
-        return any([
-            self.checkPinNames(),
-            self.checkDuplicatePins()
-            ])
+        return any([self.checkPinNames(), self.checkDuplicatePins()])
 
     def fix(self):
         """

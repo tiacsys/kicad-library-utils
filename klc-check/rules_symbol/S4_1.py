@@ -3,6 +3,7 @@ from typing import List
 from kicad_sym import KicadSymbol, Pin, mm_to_mil
 from rules_symbol.rule import KLCRule, pinString
 
+
 class Rule(KLCRule):
     """General pin requirements"""
 
@@ -20,8 +21,12 @@ class Rule(KLCRule):
             if (posx % gridspacing) != 0 or (posy % gridspacing) != 0:
                 self.violating_pins.append(pin)
                 if not err:
-                    self.error("Pins not located on {0}mil (={1:.3}mm) grid:".format(gridspacing, gridspacing*0.0254))
-                self.error(' - {0} '.format(pinString(pin, loc = True)))
+                    self.error(
+                        "Pins not located on {0}mil (={1:.3}mm) grid:".format(
+                            gridspacing, gridspacing * 0.0254
+                        )
+                    )
+                self.error(" - {0} ".format(pinString(pin, loc=True)))
                 err = True
 
         return len(self.violating_pins) > 0
@@ -40,7 +45,9 @@ class Rule(KLCRule):
 
         return duplicate
 
-    def checkPinLength(self, errorPinLength: int = 49, warningPinLength: int = 99) -> bool:
+    def checkPinLength(
+        self, errorPinLength: int = 49, warningPinLength: int = 99
+    ) -> bool:
         self.violating_pins = []
 
         for pin in self.component.pins:
@@ -53,19 +60,33 @@ class Rule(KLCRule):
                 continue
 
             if length <= errorPinLength:
-                self.error("{pin} length ({len}mils) is below {pl}mils".format(pin=pinString(pin), len=length, pl=errorPinLength+1))
+                self.error(
+                    "{pin} length ({len}mils) is below {pl}mils".format(
+                        pin=pinString(pin), len=length, pl=errorPinLength + 1
+                    )
+                )
             elif length <= warningPinLength:
-                self.warning("{pin} length ({len}mils) is below {pl}mils".format(pin=pinString(pin), len=length, pl=warningPinLength+1))
+                self.warning(
+                    "{pin} length ({len}mils) is below {pl}mils".format(
+                        pin=pinString(pin), len=length, pl=warningPinLength + 1
+                    )
+                )
 
             if length % 50 != 0:
-                self.warning("{pin} length ({len}mils) is not a multiple of 50mils".format(pin=pinString(pin), len=length))
+                self.warning(
+                    "{pin} length ({len}mils) is not a multiple of 50mils".format(
+                        pin=pinString(pin), len=length
+                    )
+                )
 
             # length too long flags a warning
             if length > 300:
                 err = True
-                self.error("{pin} length ({length}mils) is longer than maximum (300mils)".format(
-                    pin=pinString(pin),
-                    length=length))
+                self.error(
+                    "{pin} length ({length}mils) is longer than maximum (300mils)".format(
+                        pin=pinString(pin), length=length
+                    )
+                )
 
             if err:
                 self.violating_pins.append(pin)
@@ -88,11 +109,13 @@ class Rule(KLCRule):
             errorPinLength = 24
             warningPinLength = 49
 
-        return any([
-            self.checkPinOrigin(pingrid),
-            self.checkPinLength(errorPinLength, warningPinLength),
-            self.checkDuplicatePins()
-            ])
+        return any(
+            [
+                self.checkPinOrigin(pingrid),
+                self.checkPinLength(errorPinLength, warningPinLength),
+                self.checkDuplicatePins(),
+            ]
+        )
 
     def fix(self) -> None:
         """

@@ -9,21 +9,21 @@ class Rule(KLCRule):
     """Pin electrical type should match pin function"""
 
     # Power Input Pins should be 'W'
-    POWER_INPUTS = ['^[ad]*g(rou)*nd(a)*$', '^[ad]*v(aa|cc|dd|ss|bat|in)$']
+    POWER_INPUTS = ["^[ad]*g(rou)*nd(a)*$", "^[ad]*v(aa|cc|dd|ss|bat|in)$"]
 
     # Power Output Pins should be 'w'
-    POWER_OUTPUTS = ['^vout$']
+    POWER_OUTPUTS = ["^vout$"]
 
     PASSIVE_PINS = []
 
     # Input Pins should be "I"
-    INPUT_PINS = ['^sdi$', '^cl(oc)*k(in)*$', '^~*cs~*$', '^[av]ref$']
+    INPUT_PINS = ["^sdi$", "^cl(oc)*k(in)*$", "^~*cs~*$", "^[av]ref$"]
 
     # Output pins should be "O"
-    OUTPUT_PINS = ['^sdo$', '^cl(oc)*kout$']
+    OUTPUT_PINS = ["^sdo$", "^cl(oc)*kout$"]
 
     # Bidirectional pins should be "B"
-    BIDIR_PINS = ['^sda$', '^s*dio$']
+    BIDIR_PINS = ["^sda$", "^s*dio$"]
 
     warning_tests = {
         "power_out": POWER_OUTPUTS,
@@ -31,7 +31,7 @@ class Rule(KLCRule):
         "input": INPUT_PINS,
         "output": OUTPUT_PINS,
         "bidirectional": BIDIR_PINS,
-        }
+    }
 
     def __init__(self, component: KicadSymbol):
         super().__init__(component)
@@ -46,7 +46,6 @@ class Rule(KLCRule):
             if re.search(name, pinName, flags=re.IGNORECASE) is not None:
                 return True
         return False
-
 
     # These pin types must be satisfied
     def checkPowerPins(self) -> bool:
@@ -64,19 +63,25 @@ class Rule(KLCRule):
                 name = pin.name.lower()
                 etype = pin.etype
 
-                if self.test(name.lower(), self.POWER_INPUTS) and (not etype.lower() == 'power_in'):
+                if self.test(name.lower(), self.POWER_INPUTS) and (
+                    not etype.lower() == "power_in"
+                ):
                     if len(self.power_errors) == 0:
-                        self.error("Power pins should be of type POWER INPUT or POWER OUTPUT")
+                        self.error(
+                            "Power pins should be of type POWER INPUT or POWER OUTPUT"
+                        )
                     self.power_errors.append(pin)
-                    self.errorExtra("{pin} is of type {t}".format(
-                        pin=pinString(pin),
-                        t=etype))
+                    self.errorExtra(
+                        "{pin} is of type {t}".format(pin=pinString(pin), t=etype)
+                    )
 
-            if len(stack) > 1 and visible and visible[0].etype.lower() == 'power_in':
+            if len(stack) > 1 and visible and visible[0].etype.lower() == "power_in":
                 for pin in invisible:
-                    if pin.etype.lower() != 'passive':
+                    if pin.etype.lower() != "passive":
                         if len(self.power_errors) == 0:
-                            self.error("Invisible powerpins in stacks should be of type PASSIVE")
+                            self.error(
+                                "Invisible powerpins in stacks should be of type PASSIVE"
+                            )
 
         return len(self.power_errors) > 0
 
@@ -97,10 +102,11 @@ class Rule(KLCRule):
                         if len(self.suggestions) == 0:
                             self.warning("Pin types should match pin function")
                         self.suggestions.append(pin)
-                        self.warningExtra("{pin} is type {t1} : suggested {t2}".format(
-                                        pin=pinString(pin),
-                                        t1=etype,
-                                        t2=pin_type))
+                        self.warningExtra(
+                            "{pin} is type {t1} : suggested {t2}".format(
+                                pin=pinString(pin), t1=etype, t2=pin_type
+                            )
+                        )
 
                     break
 
@@ -110,12 +116,18 @@ class Rule(KLCRule):
     def checkDoubleInversions(self) -> bool:
         self.inversion_errors = []
         for pin in self.component.pins:
-            m = re.search('(\~{)(.+)}', pin.name)
-            if m and pin.shape == 'inverted':
+            m = re.search("(\~{)(.+)}", pin.name)
+            if m and pin.shape == "inverted":
                 if len(self.inversion_errors) == 0:
-                    self.error("Pins should not be inverted twice (with inversion-symbol on pin and overline on label)")
+                    self.error(
+                        "Pins should not be inverted twice (with inversion-symbol on pin and overline on label)"
+                    )
                 self.inversion_errors.append(pin)
-                self.errorExtra("{pin} : double inversion (overline + pin type:Inverting)".format(pin=pinString(pin)))
+                self.errorExtra(
+                    "{pin} : double inversion (overline + pin type:Inverting)".format(
+                        pin=pinString(pin)
+                    )
+                )
 
         return len(self.inversion_errors) > 0
 
@@ -132,11 +144,13 @@ class Rule(KLCRule):
         if self.component.extends is not None:
             return False
 
-        return any([
-            self.checkPowerPins(),
-            self.checkDoubleInversions(),
-            self.checkSuggestions()
-            ])
+        return any(
+            [
+                self.checkPowerPins(),
+                self.checkDoubleInversions(),
+                self.checkSuggestions(),
+            ]
+        )
 
     def fix(self) -> None:
         """
@@ -147,12 +161,12 @@ class Rule(KLCRule):
 
         for pin in self.power_errors:
 
-            pin['electrical_type'] = 'W'  # Power Input
+            pin["electrical_type"] = "W"  # Power Input
 
-            self.info("Changing pin {n} type to POWER_INPUT".format(n=pin['num']))
+            self.info("Changing pin {n} type to POWER_INPUT".format(n=pin["num"]))
 
         for pin in self.inversion_errors:
-            pin['pin_type'] = ""  # reset pin type (removes dot at the base of pin)
-            self.info("Removing double inversion on pin {n}".format(n=pin['num']))
+            pin["pin_type"] = ""  # reset pin type (removes dot at the base of pin)
+            self.info("Removing double inversion on pin {n}".format(n=pin["num"]))
 
         self.recheck()

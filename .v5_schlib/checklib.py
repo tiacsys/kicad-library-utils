@@ -1,42 +1,80 @@
 #!/usr/bin/env python3
 
 import argparse
-import sys, os
+import os
+import sys
 
-common = os.path.abspath(os.path.join(sys.path[0], '..','common'))
+common = os.path.abspath(os.path.join(sys.path[0], "..", "common"))
 
 if not common in sys.path:
     sys.path.append(common)
 
-from schlib import *
-
-from print_color import *
 import re
-from rules import __all__ as all_rules
-from rules import *
-from rules.rule import KLCRule
-from rulebase import logError
 
-#enable windows wildcards
+# enable windows wildcards
 from glob import glob
 
-parser = argparse.ArgumentParser(description='Checks KiCad library files (.lib) against KiCad Library Convention (KLC) rules. You can find the KLC at https://kicad.org/libraries/klc/')
-parser.add_argument('libfiles', nargs='+')
-parser.add_argument('-c', '--component', help='check only a specific component (implicitly verbose)', action='store')
-parser.add_argument('-p', '--pattern', help='Check multiple components by matching a regular expression', action='store')
-parser.add_argument('-r','--rule',help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r 3.1,EC02"')
-parser.add_argument('-e','--exclude',help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e 3.1,EC02"')
-parser.add_argument('--fix', help='fix the violations if possible', action='store_true')
-parser.add_argument('--nocolor', help='does not use colors to show the output', action='store_true')
-parser.add_argument('-v', '--verbose', help='Enable verbose output. -v shows brief information, -vv shows complete information', action='count')
-parser.add_argument('-s', '--silent', help='skip output for symbols passing all checks', action='store_true')
-parser.add_argument('-l', '--log', help='Path to JSON file to log error information')
-parser.add_argument('-w', '--nowarnings', help='Hide warnings (only show errors)', action='store_true')
-parser.add_argument('--footprints', help='Path to footprint libraries (.pretty dirs). Specify with e.g. "~/kicad/footprints/"')
+from print_color import *
+from rulebase import logError
+from rules import *
+from rules import __all__ as all_rules
+from rules.rule import KLCRule
+from schlib import *
+
+parser = argparse.ArgumentParser(
+    description="Checks KiCad library files (.lib) against KiCad Library Convention (KLC) rules. You can find the KLC at https://kicad.org/libraries/klc/"
+)
+parser.add_argument("libfiles", nargs="+")
+parser.add_argument(
+    "-c",
+    "--component",
+    help="check only a specific component (implicitly verbose)",
+    action="store",
+)
+parser.add_argument(
+    "-p",
+    "--pattern",
+    help="Check multiple components by matching a regular expression",
+    action="store",
+)
+parser.add_argument(
+    "-r",
+    "--rule",
+    help='Select a particular rule (or rules) to check against (default = all rules). Use comma separated values to select multiple rules. e.g. "-r 3.1,EC02"',
+)
+parser.add_argument(
+    "-e",
+    "--exclude",
+    help='Exclude a particular rule (or rules) to check against. Use comma separated values to select multiple rules. e.g. "-e 3.1,EC02"',
+)
+parser.add_argument("--fix", help="fix the violations if possible", action="store_true")
+parser.add_argument(
+    "--nocolor", help="does not use colors to show the output", action="store_true"
+)
+parser.add_argument(
+    "-v",
+    "--verbose",
+    help="Enable verbose output. -v shows brief information, -vv shows complete information",
+    action="count",
+)
+parser.add_argument(
+    "-s",
+    "--silent",
+    help="skip output for symbols passing all checks",
+    action="store_true",
+)
+parser.add_argument("-l", "--log", help="Path to JSON file to log error information")
+parser.add_argument(
+    "-w", "--nowarnings", help="Hide warnings (only show errors)", action="store_true"
+)
+parser.add_argument(
+    "--footprints",
+    help='Path to footprint libraries (.pretty dirs). Specify with e.g. "~/kicad/footprints/"',
+)
 
 args = parser.parse_args()
 
-printer = PrintColor(use_color = not args.nocolor)
+printer = PrintColor(use_color=not args.nocolor)
 
 # Set verbosity globally
 verbosity = 0
@@ -46,35 +84,35 @@ if args.verbose:
 KLCRule.verbosity = verbosity
 
 if args.rule:
-    selected_rules = args.rule.split(',')
+    selected_rules = args.rule.split(",")
 else:
-    #ALL rules are used
+    # ALL rules are used
     selected_rules = None
 
 if args.exclude:
-    excluded_rules = args.exclude.split(',')
+    excluded_rules = args.exclude.split(",")
 else:
     excluded_rules = None
 
 rules = []
 
 for r in all_rules:
-    r_name = r.replace('_', '.')
+    r_name = r.replace("_", ".")
     if selected_rules == None or r_name in selected_rules:
         if excluded_rules == None or r_name not in excluded_rules:
             rules.append(globals()[r].Rule)
 
-#grab list of libfiles (even on windows!)
+# grab list of libfiles (even on windows!)
 libfiles = []
 
-if len(all_rules)<=0:
+if len(all_rules) <= 0:
     printer.red("No rules selected for check!")
     sys.exit(1)
 else:
-    if (verbosity>2):
+    if verbosity > 2:
         printer.regular("checking rules:")
         for rule in all_rules:
-            printer.regular("  - "+str(rule))
+            printer.regular("  - " + str(rule))
         printer.regular("")
 
 for libfile in args.libfiles:
@@ -96,22 +134,25 @@ for libfile in libfiles:
 
     # Print library name
     if len(libfiles) > 1:
-        printer.purple('Library: %s' % libfile)
+        printer.purple("Library: %s" % libfile)
 
-    n_allviolations=0
+    n_allviolations = 0
 
     for component in lib.components:
 
-        #simple match
+        # simple match
         match = True
         if args.component:
             match = match and args.component.lower() == component.name.lower()
 
-        #regular expression match
+        # regular expression match
         if args.pattern:
-            match = match and re.search(args.pattern, component.name, flags=re.IGNORECASE)
+            match = match and re.search(
+                args.pattern, component.name, flags=re.IGNORECASE
+            )
 
-        if not match: continue
+        if not match:
+            continue
 
         n_components += 1
 
@@ -141,7 +182,9 @@ for libfile in libfiles:
                     printer.green("Checking symbol '{sym}':".format(sym=component.name))
                     first = False
 
-                printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
+                printer.yellow(
+                    "Violating " + rule.name + " - " + rule.url, indentation=2
+                )
                 rule.processOutput(printer, verbosity, args.silent)
 
             # Specifically check for errors
@@ -159,15 +202,21 @@ for libfile in libfiles:
         # No messages?
         if first:
             if not args.silent:
-                printer.green("Checking symbol '{sym}' - No errors".format(sym=component.name))
+                printer.green(
+                    "Checking symbol '{sym}' - No errors".format(sym=component.name)
+                )
 
         # check the number of violations
         if n_violations > 0:
             exit_code += 1
-        n_allviolations=n_allviolations+n_violations
+        n_allviolations = n_allviolations + n_violations
 
     if args.fix and n_allviolations > 0:
         lib.save()
-        printer.green("saved '{file}' with fixes for {n_violations} violations.".format(file=libfile, n_violations=n_allviolations))
+        printer.green(
+            "saved '{file}' with fixes for {n_violations} violations.".format(
+                file=libfile, n_violations=n_allviolations
+            )
+        )
 
-sys.exit(exit_code);
+sys.exit(exit_code)

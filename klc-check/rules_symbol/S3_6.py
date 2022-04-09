@@ -1,4 +1,4 @@
-from kicad_sym import KicadSymbol, mm_to_mil, mil_to_mm
+from kicad_sym import KicadSymbol, mil_to_mm, mm_to_mil
 from rules_symbol.rule import KLCRule, positionFormater
 
 
@@ -29,8 +29,10 @@ class Rule(KLCRule):
             return True
         elif offset > 20:
             self.warning("Pin offset not preferred value")
-            self.warningExtra(f"Pin offset ({offset}) should be 20mils unless"
-                    " required by symbol geometry")
+            self.warningExtra(
+                f"Pin offset ({offset}) should be 20mils unless"
+                " required by symbol geometry"
+            )
 
         return False
 

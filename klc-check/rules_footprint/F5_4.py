@@ -8,6 +8,7 @@ from kicad_mod import KicadMod
 from rules_footprint.klc_constants import *
 from rules_footprint.rule import *
 
+
 class Rule(KLCRule):
     """Elements on the graphic layer should not overlap"""
 
@@ -19,7 +20,7 @@ class Rule(KLCRule):
 
     def getCirclesOverlap(self, circles) -> List[Any]:
         def is_same(c1, c2) -> bool:
-            if c1['end'] == c2['end'] and c1['center'] == c2['center']:
+            if c1["end"] == c2["end"] and c1["center"] == c2["center"]:
                 return True
             return False
 
@@ -37,7 +38,7 @@ class Rule(KLCRule):
     def getLinesOverlap(self, lines: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         # from https://stackoverflow.com/questions/328107/how-can-you-determine-a-point-is-between-two-other-points-on-a-line-segment
         def distance(a: Dict[str, Any], b: Dict[str, Any]) -> float:
-            return math.sqrt((a['x'] - b['x'])**2 + (a['y'] - b['y'])**2)
+            return math.sqrt((a["x"] - b["x"]) ** 2 + (a["y"] - b["y"]) ** 2)
 
         def is_between(a: Dict[str, Any], b: Dict[str, Any], c: Dict[str, Any]):
             # check if c is the same as a or b, then c is not between a or b
@@ -51,9 +52,13 @@ class Rule(KLCRule):
             return d < 0.0001
 
         def is_same(l1: Dict[str, Any], l2: Dict[str, Any]) -> bool:
-            if (getStartPoint(l1) == getStartPoint(l2)) and (getEndPoint(l1) == getEndPoint(l2)):
+            if (getStartPoint(l1) == getStartPoint(l2)) and (
+                getEndPoint(l1) == getEndPoint(l2)
+            ):
                 return True
-            if (getStartPoint(l1) == getEndPoint(l2)) and (getEndPoint(l1) == getStartPoint(l2)):
+            if (getStartPoint(l1) == getEndPoint(l2)) and (
+                getEndPoint(l1) == getStartPoint(l2)
+            ):
                 return True
             return False
 
@@ -68,15 +73,15 @@ class Rule(KLCRule):
                 # not sure if that can happen?
                 continue
 
-            dx = start['x'] - end['x']
-            dy = start['y'] - end['y']
-            line['l'] = distance(start, end)
+            dx = start["x"] - end["x"]
+            dy = start["y"] - end["y"]
+            line["l"] = distance(start, end)
             if dx == 0:
-                d = 'h'
+                d = "h"
             elif dy == 0:
-                d = 'v'
+                d = "v"
             else:
-                d = round(dx/dy, 3)
+                d = round(dx / dy, 3)
 
             if d not in directions:
                 directions[d] = []
@@ -91,13 +96,12 @@ class Rule(KLCRule):
                         if line not in overlap:
                             overlap.append(line)
                             lines.remove(line)
-                    if is_between(line['start'], line['end'], line2['start']):
+                    if is_between(line["start"], line["end"], line2["start"]):
                         if line not in overlap:
                             overlap.append(line)
                             lines.remove(line)
 
         return overlap
-
 
     def check(self) -> bool:
         """
@@ -108,20 +112,24 @@ class Rule(KLCRule):
         """
 
         module = self.module
-        layers_to_check = ['F.Fab', 'B.Fab', 'F.SilkS', 'B.SilkS', 'F.CrtYd', 'B.CrtYd']
+        layers_to_check = ["F.Fab", "B.Fab", "F.SilkS", "B.SilkS", "F.CrtYd", "B.CrtYd"]
 
         self.overlaps = {}
         self.errcnt = 0
         for layer in layers_to_check:
             self.overlaps[layer] = []
             self.overlaps[layer].extend(self.getLinesOverlap(module.filterLines(layer)))
-            self.overlaps[layer].extend(self.getCirclesOverlap(module.filterCircles(layer)))
+            self.overlaps[layer].extend(
+                self.getCirclesOverlap(module.filterCircles(layer))
+            )
 
             # Display message if silkscreen has overlapping lines
             if len(self.overlaps[layer]) > 0:
                 self.errcnt += 1
                 self.error("%s graphic elements should not overlap." % layer)
-                self.errorExtra("The following elements do overlap at least one other graphic element on the same layer")
+                self.errorExtra(
+                    "The following elements do overlap at least one other graphic element on the same layer"
+                )
                 for bad in self.overlaps[layer]:
                     self.errorExtra(graphItemString(bad, layer=True, width=False))
 

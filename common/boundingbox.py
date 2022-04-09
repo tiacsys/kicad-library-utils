@@ -4,9 +4,15 @@ Library for dealing with bounding boxes (2D areas defined by four points).
 
 from typing import Dict, Optional
 
-class BoundingBox(object):
 
-    def __init__(self, xmin: Optional[float] = None, ymin: Optional[float] = None, xmax: Optional[float] = None, ymax: Optional[float] = None):
+class BoundingBox(object):
+    def __init__(
+        self,
+        xmin: Optional[float] = None,
+        ymin: Optional[float] = None,
+        xmax: Optional[float] = None,
+        ymax: Optional[float] = None,
+    ):
         self.xmin: Optional[float] = None
         self.ymin: Optional[float] = None
         self.xmax: Optional[float] = None
@@ -15,7 +21,9 @@ class BoundingBox(object):
         self.addPoint(xmin, ymin)
         self.addPoint(xmax, ymax)
 
-    def checkMin(self, current: Optional[float], compare: Optional[float]) -> Optional[float]:
+    def checkMin(
+        self, current: Optional[float], compare: Optional[float]
+    ) -> Optional[float]:
         if current is None:
             return compare
 
@@ -27,7 +35,9 @@ class BoundingBox(object):
 
         return current
 
-    def checkMax(self, current: Optional[float], compare: Optional[float]) -> Optional[float]:
+    def checkMax(
+        self, current: Optional[float], compare: Optional[float]
+    ) -> Optional[float]:
         if current is None:
             return compare
 
@@ -39,7 +49,9 @@ class BoundingBox(object):
 
         return current
 
-    def addPoint(self, x: Optional[float], y: Optional[float], radius: float = 0.0) -> None:
+    def addPoint(
+        self, x: Optional[float], y: Optional[float], radius: float = 0.0
+    ) -> None:
         # x might be 'None' so prevent subtraction
         self.xmin = self.checkMin(self.xmin, x - radius if x else x)
         self.xmax = self.checkMax(self.xmax, x + radius if x else x)
@@ -48,7 +60,7 @@ class BoundingBox(object):
         self.ymin = self.checkMin(self.ymin, y - radius if y else y)
         self.ymax = self.checkMax(self.ymax, y + radius if y else y)
 
-    def addBoundingBox(self, other: 'BoundingBox') -> None:
+    def addBoundingBox(self, other: "BoundingBox") -> None:
         self.addPoint(other.xmin, other.ymin)
         self.addPoint(other.xmax, other.ymax)
 
@@ -81,13 +93,15 @@ class BoundingBox(object):
         self.xmax += distance
         self.ymax += distance
 
-    def overlaps(self, other: 'BoundingBox') -> bool:
-        return any([
-            self.containsPoint(other.xmin, other.ymin),
-            self.containsPoint(other.xmin, other.ymax),
-            self.containsPoint(other.xmax, other.ymax),
-            self.containsPoint(other.xmax, other.ymin)
-            ])
+    def overlaps(self, other: "BoundingBox") -> bool:
+        return any(
+            [
+                self.containsPoint(other.xmin, other.ymin),
+                self.containsPoint(other.xmin, other.ymax),
+                self.containsPoint(other.xmax, other.ymax),
+                self.containsPoint(other.xmax, other.ymin),
+            ]
+        )
 
     @property
     def x(self) -> Optional[float]:
@@ -113,21 +127,22 @@ class BoundingBox(object):
 
     @property
     def size(self):
-        return {'x': self.width, 'y': self.height}
+        return {"x": self.width, "y": self.height}
 
     @property
     def center(self) -> Dict[str, float]:
         if self.xmin and self.width and self.ymin and self.height:
-            return {'x': self.xmin + self.width / 2, 'y': self.ymin + self.height/2 }
+            return {"x": self.xmin + self.width / 2, "y": self.ymin + self.height / 2}
         else:
-            return {'x': 0.0, 'y': 0.0}
+            return {"x": 0.0, "y": 0.0}
 
-if __name__ == '__main__':
-    bb1 = BoundingBox(-20,50,10,-20)
-    bb2 = BoundingBox(-5,-5,7,21)
 
-    bb3 = BoundingBox(2,200)
-    bb3.addPoint(3,5)
+if __name__ == "__main__":
+    bb1 = BoundingBox(-20, 50, 10, -20)
+    bb2 = BoundingBox(-5, -5, 7, 21)
+
+    bb3 = BoundingBox(2, 200)
+    bb3.addPoint(3, 5)
 
     bb3.addBoundingBox(bb1)
 

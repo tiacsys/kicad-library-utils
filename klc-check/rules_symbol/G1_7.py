@@ -18,7 +18,7 @@ class Rule(KLCRule):
     def check(self) -> bool:
         # Only perform this check on linux systems (i.e. Travis)
         # Windows automatically checks out with CR+LF line endings
-        if 'linux' in platform.platform().lower():
+        if "linux" in platform.platform().lower():
             if not checkLineEndings(self.component.filename):
                 self.lib_error = True
                 self.error("Incorrect line endings (.kicad_sym)")

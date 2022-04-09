@@ -17,16 +17,17 @@
 # Library format description
 # https://www.compuphase.com/electronics/LibraryFileFormats.pdf
 
-from enum import Enum
-from Point import Point
 from copy import deepcopy
+from enum import Enum
 
 import kicad_sym
+from Point import Point
+
 
 class ElementFill(Enum):
-    NO_FILL = 'none'
-    FILL_BACKGROUND = 'background'
-    FILL_FOREGROUND = 'outline'
+    NO_FILL = "none"
+    FILL_BACKGROUND = "background"
+    FILL_FOREGROUND = "outline"
 
     def __str__(self):
         return self.value
@@ -34,10 +35,10 @@ class ElementFill(Enum):
 
 class DrawingPin:
     class PinOrientation(Enum):
-        UP = 'U'
-        DOWN = 'D'
-        LEFT = 'L'
-        RIGHT = 'R'
+        UP = "U"
+        DOWN = "D"
+        LEFT = "L"
+        RIGHT = "R"
 
         def __str__(self):
             return self.value
@@ -46,17 +47,17 @@ class DrawingPin:
             return self.value
 
     class PinElectricalType(Enum):
-        EL_TYPE_INPUT = 'input'
-        EL_TYPE_OUTPUT = 'output'
-        EL_TYPE_BIDIR = 'bidirectional'
-        EL_TYPE_TRISTATE = 'tri_state'
-        EL_TYPE_PASSIVE = 'passive'
-        EL_TYPE_OPEN_COLECTOR = 'open_collector'
-        EL_TYPE_OPEN_EMITTER = 'open_emitter'
-        EL_TYPE_NC = 'no_connect'
-        EL_TYPE_UNSPECIFIED = 'unspecified'
-        EL_TYPE_POWER_INPUT = 'power_in'
-        EL_TYPE_POWER_OUTPUT = 'power_out'
+        EL_TYPE_INPUT = "input"
+        EL_TYPE_OUTPUT = "output"
+        EL_TYPE_BIDIR = "bidirectional"
+        EL_TYPE_TRISTATE = "tri_state"
+        EL_TYPE_PASSIVE = "passive"
+        EL_TYPE_OPEN_COLECTOR = "open_collector"
+        EL_TYPE_OPEN_EMITTER = "open_emitter"
+        EL_TYPE_NC = "no_connect"
+        EL_TYPE_UNSPECIFIED = "unspecified"
+        EL_TYPE_POWER_INPUT = "power_in"
+        EL_TYPE_POWER_OUTPUT = "power_out"
 
         def __str__(self):
             return self.value
@@ -69,11 +70,11 @@ class DrawingPin:
             return self.value
 
     class PinStyle(Enum):
-        SHAPE_LINE = 'line'
-        SHAPE_INVERTED = 'inverted'
-        SHAPE_CLOCK = 'clock'
-        SHAPE_INPUT_LOW = 'input_low'
-        SHAPE_OUTPUT_LOW = 'output_low'
+        SHAPE_LINE = "line"
+        SHAPE_INVERTED = "inverted"
+        SHAPE_CLOCK = "clock"
+        SHAPE_INPUT_LOW = "input_low"
+        SHAPE_OUTPUT_LOW = "output_low"
         # There are more, not all are implemented yet.
 
         def __str__(self):
@@ -82,80 +83,100 @@ class DrawingPin:
     def __init__(self, at, number, **kwargs):
         self.at = Point(at)
         self.num = number
-        self.name = str(kwargs.get('name', self.num))
-        self.unit_idx = int(kwargs.get('unit_idx', 1))
-        self.deMorgan_idx = int(kwargs.get('deMorgan_idx', 1))
-        self.pin_length = int(kwargs.get('pin_length', 100))
-        self.fontsize_pinnumber = int(kwargs.get('sizenumber', 50))
-        self.fontsize_pinname = int(kwargs.get('sizename', self.fontsize_pinnumber))
-        self.altfuncs = list(kwargs.get('altfuncs', []))
+        self.name = str(kwargs.get("name", self.num))
+        self.unit_idx = int(kwargs.get("unit_idx", 1))
+        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.pin_length = int(kwargs.get("pin_length", 100))
+        self.fontsize_pinnumber = int(kwargs.get("sizenumber", 50))
+        self.fontsize_pinname = int(kwargs.get("sizename", self.fontsize_pinnumber))
+        self.altfuncs = list(kwargs.get("altfuncs", []))
 
-        el_type = kwargs.get('el_type', DrawingPin.PinElectricalType.EL_TYPE_PASSIVE)
+        el_type = kwargs.get("el_type", DrawingPin.PinElectricalType.EL_TYPE_PASSIVE)
         if isinstance(el_type, DrawingPin.PinElectricalType):
             self.el_type = el_type
         else:
-            raise TypeError('el_type needs to be of type PinElectricalType')
+            raise TypeError("el_type needs to be of type PinElectricalType")
 
-        visibility = kwargs.get('visibility', DrawingPin.PinVisibility.VISIBLE)
+        visibility = kwargs.get("visibility", DrawingPin.PinVisibility.VISIBLE)
         if isinstance(visibility, DrawingPin.PinVisibility):
             self.visibility = visibility
         else:
-            raise TypeError('visibility needs to be of type PinVisibility')
+            raise TypeError("visibility needs to be of type PinVisibility")
 
-        style = kwargs.get('style', DrawingPin.PinStyle.SHAPE_LINE)
+        style = kwargs.get("style", DrawingPin.PinStyle.SHAPE_LINE)
         if isinstance(style, DrawingPin.PinStyle):
             self.style = style
         else:
-            raise TypeError('style needs to be of type PinStyle')
+            raise TypeError("style needs to be of type PinStyle")
 
-        orientation = kwargs.get('orientation', DrawingPin.PinOrientation.LEFT)
+        orientation = kwargs.get("orientation", DrawingPin.PinOrientation.LEFT)
         if isinstance(orientation, DrawingPin.PinOrientation):
             self.orientation = orientation
         else:
-            raise TypeError('orientation needs to be of type PinOrientation')
+            raise TypeError("orientation needs to be of type PinOrientation")
 
-    def updatePinNumber(self, pinnumber_update_function=lambda old_number:old_number+1,
-            pinname_update_function = lambda old_name, new_number: new_number):
+    def updatePinNumber(
+        self,
+        pinnumber_update_function=lambda old_number: old_number + 1,
+        pinname_update_function=lambda old_name, new_number: new_number,
+    ):
         self.num = pinnumber_update_function(self.num)
         self.name = pinname_update_function(self.name, self.num)
 
     def __pinShapeRender(self):
-        if self.visibility is DrawingPin.PinVisibility.INVISIBLE or self.style is not DrawingPin.PinStyle.SHAPE_LINE:
-            return ' {visibility:s}{style:s}'.format(
-                visibility = self.visibility, style = self.style)
+        if (
+            self.visibility is DrawingPin.PinVisibility.INVISIBLE
+            or self.style is not DrawingPin.PinStyle.SHAPE_LINE
+        ):
+            return " {visibility:s}{style:s}".format(
+                visibility=self.visibility, style=self.style
+            )
         else:
-            return ''
+            return ""
 
     def __str__(self):
         # X name pin X Y length PinOrientation sizenum sizename part dmg type shape
-        return 'X {name:s} {num:s} {at:s} {pin_length:d} {orientation:s} {sizenumber:d} {sizename:d} {unit_idx:d} {deMorgan_idx:d} {el_type:s}{shape}\n'.format(
-            name = self.name, num = str(self.num),
-            at = self.at, pin_length = self.pin_length, orientation = self.orientation,
-            sizenumber = self.fontsize_pinnumber, sizename = self.fontsize_pinname,
-            unit_idx = self.unit_idx, deMorgan_idx = self.deMorgan_idx,
-            el_type = self.el_type, shape = self.__pinShapeRender()
+        return "X {name:s} {num:s} {at:s} {pin_length:d} {orientation:s} {sizenumber:d} {sizename:d} {unit_idx:d} {deMorgan_idx:d} {el_type:s}{shape}\n".format(
+            name=self.name,
+            num=str(self.num),
+            at=self.at,
+            pin_length=self.pin_length,
+            orientation=self.orientation,
+            sizenumber=self.fontsize_pinnumber,
+            sizename=self.fontsize_pinname,
+            unit_idx=self.unit_idx,
+            deMorgan_idx=self.deMorgan_idx,
+            el_type=self.el_type,
+            shape=self.__pinShapeRender(),
         )
 
-    def translate(self, distance, apply_on_copy = False):
+    def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
         obj.at.translate(distance)
         return obj
 
-    def rotate(self, angle, origin = {'x':0, 'y':0}, rotate_pin_orientation = False,
-            apply_on_copy = False):
+    def rotate(
+        self,
+        angle,
+        origin={"x": 0, "y": 0},
+        rotate_pin_orientation=False,
+        apply_on_copy=False,
+    ):
         obj = self if not apply_on_copy else deepcopy(self)
 
-        obj.at.rotate(angle = angle, origin = origin)
+        obj.at.rotate(angle=angle, origin=origin)
         if rotate_pin_orientation:
-            raise NotImplementedError('Rotating the pin orientation is not yet implemented')
-            #ToDo: Implement
+            raise NotImplementedError(
+                "Rotating the pin orientation is not yet implemented"
+            )
+            # ToDo: Implement
             # set separate coordinate system to base of pin and calculate the rotation
             # needed around it. (can only be rotaded in steps of 90 degree)
             # determine new pin orientation and translate end point such that base point is
             # still at the same place.
         return obj
 
-    def mirrorHorizontal(self, apply_on_copy = False):
+    def mirrorHorizontal(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         if obj.orientation is DrawingPin.PinOrientation.LEFT:
@@ -165,7 +186,7 @@ class DrawingPin:
         obj.at.mirrorHorizontal()
         return obj
 
-    def mirrorVertical(self, apply_on_copy = False):
+    def mirrorVertical(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         if obj.orientation is DrawingPin.PinOrientation.UP:
@@ -175,26 +196,30 @@ class DrawingPin:
         obj.at.mirrorVertical()
         return obj
 
+
 class DrawingRectangle:
     def __init__(self, start, end, **kwargs):
         self.start = Point(start)
         self.end = Point(end)
-        self.unit_idx = int(kwargs.get('unit_idx', 1))
-        self.deMorgan_idx = int(kwargs.get('deMorgan_idx', 1))
-        self.line_width = int(kwargs.get('line_width', 10))
+        self.unit_idx = int(kwargs.get("unit_idx", 1))
+        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.line_width = int(kwargs.get("line_width", 10))
 
-        fill = kwargs.get('fill', ElementFill.NO_FILL)
+        fill = kwargs.get("fill", ElementFill.NO_FILL)
         if isinstance(fill, ElementFill):
             self.fill = fill
         else:
-            raise TypeError('fill needs to be of type ElementFill')
+            raise TypeError("fill needs to be of type ElementFill")
 
     def __str__(self):
         # S X1 Y1 X2 Y2 part dmg pen fill
-        return 'S {start:s} {end:s} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s}\n'.format(
-            start = self.start, end = self.end,
-            unit_idx = self.unit_idx, deMorgan_idx = self.deMorgan_idx,
-            line_width = self.line_width, fill = self.fill
+        return "S {start:s} {end:s} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s}\n".format(
+            start=self.start,
+            end=self.end,
+            unit_idx=self.unit_idx,
+            deMorgan_idx=self.deMorgan_idx,
+            line_width=self.line_width,
+            fill=self.fill,
         )
 
     def toPolyline(self):
@@ -207,81 +232,90 @@ class DrawingRectangle:
 
         polyline = DrawingPolyline(
             points=points,
-            unit_idx=self.unit_idx, deMorgan_idx=self.deMorgan_idx,
-            line_width=self.line_width, fill=self.fill
+            unit_idx=self.unit_idx,
+            deMorgan_idx=self.deMorgan_idx,
+            line_width=self.line_width,
+            fill=self.fill,
         )
 
         return polyline
 
-    def translate(self, distance, apply_on_copy = False):
+    def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.start.translate(distance)
         obj.end.translate(distance)
         return obj
 
-    def rotate(self, angle, origin = None, apply_on_copy = False):
+    def rotate(self, angle, origin=None, apply_on_copy=False):
         # obj = self if not apply_on_copy else deepcopy(self)
         if not apply_on_copy:
-            raise NotImplementedError('Rotating the rectangles only implemented for copies -> converts to polyline')
+            raise NotImplementedError(
+                "Rotating the rectangles only implemented for copies -> converts to polyline"
+            )
 
         if origin is None:
-            origin = Point((self.start.x + self.end.x)/2, (self.start.y + self.end.y)/2)
+            origin = Point(
+                (self.start.x + self.end.x) / 2, (self.start.y + self.end.y) / 2
+            )
 
         obj = self.toPolyline()
         obj.rotate(angle, origin, False)
         return obj
         # return obj
 
-    def mirrorVertical(self, apply_on_copy = False):
+    def mirrorVertical(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.start.mirrorVertical()
         obj.end.mirrorVertical()
         return obj
 
-    def mirrorHorizontal(self, apply_on_copy = False):
+    def mirrorHorizontal(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.start.mirrorHorizontal()
         obj.end.mirrorHorizontal()
         return obj
 
+
 class DrawingPolyline:
     def __init__(self, points, **kwargs):
-        self.unit_idx = int(kwargs.get('unit_idx', 1))
-        self.deMorgan_idx = int(kwargs.get('deMorgan_idx', 1))
-        self.line_width = int(kwargs.get('line_width', 10))
+        self.unit_idx = int(kwargs.get("unit_idx", 1))
+        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.line_width = int(kwargs.get("line_width", 10))
 
-        fill = kwargs.get('fill', ElementFill.NO_FILL)
+        fill = kwargs.get("fill", ElementFill.NO_FILL)
         if isinstance(fill, ElementFill):
             self.fill = fill
         else:
-            raise TypeError('fill needs to be of type ElementFill')
+            raise TypeError("fill needs to be of type ElementFill")
 
         if len(points) < 2:
-            raise TypeError('A polyline needs at least two points')
-        self.points=[]
+            raise TypeError("A polyline needs at least two points")
+        self.points = []
         for point in points:
             self.points.append(Point(point))
 
     def __str__(self):
         # P count part dmg pen X Y ... fill
-        return 'P {count:d} {unit_idx:d} {deMorgan_idx:d} {line_width} {points:s} {fill:s}\n'.format(
-            count = len(self.points),
-            unit_idx = self.unit_idx, deMorgan_idx = self.deMorgan_idx,
-            points = ' '.join(map(str, self.points)),
-            fill = self.fill, line_width = self.line_width
+        return "P {count:d} {unit_idx:d} {deMorgan_idx:d} {line_width} {points:s} {fill:s}\n".format(
+            count=len(self.points),
+            unit_idx=self.unit_idx,
+            deMorgan_idx=self.deMorgan_idx,
+            points=" ".join(map(str, self.points)),
+            fill=self.fill,
+            line_width=self.line_width,
         )
 
-    def translate(self, distance, apply_on_copy = False):
+    def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         for point in obj.points:
             point.translate(distance)
         return obj
 
-    def rotate(self, angle, origin = None, apply_on_copy = False):
+    def rotate(self, angle, origin=None, apply_on_copy=False):
         if origin is None:
             x = 0
             y = 0
@@ -294,7 +328,7 @@ class DrawingPolyline:
                 x += point.x
                 y += point.y
 
-            origin = Point(x/len(point), y/len(point))
+            origin = Point(x / len(point), y / len(point))
 
         obj = self if not apply_on_copy else deepcopy(self)
 
@@ -302,19 +336,20 @@ class DrawingPolyline:
             point.rotate(angle, origin)
         return obj
 
-    def mirrorHorizontal(self, apply_on_copy = False):
+    def mirrorHorizontal(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         for point in obj.points:
             point.mirrorHorizontal()
         return obj
 
-    def mirrorVertical(self, apply_on_copy = False):
+    def mirrorVertical(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         for point in obj.points:
             point.mirrorVertical()
         return obj
+
 
 class DrawingArc:
     def __normalizeAngle(angle):
@@ -344,38 +379,45 @@ class DrawingArc:
         self.angle_end = DrawingArc.__normalizeAngle(int(angle_end))
         self.__ensureUniqueDrawing()
 
-        self.unit_idx = int(kwargs.get('unit_idx', 1))
-        self.deMorgan_idx = int(kwargs.get('deMorgan_idx', 1))
-        self.line_width = int(kwargs.get('line_width', 10))
+        self.unit_idx = int(kwargs.get("unit_idx", 1))
+        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.line_width = int(kwargs.get("line_width", 10))
 
-        fill = kwargs.get('fill', ElementFill.NO_FILL)
+        fill = kwargs.get("fill", ElementFill.NO_FILL)
         if isinstance(fill, ElementFill):
             self.fill = fill
         else:
-            raise TypeError('fill needs to be of type ElementFill')
+            raise TypeError("fill needs to be of type ElementFill")
 
     def __str__(self):
         # A X Y radius start end part dmg pen fill Xstart Ystart Xend Yend
-        start = Point(distance = self.radius, angle = self.angle_start/10).translate(self.at)
-        end = Point(distance = self.radius, angle = self.angle_end/10).translate(self.at)
-        return 'A {cp:s} {r:d} {angle_start:d} {angle_end:d} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s} {p_start:s} {p_end:s}\n'.format(
-            cp = self.at, r = self.radius,
-            angle_start = self.angle_start, angle_end = self.angle_end,
-            unit_idx = self.unit_idx, deMorgan_idx = self.deMorgan_idx,
-            fill = self.fill, line_width = self.line_width,
-            p_start = start, p_end = end
+        start = Point(distance=self.radius, angle=self.angle_start / 10).translate(
+            self.at
+        )
+        end = Point(distance=self.radius, angle=self.angle_end / 10).translate(self.at)
+        return "A {cp:s} {r:d} {angle_start:d} {angle_end:d} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s} {p_start:s} {p_end:s}\n".format(
+            cp=self.at,
+            r=self.radius,
+            angle_start=self.angle_start,
+            angle_end=self.angle_end,
+            unit_idx=self.unit_idx,
+            deMorgan_idx=self.deMorgan_idx,
+            fill=self.fill,
+            line_width=self.line_width,
+            p_start=start,
+            p_end=end,
         )
 
-    def translate(self, distance, apply_on_copy = False):
+    def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.at.translate(distance)
         return obj
 
-    def rotate(self, angle, origin = {'x':0, 'y':0}, apply_on_copy = False):
+    def rotate(self, angle, origin={"x": 0, "y": 0}, apply_on_copy=False):
         # obj = self if not apply_on_copy else deepcopy(self)
 
-        raise NotImplementedError('Rotating arcs is not yet implementd')
+        raise NotImplementedError("Rotating arcs is not yet implementd")
         # return obj
 
     def __mirrorAngleHorizontal(angle):
@@ -383,50 +425,54 @@ class DrawingArc:
             return 1800 - angle
         return -1800 - angle
 
-    def mirrorHorizontal(self, apply_on_copy = False):
+    def mirrorHorizontal(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
         obj.at.mirrorHorizontal()
         obj.angle_start = DrawingArc.__mirrorAngleHorizontal(obj.angle_start)
         obj.angle_end = DrawingArc.__mirrorAngleHorizontal(obj.angle_end)
         return obj
 
-    def mirrorVertical(self, apply_on_copy = False):
+    def mirrorVertical(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
         obj.at.mirrorVertical()
         obj.angle_start *= -1
         obj.angle_end *= -1
         return obj
 
+
 class DrawingCircle:
     def __init__(self, at, radius, **kwargs):
         self.at = Point(at)
         self.radius = int(radius)
 
-        self.unit_idx = int(kwargs.get('unit_idx', 1))
-        self.deMorgan_idx = int(kwargs.get('deMorgan_idx', 1))
-        self.line_width = int(kwargs.get('line_width', 10))
+        self.unit_idx = int(kwargs.get("unit_idx", 1))
+        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.line_width = int(kwargs.get("line_width", 10))
 
-        fill = kwargs.get('fill', ElementFill.NO_FILL)
+        fill = kwargs.get("fill", ElementFill.NO_FILL)
         if isinstance(fill, ElementFill):
             self.fill = fill
         else:
-            raise TypeError('fill needs to be of type ElementFill')
+            raise TypeError("fill needs to be of type ElementFill")
 
     def __str__(self):
         # C X Y radius part dmg pen fill
-        return 'C {cp:s} {r:d} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s}\n'.format(
-            cp = self.at, r = self.radius,
-            unit_idx = self.unit_idx, deMorgan_idx = self.deMorgan_idx,
-            fill = self.fill, line_width = self.line_width
+        return "C {cp:s} {r:d} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s}\n".format(
+            cp=self.at,
+            r=self.radius,
+            unit_idx=self.unit_idx,
+            deMorgan_idx=self.deMorgan_idx,
+            fill=self.fill,
+            line_width=self.line_width,
         )
 
-    def translate(self, distance, apply_on_copy = False):
+    def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.at.translate(distance)
         return obj
 
-    def rotate(self, angle, origin = None, apply_on_copy = False):
+    def rotate(self, angle, origin=None, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
         if origin is None:
             return obj
@@ -434,45 +480,46 @@ class DrawingCircle:
         obj.at.rotate(angle, origin)
         return obj
 
-    def mirrorHorizontal(self, apply_on_copy = False):
+    def mirrorHorizontal(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.at.mirrorHorizontal()
         return obj
 
-    def mirrorVertical(self, apply_on_copy = False):
+    def mirrorVertical(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.at.mirrorVertical()
         return obj
 
+
 class DrawingText:
     class FontType(Enum):
-        ITALIC = 'Italic'
-        NORMAL = 'Normal'
+        ITALIC = "Italic"
+        NORMAL = "Normal"
 
         def __str__(self):
             return self.value
 
     class FontWeight(Enum):
-        BOLD = '1'
-        NORMAL = '0'
+        BOLD = "1"
+        NORMAL = "0"
 
         def __str__(self):
             return self.value
 
     class VerticalAlignment(Enum):
-        CENTER = 'C'
-        TOP = 'T'
-        BOTTOM ='B'
+        CENTER = "C"
+        TOP = "T"
+        BOTTOM = "B"
 
         def __str__(self):
             return self.value
 
     class HorizontalAlignment(Enum):
-        CENTER = 'C'
-        LEFT = 'L'
-        RIGHT = 'R'
+        CENTER = "C"
+        LEFT = "L"
+        RIGHT = "R"
 
         def __str__(self):
             return self.value
@@ -483,54 +530,65 @@ class DrawingText:
         self.angle = kwargs.get("angle", 0)
         self.size = int(kwargs.get("size", 50))
 
-        self.unit_idx = int(kwargs.get('unit_idx', 1))
-        self.deMorgan_idx = int(kwargs.get('deMorgan_idx', 1))
+        self.unit_idx = int(kwargs.get("unit_idx", 1))
+        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
 
-        self.hidden = int(kwargs.get('hidden', 0))
-        if self.hidden not in [0,1]:
-            raise TypeError('hidden needs to be 0 or 1')
+        self.hidden = int(kwargs.get("hidden", 0))
+        if self.hidden not in [0, 1]:
+            raise TypeError("hidden needs to be 0 or 1")
 
-        font_type = kwargs.get('font_type', DrawingText.FontType.NORMAL)
+        font_type = kwargs.get("font_type", DrawingText.FontType.NORMAL)
         if isinstance(font_type, DrawingText.FontType):
             self.font_type = font_type
         else:
-            raise TypeError('font_type needs to be of type DrawingText.FontType')
+            raise TypeError("font_type needs to be of type DrawingText.FontType")
 
-        font_weight = kwargs.get('font_weight', DrawingText.FontWeight.NORMAL)
+        font_weight = kwargs.get("font_weight", DrawingText.FontWeight.NORMAL)
         if isinstance(font_weight, DrawingText.FontWeight):
             self.font_weight = font_weight
         else:
-            raise TypeError('font_weight needs to be of type DrawingText.FontWeight')
+            raise TypeError("font_weight needs to be of type DrawingText.FontWeight")
 
-        valign = kwargs.get('valign', DrawingText.VerticalAlignment.CENTER)
+        valign = kwargs.get("valign", DrawingText.VerticalAlignment.CENTER)
         if isinstance(valign, DrawingText.VerticalAlignment):
             self.valign = valign
         else:
-            raise TypeError('valign needs to be of type DrawingText.VerticalAlignment')
+            raise TypeError("valign needs to be of type DrawingText.VerticalAlignment")
 
-        halign = kwargs.get('halign', DrawingText.HorizontalAlignment.CENTER)
+        halign = kwargs.get("halign", DrawingText.HorizontalAlignment.CENTER)
         if isinstance(halign, DrawingText.HorizontalAlignment):
             self.halign = halign
         else:
-            raise TypeError('halign needs to be of type DrawingText.HorizontalAlignment')
+            raise TypeError(
+                "halign needs to be of type DrawingText.HorizontalAlignment"
+            )
 
     def __str__(self):
         # T angle X Y size hidden part dmg text italic bold Halign Valign
-        return 'T {angle:d} {at:s} {size:d} {hidden:d} {unit_idx:d} {deMorgan_idx:d}'\
+        return (
+            "T {angle:d} {at:s} {size:d} {hidden:d} {unit_idx:d} {deMorgan_idx:d}"
             ' "{text:s}" {italic:s} {bold:s} {Halign:s} {Valign:s}\n'.format(
-                angle=int(self.angle*10), at=self.at, size=self.size,
-                hidden=self.hidden, unit_idx=self.unit_idx, deMorgan_idx=self.deMorgan_idx,
-                text=self.text, italic=self.font_type, bold=self.font_weight,
-                Halign=self.halign, Valign=self.valign
+                angle=int(self.angle * 10),
+                at=self.at,
+                size=self.size,
+                hidden=self.hidden,
+                unit_idx=self.unit_idx,
+                deMorgan_idx=self.deMorgan_idx,
+                text=self.text,
+                italic=self.font_type,
+                bold=self.font_weight,
+                Halign=self.halign,
+                Valign=self.valign,
             )
+        )
 
-    def translate(self, distance, apply_on_copy = False):
+    def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.at.translate(distance)
         return obj
 
-    def rotate(self, angle, origin = None, apply_on_copy = False):
+    def rotate(self, angle, origin=None, apply_on_copy=False):
         if origin is None:
             origin = self.at
         obj = self if not apply_on_copy else deepcopy(self)
@@ -539,18 +597,17 @@ class DrawingText:
         obj.angle += angle
         return obj
 
-    def mirrorHorizontal(self, apply_on_copy = False):
+    def mirrorHorizontal(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.at.mirrorHorizontal()
         return obj
 
-    def mirrorVertical(self, apply_on_copy = False):
+    def mirrorVertical(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
         obj.at.mirrorVertical()
         return obj
-
 
 
 class Drawing:
@@ -597,17 +654,19 @@ class Drawing:
         elif isinstance(obj, Drawing):
             self.__appendDrawing(obj)
         else:
-            TypeError('trying to append an illegal type to Drawing. Maybe something is not yet implemented.')
+            TypeError(
+                "trying to append an illegal type to Drawing. Maybe something is not yet implemented."
+            )
 
     def __str__(self):
-        drawing = 'DRAW\n'
-        drawing += ''.join(sorted(map(str, self.arc)))
-        drawing += ''.join(sorted(map(str, self.circle)))
-        drawing += ''.join(sorted(map(str, self.text)))
-        drawing += ''.join(sorted(map(str, self.rectangle)))
-        drawing += ''.join(sorted(map(str, self.polyline)))
-        drawing += ''.join(sorted(map(str, self.pins)))
-        drawing += 'ENDDRAW\n'
+        drawing = "DRAW\n"
+        drawing += "".join(sorted(map(str, self.arc)))
+        drawing += "".join(sorted(map(str, self.circle)))
+        drawing += "".join(sorted(map(str, self.text)))
+        drawing += "".join(sorted(map(str, self.rectangle)))
+        drawing += "".join(sorted(map(str, self.polyline)))
+        drawing += "".join(sorted(map(str, self.pins)))
+        drawing += "ENDDRAW\n"
         return drawing
 
     def mapOnAll(self, function, **kwargs):
@@ -635,130 +694,166 @@ class Drawing:
             fp = getattr(element, function)
             fp(**kwargs)
 
-    def translate(self, distance, apply_on_copy = False):
+    def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
-        obj.mapOnAll('translate', distance=distance)
+        obj.mapOnAll("translate", distance=distance)
         return obj
 
-    def rotate(self, angle, origin = {'x':0, 'y':0}, apply_on_copy = False):
+    def rotate(self, angle, origin={"x": 0, "y": 0}, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
-        obj.mapOnAll('rotate', angle = angle, origin = origin)
+        obj.mapOnAll("rotate", angle=angle, origin=origin)
         return obj
 
-    def mirrorHorizontal(self, apply_on_copy = False):
+    def mirrorHorizontal(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
-        obj.mapOnAll('mirrorHorizontal')
+        obj.mapOnAll("mirrorHorizontal")
         return obj
 
-    def mirrorVertical(self, apply_on_copy = False):
+    def mirrorVertical(self, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
-        obj.mapOnAll('mirrorVertical')
+        obj.mapOnAll("mirrorVertical")
         return obj
 
-    def updatePinNumber(self, pinnumber_update_function=lambda x:x+1,
-            pinname_update_function = lambda old_name, new_number: new_number):
+    def updatePinNumber(
+        self,
+        pinnumber_update_function=lambda x: x + 1,
+        pinname_update_function=lambda old_name, new_number: new_number,
+    ):
         for pin in self.pins:
             pin.updatePinNumber(pinnumber_update_function, pinname_update_function)
 
-    def appendToSymbol (self, symbol):
+    def appendToSymbol(self, symbol):
         """
         Convert the drawing elements to equivalent objects and append them to a KicadSymbol object
         """
 
         for r in self.rectangle:
-            rect = kicad_sym.Rectangle.new_mil (r.start.x, r.start.y, r.end.x, r.end.y)
-            rect.stroke_width = kicad_sym.mil_to_mm (r.line_width)
-            rect.fill_type =  r.fill
+            rect = kicad_sym.Rectangle.new_mil(r.start.x, r.start.y, r.end.x, r.end.y)
+            rect.stroke_width = kicad_sym.mil_to_mm(r.line_width)
+            rect.fill_type = r.fill
             rect.unit = r.unit_idx
             rect.demorgan = r.deMorgan_idx
-            symbol.rectangles.append (rect)
+            symbol.rectangles.append(rect)
 
         for p in self.pins:
-            pin = kicad_sym.Pin (p.name, str(p.num), str(p.el_type), kicad_sym.mil_to_mm(p.at.x), kicad_sym.mil_to_mm(p.at.y), 
-            kicad_sym.Pin.dir_to_rotation(str(p.orientation)), str(p.style), kicad_sym.mil_to_mm(p.pin_length))
+            pin = kicad_sym.Pin(
+                p.name,
+                str(p.num),
+                str(p.el_type),
+                kicad_sym.mil_to_mm(p.at.x),
+                kicad_sym.mil_to_mm(p.at.y),
+                kicad_sym.Pin.dir_to_rotation(str(p.orientation)),
+                str(p.style),
+                kicad_sym.mil_to_mm(p.pin_length),
+            )
             pin.is_hidden = p.visibility == DrawingPin.PinVisibility.INVISIBLE
-            pin.name_effect.sizex = kicad_sym.mil_to_mm (p.fontsize_pinname)
+            pin.name_effect.sizex = kicad_sym.mil_to_mm(p.fontsize_pinname)
             pin.name_effect.sizey = pin.name_effect.sizex
-            pin.number_effect.sizex = kicad_sym.mil_to_mm (p.fontsize_pinnumber)
+            pin.number_effect.sizex = kicad_sym.mil_to_mm(p.fontsize_pinnumber)
             pin.number_effect.sizey = pin.number_effect.sizex
             pin.altfuncs = p.altfuncs
             pin.unit = p.unit_idx
             pin.demorgan = p.deMorgan_idx
-            symbol.pins.append (pin)
-        
+            symbol.pins.append(pin)
+
         for a in self.arc:
-            start = Point(distance = a.radius, angle = a.angle_start/10).translate(a.at)
-            end = Point(distance = a.radius, angle = a.angle_end/10).translate(a.at)
+            start = Point(distance=a.radius, angle=a.angle_start / 10).translate(a.at)
+            end = Point(distance=a.radius, angle=a.angle_end / 10).translate(a.at)
 
-            arc = kicad_sym.Arc(kicad_sym.mil_to_mm(start.x), kicad_sym.mil_to_mm(start.y),
-                                kicad_sym.mil_to_mm(end.x), kicad_sym.mil_to_mm(end.y),
-                                kicad_sym.mil_to_mm(a.at.x), kicad_sym.mil_to_mm(a.at.y), 
-                                kicad_sym.mil_to_mm(a.radius), a.angle_start/10, a.angle_end/10)
+            arc = kicad_sym.Arc(
+                kicad_sym.mil_to_mm(start.x),
+                kicad_sym.mil_to_mm(start.y),
+                kicad_sym.mil_to_mm(end.x),
+                kicad_sym.mil_to_mm(end.y),
+                kicad_sym.mil_to_mm(a.at.x),
+                kicad_sym.mil_to_mm(a.at.y),
+                kicad_sym.mil_to_mm(a.radius),
+                a.angle_start / 10,
+                a.angle_end / 10,
+            )
 
-            arc.stroke_width = kicad_sym.mil_to_mm (a.line_width)
+            arc.stroke_width = kicad_sym.mil_to_mm(a.line_width)
             arc.fill_type = a.fill
             arc.unit = a.unit_idx
             arc.demorgan = a.deMorgan_idx
-            symbol.arcs.append (arc)
+            symbol.arcs.append(arc)
 
         for c in self.circle:
-            circle = kicad_sym.Circle(kicad_sym.mil_to_mm(c.at.x), kicad_sym.mil_to_mm(c.at.y), kicad_sym.mil_to_mm(c.radius), kicad_sym.mil_to_mm (c.line_width) )
+            circle = kicad_sym.Circle(
+                kicad_sym.mil_to_mm(c.at.x),
+                kicad_sym.mil_to_mm(c.at.y),
+                kicad_sym.mil_to_mm(c.radius),
+                kicad_sym.mil_to_mm(c.line_width),
+            )
             circle.fill_type = c.fill
             circle.unit = c.unit_idx
             circle.demorgan = c.deMorgan_idx
-            symbol.circles.append (circle)
+            symbol.circles.append(circle)
 
         for t in self.text:
-            text = kicad_sym.Text(t.text, kicad_sym.mil_to_mm(t.at.x), kicad_sym.mil_to_mm(t.at.y), t.angle, kicad_sym.TextEffect(kicad_sym.mil_to_mm (t.size), kicad_sym.mil_to_mm (t.size)))
+            text = kicad_sym.Text(
+                t.text,
+                kicad_sym.mil_to_mm(t.at.x),
+                kicad_sym.mil_to_mm(t.at.y),
+                t.angle,
+                kicad_sym.TextEffect(
+                    kicad_sym.mil_to_mm(t.size), kicad_sym.mil_to_mm(t.size)
+                ),
+            )
             text.effects.is_italic = t.font_type == DrawingText.FontType.ITALIC
             text.effects.is_bold = t.font_weight == DrawingText.FontWeight.BOLD
             text.effects.is_hidden = t.hidden == 1
-            if t.halign == DrawingText.HorizontalAlignment.CENTER: 
+            if t.halign == DrawingText.HorizontalAlignment.CENTER:
                 text.effects.h_justify = "center"
-            elif t.halign == DrawingText.HorizontalAlignment.LEFT: 
+            elif t.halign == DrawingText.HorizontalAlignment.LEFT:
                 text.effects.h_justify = "left"
-            if t.halign == DrawingText.HorizontalAlignment.RIGHT: 
+            if t.halign == DrawingText.HorizontalAlignment.RIGHT:
                 text.effects.h_justify = "right"
-            if t.valign == DrawingText.VerticalAlignment.CENTER: 
+            if t.valign == DrawingText.VerticalAlignment.CENTER:
                 text.effects.v_justify = "center"
-            elif t.valign == DrawingText.VerticalAlignment.TOP: 
+            elif t.valign == DrawingText.VerticalAlignment.TOP:
                 text.effects.v_justify = "top"
-            elif t.valign == DrawingText.VerticalAlignment.BOTTOM: 
+            elif t.valign == DrawingText.VerticalAlignment.BOTTOM:
                 text.effects.v_justify = "bottom"
             text.unit = t.unit_idx
             text.demorgan = t.deMorgan_idx
-            symbol.texts.append (text)
+            symbol.texts.append(text)
 
         for p in self.polyline:
             pts = []
             for pt in p.points:
-                pts.append (kicad_sym.Point.new_mil (pt.x, pt.y))
+                pts.append(kicad_sym.Point.new_mil(pt.x, pt.y))
 
             poly = kicad_sym.Polyline(pts)
             poly.unit = p.unit_idx
             poly.demorgan = p.deMorgan_idx
             poly.stroke_width = kicad_sym.mil_to_mm(p.line_width)
             poly.fill_type = p.fill
-            symbol.polylines.append (poly)
+            symbol.polylines.append(poly)
 
         symbol.unit_count = 1
         symbol.demorgan_count = 1
 
 
-
 class DrawingArray(Drawing):
-    def __init__(self, original, distance, number_of_instances,
-        pinnumber_update_function=lambda x:x+1,
-        pinname_update_function = lambda old_name, new_number: new_number):
+    def __init__(
+        self,
+        original,
+        distance,
+        number_of_instances,
+        pinnumber_update_function=lambda x: x + 1,
+        pinname_update_function=lambda old_name, new_number: new_number,
+    ):
         Drawing.__init__(self)
         for i in range(number_of_instances):
             self.append(deepcopy(original))
             original.translate(distance)
             if isinstance(original, Drawing) or isinstance(original, DrawingPin):
                 original.updatePinNumber(
-                    pinnumber_update_function = pinnumber_update_function,
-                    pinname_update_function = pinname_update_function)
+                    pinnumber_update_function=pinnumber_update_function,
+                    pinname_update_function=pinname_update_function,
+                )

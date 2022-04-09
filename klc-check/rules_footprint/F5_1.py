@@ -3,8 +3,8 @@ from copy import deepcopy
 from typing import Any, Dict, List
 
 from kicad_mod import KicadMod
-from rules_footprint.rule import *
 from rules_footprint.klc_constants import *
+from rules_footprint.rule import *
 
 
 class Rule(KLCRule):
@@ -32,32 +32,49 @@ class Rule(KLCRule):
 
         ref = self.module.reference
 
-        font = ref['font']
+        font = ref["font"]
 
         errors = []
 
         # Check correct value of reference field
-        if not ref['reference'] == 'REF**':
-            errors.append("Reference text is '{v}', expected: 'REF**'".format(
-                v = ref['reference']))
+        if not ref["reference"] == "REF**":
+            errors.append(
+                "Reference text is '{v}', expected: 'REF**'".format(v=ref["reference"])
+            )
 
         # Check correct layer for reference
-        if ref['layer'] not in ['F.SilkS']:
-            errors.append("Reference label is on layer '{0}', but should be on layer F.SilkS!".format(ref['layer']))
+        if ref["layer"] not in ["F.SilkS"]:
+            errors.append(
+                "Reference label is on layer '{0}', but should be on layer F.SilkS!".format(
+                    ref["layer"]
+                )
+            )
 
         # Check that reference is not hidden
-        if ref['hide']:
+        if ref["hide"]:
             errors.append("Reference label is hidden (must be set to visible)")
 
         # Check reference size
-        if not font['width'] == font['height']:
+        if not font["width"] == font["height"]:
             errors.append("Reference label font aspect ratio should be 1:1")
-        if font['height'] != KLC_TEXT_SIZE:
-            errors.append("Reference label has a height of {1}mm (expected: {0}mm).".format(KLC_TEXT_SIZE,font['height']))
-        if font['width'] != KLC_TEXT_SIZE:
-            errors.append("Reference label has a width of {1}mm (expected: {0}mm).".format(KLC_TEXT_SIZE,font['width']))
-        if font['thickness'] != KLC_TEXT_THICKNESS:
-            errors.append("Reference label has a thickness of {1}mm (expected: {0}mm).".format(KLC_TEXT_THICKNESS,font['thickness']))
+        if font["height"] != KLC_TEXT_SIZE:
+            errors.append(
+                "Reference label has a height of {1}mm (expected: {0}mm).".format(
+                    KLC_TEXT_SIZE, font["height"]
+                )
+            )
+        if font["width"] != KLC_TEXT_SIZE:
+            errors.append(
+                "Reference label has a width of {1}mm (expected: {0}mm).".format(
+                    KLC_TEXT_SIZE, font["width"]
+                )
+            )
+        if font["thickness"] != KLC_TEXT_THICKNESS:
+            errors.append(
+                "Reference label has a thickness of {1}mm (expected: {0}mm).".format(
+                    KLC_TEXT_THICKNESS, font["thickness"]
+                )
+            )
 
         self.refDesError = len(errors) > 0
 
@@ -75,10 +92,10 @@ class Rule(KLCRule):
         self.bad_width = []
         self.non_nominal_width = []
 
-        for graph in (self.f_silk + self.b_silk):
-            if graph['width'] not in KLC_SILK_WIDTH_ALLOWED:
+        for graph in self.f_silk + self.b_silk:
+            if graph["width"] not in KLC_SILK_WIDTH_ALLOWED:
                 self.bad_width.append(graph)
-            elif graph['width'] != KLC_SILK_WIDTH:
+            elif graph["width"] != KLC_SILK_WIDTH:
                 self.non_nominal_width.append(graph)
 
     def checkIntersections(self) -> None:
@@ -89,36 +106,55 @@ class Rule(KLCRule):
 
         self.intersections = []
 
-        for graph in (self.f_silk + self.b_silk):
-            if 'angle' in graph:
-                #TODO
+        for graph in self.f_silk + self.b_silk:
+            if "angle" in graph:
+                # TODO
                 pass
-            elif 'center' in graph:
+            elif "center" in graph:
                 for pad in self.module.pads:
-                    padComplex = complex(pad['pos']['x'], pad['pos']['y'])
+                    padComplex = complex(pad["pos"]["x"], pad["pos"]["y"])
                     padOffset = 0 + 0j
-                    if 'offset' in pad['drill']:
-                        if 'x' in pad['drill']['offset']:
-                            padOffset = complex(pad['drill']['offset']['x'], pad['drill']['offset']['y'])
+                    if "offset" in pad["drill"]:
+                        if "x" in pad["drill"]["offset"]:
+                            padOffset = complex(
+                                pad["drill"]["offset"]["x"], pad["drill"]["offset"]["y"]
+                            )
 
                     edgesPad = {}
-                    edgesPad[0] = complex(pad['size']['x'] / 2.0, pad['size']['y'] / 2.0) + padComplex + padOffset
-                    edgesPad[1] = complex(-pad['size']['x'] / 2.0, -pad['size']['y'] / 2.0) + padComplex + padOffset
-                    edgesPad[2] = complex(pad['size']['x'] / 2.0, -pad['size']['y'] / 2.0) + padComplex + padOffset
-                    edgesPad[3] = complex(-pad['size']['x'] / 2.0, pad['size']['y'] / 2.0) + padComplex + padOffset
+                    edgesPad[0] = (
+                        complex(pad["size"]["x"] / 2.0, pad["size"]["y"] / 2.0)
+                        + padComplex
+                        + padOffset
+                    )
+                    edgesPad[1] = (
+                        complex(-pad["size"]["x"] / 2.0, -pad["size"]["y"] / 2.0)
+                        + padComplex
+                        + padOffset
+                    )
+                    edgesPad[2] = (
+                        complex(pad["size"]["x"] / 2.0, -pad["size"]["y"] / 2.0)
+                        + padComplex
+                        + padOffset
+                    )
+                    edgesPad[3] = (
+                        complex(-pad["size"]["x"] / 2.0, pad["size"]["y"] / 2.0)
+                        + padComplex
+                        + padOffset
+                    )
 
-                    vectorR = cmath.rect(1, cmath.pi / 180 * pad['pos']['orientation'])
+                    vectorR = cmath.rect(1, cmath.pi / 180 * pad["pos"]["orientation"])
                     for i in range(4):
                         edgesPad[i] = (edgesPad[i] - padComplex) * vectorR + padComplex
 
-                    centerComplex = complex(graph['center']['x'], graph['center']['y'])
-                    endComplex = complex(graph['end']['x'], graph['end']['y'])
+                    centerComplex = complex(graph["center"]["x"], graph["center"]["y"])
+                    endComplex = complex(graph["end"]["x"], graph["end"]["y"])
                     radius = abs(endComplex - centerComplex)
-                    if 'circle' in pad['shape']:
-                        distance = radius + pad['size']['x'] / 2.0 + 0.075
-                        if (abs(centerComplex - padComplex) < distance and
-                            abs(centerComplex - padComplex) > abs(-radius + pad['size']['x'] / 2.0 + 0.075)):
-                            self.intersections.append({'pad':pad, 'graph':graph})
+                    if "circle" in pad["shape"]:
+                        distance = radius + pad["size"]["x"] / 2.0 + 0.075
+                        if abs(centerComplex - padComplex) < distance and abs(
+                            centerComplex - padComplex
+                        ) > abs(-radius + pad["size"]["x"] / 2.0 + 0.075):
+                            self.intersections.append({"pad": pad, "graph": graph})
                     else:
                         # if there are edges inside and outside the circle, we have an intersection
                         edgesInside = []
@@ -129,32 +165,50 @@ class Rule(KLCRule):
                             else:
                                 edgesOutside.append(edgesPad[i])
                         if edgesInside and edgesOutside:
-                            self.intersections.append({'pad':pad, 'graph':graph})
+                            self.intersections.append({"pad": pad, "graph": graph})
             else:
                 for pad in self.module.pads:
 
                     # Skip checks on NPTH and Connect holes
-                    if pad['type'] in ['np_thru_hole', 'connect']:
+                    if pad["type"] in ["np_thru_hole", "connect"]:
                         continue
 
-                    padComplex = complex(pad['pos']['x'], pad['pos']['y'])
+                    padComplex = complex(pad["pos"]["x"], pad["pos"]["y"])
                     padOffset = 0 + 0j
-                    if 'offset' in pad['drill']:
-                        if 'x' in pad['drill']['offset']:
-                            padOffset = complex(pad['drill']['offset']['x'], pad['drill']['offset']['y'])
+                    if "offset" in pad["drill"]:
+                        if "x" in pad["drill"]["offset"]:
+                            padOffset = complex(
+                                pad["drill"]["offset"]["x"], pad["drill"]["offset"]["y"]
+                            )
 
                     edgesPad = {}
-                    edgesPad[0] = complex(pad['size']['x'] / 2.0, pad['size']['y'] / 2.0) + padComplex + padOffset
-                    edgesPad[1] = complex(-pad['size']['x'] / 2.0, -pad['size']['y'] / 2.0) + padComplex + padOffset
-                    edgesPad[2] = complex(pad['size']['x'] / 2.0, -pad['size']['y'] / 2.0) + padComplex + padOffset
-                    edgesPad[3] = complex(-pad['size']['x'] / 2.0, pad['size']['y'] / 2.0) + padComplex + padOffset
+                    edgesPad[0] = (
+                        complex(pad["size"]["x"] / 2.0, pad["size"]["y"] / 2.0)
+                        + padComplex
+                        + padOffset
+                    )
+                    edgesPad[1] = (
+                        complex(-pad["size"]["x"] / 2.0, -pad["size"]["y"] / 2.0)
+                        + padComplex
+                        + padOffset
+                    )
+                    edgesPad[2] = (
+                        complex(pad["size"]["x"] / 2.0, -pad["size"]["y"] / 2.0)
+                        + padComplex
+                        + padOffset
+                    )
+                    edgesPad[3] = (
+                        complex(-pad["size"]["x"] / 2.0, pad["size"]["y"] / 2.0)
+                        + padComplex
+                        + padOffset
+                    )
 
-                    vectorR = cmath.rect(1, cmath.pi / 180 * pad['pos']['orientation'])
+                    vectorR = cmath.rect(1, cmath.pi / 180 * pad["pos"]["orientation"])
                     for i in range(4):
                         edgesPad[i] = (edgesPad[i] - padComplex) * vectorR + padComplex
 
-                    startComplex = complex(graph['start']['x'], graph['start']['y'])
-                    endComplex = complex(graph['end']['x'], graph['end']['y'])
+                    startComplex = complex(graph["start"]["x"], graph["start"]["y"])
+                    endComplex = complex(graph["end"]["x"], graph["end"]["y"])
                     if endComplex.imag > startComplex.imag:
                         vector = endComplex - startComplex
                         padComplex = padComplex - startComplex
@@ -172,13 +226,20 @@ class Rule(KLCRule):
                     for i in range(4):
                         edgesPad[i] = edgesPad[i] * vectorR
 
-                    if 'circle' in pad['shape']:
-                        distance = cmath.sqrt((pad['size']['x'] / 2.0) ** 2 - (padComplex.imag) ** 2).real
+                    if "circle" in pad["shape"]:
+                        distance = cmath.sqrt(
+                            (pad["size"]["x"] / 2.0) ** 2 - (padComplex.imag) ** 2
+                        ).real
                         padMinX = padComplex.real - distance
                         padMaxX = padComplex.real + distance
                     else:
-                        edges = [[0,3],[0,2],[2,1],[1,3]] #lines of the rectangle pads
-                        x0 = [] #vector of value the x to y=0
+                        edges = [
+                            [0, 3],
+                            [0, 2],
+                            [2, 1],
+                            [1, 3],
+                        ]  # lines of the rectangle pads
+                        x0 = []  # vector of value the x to y=0
                         for edge in edges:
                             x1 = edgesPad[edge[0]].real
                             x2 = edgesPad[edge[1]].real
@@ -193,22 +254,38 @@ class Rule(KLCRule):
                             padMaxX = max(x0)
                         else:
                             continue
-                    if ((padMinX < length and padMinX > 0) or
-                        (padMaxX < length and padMaxX > 0) or
-                        (padMaxX > length and padMinX < 0)) :
-                        if 'circle' in pad['shape']:
-                            distance = pad['size']['x'] / 2.0
+                    if (
+                        (padMinX < length and padMinX > 0)
+                        or (padMaxX < length and padMaxX > 0)
+                        or (padMaxX > length and padMinX < 0)
+                    ):
+                        if "circle" in pad["shape"]:
+                            distance = pad["size"]["x"] / 2.0
                             padMin = padComplex.imag - distance
                             padMax = padComplex.imag + distance
                         else:
-                            padMin = min(edgesPad[0].imag, edgesPad[1].imag, edgesPad[2].imag, edgesPad[3].imag)
-                            padMax = max(edgesPad[0].imag, edgesPad[1].imag, edgesPad[2].imag, edgesPad[3].imag)
+                            padMin = min(
+                                edgesPad[0].imag,
+                                edgesPad[1].imag,
+                                edgesPad[2].imag,
+                                edgesPad[3].imag,
+                            )
+                            padMax = max(
+                                edgesPad[0].imag,
+                                edgesPad[1].imag,
+                                edgesPad[2].imag,
+                                edgesPad[3].imag,
+                            )
                         try:
                             differentSign = padMax / padMin
                         except:
                             differentSign = padMin / padMax
-                        if (differentSign < 0) or (abs(padMax) < 0.075) or (abs(padMin) < 0.075):
-                            self.intersections.append({'pad':pad, 'graph':graph})
+                        if (
+                            (differentSign < 0)
+                            or (abs(padMax) < 0.075)
+                            or (abs(padMin) < 0.075)
+                        ):
+                            self.intersections.append({"pad": pad, "graph": graph})
 
     def check(self) -> bool:
         """
@@ -220,8 +297,8 @@ class Rule(KLCRule):
             * non_nominal_width
         """
 
-        self.f_silk = self.module.filterGraphs('F.SilkS')
-        self.b_silk = self.module.filterGraphs('B.SilkS')
+        self.f_silk = self.module.filterGraphs("F.SilkS")
+        self.b_silk = self.module.filterGraphs("B.SilkS")
 
         self.checkReference()
         self.checkSilkscreenWidth()
@@ -232,14 +309,18 @@ class Rule(KLCRule):
 
         # Display message if bad silkscreen width was found
         if len(self.bad_width) > 0:
-            self.error("Some silkscreen lines have incorrect width: Allowed "
-                       "= {allowed} mm".format(allowed=KLC_SILK_WIDTH_ALLOWED))
+            self.error(
+                "Some silkscreen lines have incorrect width: Allowed "
+                "= {allowed} mm".format(allowed=KLC_SILK_WIDTH_ALLOWED)
+            )
             for g in self.bad_width:
                 self.errorExtra(graphItemString(g, layer=True, width=True))
 
         if len(self.non_nominal_width) > 0:
-            self.warning("Some silkscreen lines are not using the nominal "
-                         "width of {width} mm".format(width=KLC_SILK_WIDTH))
+            self.warning(
+                "Some silkscreen lines are not using the nominal "
+                "width of {width} mm".format(width=KLC_SILK_WIDTH)
+            )
             for g in self.non_nominal_width:
                 self.warningExtra(graphItemString(g, layer=True, width=True))
 
@@ -248,18 +329,20 @@ class Rule(KLCRule):
             self.error("Some Silkscreen lines intersects with pads")
             pad_nums = []
             for ints in self.intersections:
-                if not ints['pad']['number'] in pad_nums:
-                    self.errorExtra(" - Pad {n} @ ({x},{y})".format(
-                        n = ints['pad']['number'],
-                        x = ints['pad']['pos']['x'],
-                        y = ints['pad']['pos']['y']))
-                    pad_nums.append(ints['pad']['number'])
+                if not ints["pad"]["number"] in pad_nums:
+                    self.errorExtra(
+                        " - Pad {n} @ ({x},{y})".format(
+                            n=ints["pad"]["number"],
+                            x=ints["pad"]["pos"]["x"],
+                            y=ints["pad"]["pos"]["y"],
+                        )
+                    )
+                    pad_nums.append(ints["pad"]["number"])
 
         # Return True if any of the checks returned an error
-        return any([len(self.bad_width) > 0,
-                    len(self.intersections) > 0,
-                    self.refDesError
-                    ])
+        return any(
+            [len(self.bad_width) > 0, len(self.intersections) > 0, self.refDesError]
+        )
 
     def fix(self) -> None:
         """
@@ -271,34 +354,40 @@ class Rule(KLCRule):
         if self.check():
             if self.refDesError:
                 ref = self.module.reference
-                if self.checkReference(): # @todo checkReference() does not return anything
-                    ref['value'] = 'REF**'
-                    ref['layer'] = 'F.SilkS'
-                    ref['font']['width'] = KLC_TEXT_WIDTH # @todo KLC_TEXT_WIDTH does not exist
-                    ref['font']['height'] = KLC_TEXT_HEIGHT # @todo KLC_TEXT_HEIGHT does not exist
-                    ref['font']['thickness'] = KLC_TEXT_THICKNESS
+                if (
+                    self.checkReference()
+                ):  # @todo checkReference() does not return anything
+                    ref["value"] = "REF**"
+                    ref["layer"] = "F.SilkS"
+                    ref["font"][
+                        "width"
+                    ] = KLC_TEXT_WIDTH  # @todo KLC_TEXT_WIDTH does not exist
+                    ref["font"][
+                        "height"
+                    ] = KLC_TEXT_HEIGHT  # @todo KLC_TEXT_HEIGHT does not exist
+                    ref["font"]["thickness"] = KLC_TEXT_THICKNESS
             for graph in self.bad_width:
-                graph['width'] = KLC_SILK_WIDTH
+                graph["width"] = KLC_SILK_WIDTH
             for inter in self.intersections:
-                pad = inter['pad']
-                graph = inter['graph']
-                if 'angle' in graph:
-                    #TODO
+                pad = inter["pad"]
+                graph = inter["graph"]
+                if "angle" in graph:
+                    # TODO
                     pass
-                elif 'center' in graph:
-                    #TODO
+                elif "center" in graph:
+                    # TODO
                     pass
                 else:
-                    padComplex = complex(pad['pos']['x'], pad['pos']['y'])
-                    startComplex = complex(graph['start']['x'], graph['start']['y'])
-                    endComplex = complex(graph['end']['x'], graph['end']['y'])
+                    padComplex = complex(pad["pos"]["x"], pad["pos"]["y"])
+                    startComplex = complex(graph["start"]["x"], graph["start"]["y"])
+                    endComplex = complex(graph["end"]["x"], graph["end"]["y"])
                     if endComplex.imag < startComplex.imag:
                         startComplex, endComplex = endComplex, startComplex
 
-                        graph['start']['x'] = startComplex.real
-                        graph['start']['y'] = startComplex.imag
-                        graph['end']['x'] = endComplex.real
-                        graph['end']['y'] = endComplex.imag
+                        graph["start"]["x"] = startComplex.real
+                        graph["start"]["y"] = startComplex.imag
+                        graph["end"]["x"] = endComplex.real
+                        graph["end"]["y"] = endComplex.imag
 
                     vector = endComplex - startComplex
                     padComplex = padComplex - startComplex
@@ -306,27 +395,35 @@ class Rule(KLCRule):
                     phase = cmath.phase(vector)
                     vectorR = cmath.rect(1, -phase)
                     padComplex = padComplex * vectorR
-                    distance = cmath.sqrt((pad['size']['x'] / 2.0 + 0.226) ** 2 - (padComplex.imag) ** 2).real
+                    distance = cmath.sqrt(
+                        (pad["size"]["x"] / 2.0 + 0.226) ** 2 - (padComplex.imag) ** 2
+                    ).real
                     padMin = padComplex.real - distance
                     padMax = padComplex.real + distance
 
                     if 0 < padMin < length:
                         if padMax > length:
-                            padComplex = (padMin + 0j) * cmath.rect(1, phase) + startComplex
-                            graph['end']['x'] = round(padComplex.real, 3)
-                            graph['end']['y'] = round(padComplex.imag, 3)
+                            padComplex = (padMin + 0j) * cmath.rect(
+                                1, phase
+                            ) + startComplex
+                            graph["end"]["x"] = round(padComplex.real, 3)
+                            graph["end"]["y"] = round(padComplex.imag, 3)
                         else:
-                            padComplex = (padMin + 0j) * cmath.rect(1, phase) + startComplex
+                            padComplex = (padMin + 0j) * cmath.rect(
+                                1, phase
+                            ) + startComplex
                             graph2 = deepcopy(graph)
-                            graph['end']['x'] = round(padComplex.real, 3)
-                            graph['end']['y'] = round(padComplex.imag, 3)
-                            padComplex = (padMax + 0j) * cmath.rect(1, phase) + startComplex
-                            graph2['start'].update({'x':round(padComplex.real, 3)})
-                            graph2['start'].update({'y':round(padComplex.imag, 3)})
+                            graph["end"]["x"] = round(padComplex.real, 3)
+                            graph["end"]["y"] = round(padComplex.imag, 3)
+                            padComplex = (padMax + 0j) * cmath.rect(
+                                1, phase
+                            ) + startComplex
+                            graph2["start"].update({"x": round(padComplex.real, 3)})
+                            graph2["start"].update({"y": round(padComplex.imag, 3)})
                             module.lines.append(graph2)
                     elif padMin < 0 and 0 < padMax < length:
                         padComplex = (padMax + 0j) * cmath.rect(1, phase) + startComplex
-                        graph['start']['x'] = round(padComplex.real, 3)
-                        graph['start']['y'] = round(padComplex.imag, 3)
-                    elif (padMax > length and padMin < 0):
+                        graph["start"]["x"] = round(padComplex.real, 3)
+                        graph["start"]["y"] = round(padComplex.imag, 3)
+                    elif padMax > length and padMin < 0:
                         module.lines.remove(graph)

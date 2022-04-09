@@ -1,4 +1,3 @@
-
 # silkscreen layer
 KLC_SILK_WIDTH = 0.12
 KLC_SILK_WIDTH_ALLOWED = [0.10, 0.12, 0.15]

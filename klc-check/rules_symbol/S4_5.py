@@ -20,10 +20,13 @@ class Rule(KLCRule):
             if i not in int_pins:
                 missing_pins.append(i)
         if len(missing_pins) != 0:
-            self.warning("Pin{s} {n} {v} missing.".format(
-                         s="s" if len(missing_pins) > 1 else "",
-                         n=", ".join(str(x) for x in missing_pins),
-                         v="are" if len(missing_pins) > 1 else "is"))
+            self.warning(
+                "Pin{s} {n} {v} missing.".format(
+                    s="s" if len(missing_pins) > 1 else "",
+                    n=", ".join(str(x) for x in missing_pins),
+                    v="are" if len(missing_pins) > 1 else "is",
+                )
+            )
         return False
 
     def check(self) -> bool:
