@@ -362,6 +362,7 @@ class DrawingPolyline:
 
 
 class DrawingArc:
+    @staticmethod
     def __normalizeAngle(angle):
         angle = angle % 3600
         if angle > 1800:
@@ -433,6 +434,7 @@ class DrawingArc:
         raise NotImplementedError("Rotating arcs is not yet implemented")
         # return obj
 
+    @staticmethod
     def __mirrorAngleHorizontal(angle):
         if angle >= 0:
             return 1800 - angle
