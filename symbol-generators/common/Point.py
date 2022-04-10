@@ -94,7 +94,7 @@ class Point():
             point.roundToGrid()
         return point
 
-    def roundCoordinateToGrid(self, value: float, base: int, apply_on_copy: bool = False):
+    def roundCoordinateToGrid(value: float, base: int, apply_on_copy: bool = False):
         if value >= 0:
             return math.floor(value / base) * base
         return math.ceil(value / base) * base
