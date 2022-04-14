@@ -55,7 +55,6 @@ class Rule(KLCRule):
             self.recommended_ref_alignment = "R"
 
         # get the current reference infos and compare them to recommended ones
-        ref_need_fix = False
         pos = {
             "posx": int(self.component.fields[0]["posx"]),
             "posy": int(self.component.fields[0]["posy"]),
@@ -66,7 +65,6 @@ class Rule(KLCRule):
                     positionFormater(pos), positionFormater(self.recommended_ref_pos)
                 )
             )
-            ref_need_fix = True
         if self.component.fields[0]["htext_justify"] != self.recommended_ref_alignment:
             self.warning(
                 "field: reference, justification {0}, recommended {1}".format(
@@ -74,7 +72,6 @@ class Rule(KLCRule):
                     self.recommended_ref_alignment,
                 )
             )
-            ref_need_fix = True
         # Does vertical alignment matter too?
         # What about orientation checking?
 
@@ -96,7 +93,6 @@ class Rule(KLCRule):
             self.recommended_name_alignment = "R"
 
         # get the current name infos and compare them to recommended ones
-        name_need_fix = False
         pos = {
             "posx": int(self.component.fields[1]["posx"]),
             "posy": int(self.component.fields[1]["posy"]),
@@ -107,7 +103,6 @@ class Rule(KLCRule):
                     positionFormater(pos), positionFormater(self.recommended_name_pos)
                 )
             )
-            name_need_fix = True
         if self.component.fields[1]["htext_justify"] != self.recommended_name_alignment:
             self.warning(
                 "field: name, justification {0}, recommended {1}".format(
@@ -115,7 +110,6 @@ class Rule(KLCRule):
                     self.recommended_name_alignment,
                 )
             )
-            name_need_fix = True
         # footprint checking
 
         # If there is no pins in the bottom, the recommended position to footprint is at
@@ -134,7 +128,6 @@ class Rule(KLCRule):
             self.recommended_fp_alignment = "L"
 
         # get the current footprint infos and compare them to recommended ones
-        fp_need_fix = False
         self.fp_is_missing = False
         if len(self.component.fields) >= 3:
             pos = {
@@ -147,7 +140,6 @@ class Rule(KLCRule):
                         positionFormater(pos), positionFormater(self.recommended_fp_pos)
                     )
                 )
-                fp_need_fix = True
             if (
                 self.component.fields[2]["htext_justify"]
                 != self.recommended_fp_alignment
@@ -158,21 +150,15 @@ class Rule(KLCRule):
                         self.recommended_fp_alignment,
                     )
                 )
-                fp_need_fix = True
         else:
             self.warning(
                 "field: footprint is missing, please re-save symbol using KiCad"
             )
-            fp_need_fix = True
             self.fp_is_missing = True
 
         # This entire rule only generates a WARNING (won't fail a component, only display a
         # message).
-        # TODO: discard the `*_need_fix` variables, if we really do not want to report failure
-        if True:
-            return False
-        else:
-            return ref_need_fix or name_need_fix or fp_need_fix
+        return False
 
     def fix(self):
         """
