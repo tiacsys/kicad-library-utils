@@ -17,7 +17,7 @@ common = os.path.abspath(
 if common not in sys.path:
     sys.path.insert(0, common)
 
-from kicad_sym import KicadLibrary
+from kicad_sym import KicadFileFormatError, KicadLibrary
 from print_color import PrintColor
 from rulebase import Verbosity, logError
 from rules_symbol import get_all_symbol_rules
@@ -166,7 +166,7 @@ class SymbolCheck:
 
         try:
             library = KicadLibrary.from_file(filename)
-        except Exception as e:
+        except KicadFileFormatError as e:
             self.printer.red("Could not parse library: %s. (%s)" % (filename, e))
             if self.verbosity:
                 self.printer.red("Error: " + str(e))

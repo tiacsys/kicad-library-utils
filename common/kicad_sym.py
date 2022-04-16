@@ -13,6 +13,10 @@ from typing import Any, Dict, List, Optional, Tuple
 import sexpr
 
 
+class KicadFileFormatError(ValueError):
+    """any kind of problem discovered while parsing a KiCad file"""
+
+
 def mil_to_mm(mil: float) -> float:
     return round(mil * 0.0254, 6)
 
@@ -1026,6 +1030,11 @@ class KicadLibrary(KicadSymbolBase):
 
     @classmethod
     def from_file(cls, filename: str) -> "KicadLibrary":
+        """
+        Parse a symbol library from a file.
+
+        raises KicadFileFormatError in case of problems
+        """
         library = KicadLibrary(filename)
 
         # read the s-expression data
@@ -1042,13 +1051,14 @@ class KicadLibrary(KicadSymbolBase):
         # not work as expected. So just don't load them at all.
         version = _get_value_of(sexpr_data, "version")
         if str(version) != "20211014":
-            raise ValueError('Version of symbol file is not "20211014"')
+            raise KicadFileFormatError('Version of symbol file is not "20211014"')
 
         # itertate over symbol
         for item in sym_list:
-            if item.pop(0) != "symbol":
-                raise ValueError("unexpected token in file")
-            # retrieving only the `partname` if formatted as `libname:partname` (legacy format)
+            item_type = item.pop(0)
+            if item_type != "symbol":
+                raise KicadFileFormatError(f"Unexpected token found: {item_type}")
+            # retrieving the `partname`, even if formatted as `libname:partname` (legacy format)
             partname = item.pop(0).split(":")[-1]
 
             # we found a new part, extract the symbol name
@@ -1061,7 +1071,13 @@ class KicadLibrary(KicadSymbolBase):
 
             # extract properties
             for prop in _get_array(item, "property"):
-                symbol.properties.append(Property.from_sexpr(prop))
+                try:
+                    # TODO: do not append the new property, if it is None
+                    symbol.properties.append(Property.from_sexpr(prop))
+                except ValueError as exc:
+                    raise KicadFileFormatError(
+                        f"Failed to import '{partname}': {exc}"
+                    ) from exc
 
             # get flags
             if _has_value(item, "in_bom"):
@@ -1092,14 +1108,19 @@ class KicadLibrary(KicadSymbolBase):
             subsymbols = _get_array2(item, "symbol")
             for unit_data in subsymbols:
                 # we found a new 'subpart' (no clue how to call it properly)
-                if unit_data.pop(0) != "symbol":
-                    raise ValueError("unexpected token in file")
+                subpart_type = unit_data.pop(0)
+                if subpart_type != "symbol":
+                    raise KicadFileFormatError(
+                        f"Unexpected token found as 'subsymbol' of {item_type}: {subpart_type}"
+                    )
                 name = unit_data.pop(0)
 
                 # split the name
                 m1 = re.match(r"^" + re.escape(partname) + r"_(\d+?)_(\d+?)$", name)
                 if not m1:
-                    raise ValueError("failed to parse subsymbol")
+                    raise KicadFileFormatError(
+                        "Failed to parse subsymbol due to invalid name: {name}"
+                    )
 
                 (unit_idx, demorgan_idx) = (m1.group(1), m1.group(2))
                 unit_idx = int(unit_idx)
