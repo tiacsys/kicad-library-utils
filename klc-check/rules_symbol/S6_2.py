@@ -5,7 +5,7 @@ from rules_symbol.rule import KLCRule
 
 
 class Rule(KLCRule):
-    """Symbol and alias fields and metadata filled out as required"""
+    """Symbol fields and metadata filled out as required"""
 
     def checkReference(self) -> bool:
         fail = False

@@ -20,7 +20,7 @@ class Rule(KLCRule):
             * center_rect_polyline
         """
 
-        # no checks for power-symbols, graphical symbols or aliases
+        # no checks for power-symbols, graphical symbols or derived symbols
         if (
             self.component.is_power_symbol()
             or self.component.is_graphic_symbol()

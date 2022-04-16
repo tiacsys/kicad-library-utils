@@ -237,7 +237,7 @@ class Device:
         self.package = ""
         self.footprint = ""
         self.pins = []
-        self.aliases = []
+        self.derived_symbols = []
 
         self.read_info()
 
@@ -257,7 +257,7 @@ class Device:
             s = name_match.group(2).split("-")
             self.name = pre + s[0] + post
             for a in s[1:]:
-                self.aliases.append(pre + a + post)
+                self.derived_symbols.append(pre + a + post)
         else:
             self.name = name
 
@@ -422,15 +422,15 @@ class Device:
         # Draw the symbol
         self.draw_symbol()
 
-        # Add derived symbols (fka aliases)
-        for i, alias in enumerate(self.aliases):
+        # Add derived symbols
+        for i, derived_sym_name in enumerate(self.derived_symbols):
             f = 0 if len(self.flash) == 1 else i + 1
             r = 0 if len(self.ram) == 1 else i + 1
 
             description = desc_fmt.format(flash=self.flash[f], ram=self.ram[r])
 
             derived_symbol = kicad_sym.KicadSymbol.new(
-                alias,
+                derived_sym_name,
                 libname,
                 "U",
                 self.footprint,

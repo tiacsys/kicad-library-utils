@@ -142,7 +142,7 @@ class Rule(KLCRule):
             * inversion_errors
         """
 
-        # no need to check this for an alias
+        # no need to check this for a derived symbols
         if self.component.extends is not None:
             return False
 

@@ -12,7 +12,7 @@ symbol_rulechecker:
       - "klc-check/*symbol/*"
   script:
     - python3 klc-check/check_symbol.py -u klc-check/test_symbol/*.kicad_sym
-    - python3 klc-check/comparelibs.py -v --old klc-check/test_symbol/comparelibs_old/* --new klc-check/test_symbol/comparelibs_new/* --check --check-aliases -m
+    - python3 klc-check/comparelibs.py -v --old klc-check/test_symbol/comparelibs_old/* --new klc-check/test_symbol/comparelibs_new/* --check --check-derived -m
   artifacts:
     reports:
       metrics: metrics.txt

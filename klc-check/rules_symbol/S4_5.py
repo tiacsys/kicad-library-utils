@@ -30,7 +30,7 @@ class Rule(KLCRule):
         return False
 
     def check(self) -> bool:
-        # no need to check pins on an alias
+        # no need to check pins on a derived symbols
         if self.component.extends is not None:
             return False
 

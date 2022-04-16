@@ -60,8 +60,8 @@ parser.add_argument(
     action="store_true",
 )
 parser.add_argument(
-    "--check-aliases",
-    help="Do not only check symbols but also aliases.",
+    "--check-derived",
+    help="Do not only check symbols but also derived symbols.",
     action="store_true",
 )
 parser.add_argument(
@@ -156,27 +156,25 @@ for lib_name in new_libs:
     new_sym = {}
     old_sym = {}
     for sym in new_lib.symbols:
-        if not args.check_aliases and sym.extends:
+        if not args.check_derived and sym.extends:
             continue
         new_sym[sym.name] = sym
 
     for sym in old_lib.symbols:
-        if not args.check_aliases and sym.extends:
+        if not args.check_derived and sym.extends:
             continue
         old_sym[sym.name] = sym
 
     for symname in new_sym:
         # Component is 'new' (not in old library)
-        alias_info = ""
+        derived_sym_info = ""
         if new_sym[symname].extends:
-            alias_info = " alias of {}".format(new_sym[symname].extends)
+            derived_sym_info = " derived from {}".format(new_sym[symname].extends)
 
         if symname not in old_sym:
             if args.verbose:
                 printer.light_green(
-                    "New '{lib}:{name}'{alias_info}".format(
-                        lib=lib_name, name=symname, alias_info=alias_info
-                    )
+                    f"New '{lib_name}:{symname}'{derived_sym_info}"
                 )
 
             if args.check:
@@ -189,7 +187,7 @@ for lib_name in new_libs:
 
         if new_sym[symname].extends != old_sym[symname].extends and args.verbose:
             printer.white(
-                "Changed alias state of '{lib}:{name}'".format(
+                "Changed derived state of '{lib}:{name}'".format(
                     lib=lib_name, name=symname
                 )
             )
@@ -197,9 +195,7 @@ for lib_name in new_libs:
         if new_sym[symname] != old_sym[symname]:
             if args.verbose:
                 printer.yellow(
-                    "Changed '{lib}:{name}'{alias_info}".format(
-                        lib=lib_name, name=symname, alias_info=alias_info
-                    )
+                    f"Changed '{lib_name}:{symname}'{derived_sym_info}"
                 )
             if args.design_breaking_changes:
                 pins_moved = 0
@@ -228,17 +224,13 @@ for lib_name in new_libs:
                     design_breaking_changes += 1
                     printer.light_purple(
                         "Pins have been moved, renumbered or removed in symbol"
-                        " '{lib}:{name}'{alias_info}".format(
-                            lib=lib_name, name=symname, alias_info=alias_info
-                        )
+                        f" '{lib_name}:{symname}'{derived_sym_info}"
                     )
                 elif nc_pins_moved > 0 or nc_pins_missing > 0:
                     design_breaking_changes += 1
                     printer.purple(
                         "Normal pins ok but NC pins have been moved, renumbered or"
-                        " removed in symbol '{lib}:{name}'{alias_info}".format(
-                            lib=lib_name, name=symname, alias_info=alias_info
-                        )
+                        f" removed in symbol '{lib_name}:{symname}'{derived_sym_info}"
                     )
 
             if args.check:
@@ -249,15 +241,13 @@ for lib_name in new_libs:
     for symname in old_sym:
         # Component has been deleted from library
         if symname not in new_sym:
-            alias_info = ""
+            derived_sym_info = ""
             if old_sym[symname].extends:
-                alias_info = " was an alias of {}".format(old_sym[symname].extends)
+                derived_sym_info = " was an derived from {}".format(old_sym[symname].extends)
 
             if args.verbose:
                 printer.red(
-                    "Removed '{lib}:{name}'{alias_info}".format(
-                        lib=lib_name, name=symname, alias_info=alias_info
-                    )
+                    f"Removed '{lib_name}:{symname}'{derived_sym_info}"
                 )
             if args.design_breaking_changes:
                 design_breaking_changes += 1
