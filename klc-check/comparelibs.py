@@ -173,9 +173,7 @@ for lib_name in new_libs:
 
         if symname not in old_sym:
             if args.verbose:
-                printer.light_green(
-                    f"New '{lib_name}:{symname}'{derived_sym_info}"
-                )
+                printer.light_green(f"New '{lib_name}:{symname}'{derived_sym_info}")
 
             if args.check:
                 # only check new components
@@ -194,9 +192,7 @@ for lib_name in new_libs:
 
         if new_sym[symname] != old_sym[symname]:
             if args.verbose:
-                printer.yellow(
-                    f"Changed '{lib_name}:{symname}'{derived_sym_info}"
-                )
+                printer.yellow(f"Changed '{lib_name}:{symname}'{derived_sym_info}")
             if args.design_breaking_changes:
                 pins_moved = 0
                 nc_pins_moved = 0
@@ -243,12 +239,12 @@ for lib_name in new_libs:
         if symname not in new_sym:
             derived_sym_info = ""
             if old_sym[symname].extends:
-                derived_sym_info = " was an derived from {}".format(old_sym[symname].extends)
+                derived_sym_info = " was an derived from {}".format(
+                    old_sym[symname].extends
+                )
 
             if args.verbose:
-                printer.red(
-                    f"Removed '{lib_name}:{symname}'{derived_sym_info}"
-                )
+                printer.red(f"Removed '{lib_name}:{symname}'{derived_sym_info}")
             if args.design_breaking_changes:
                 design_breaking_changes += 1
 

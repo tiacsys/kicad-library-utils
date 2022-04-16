@@ -61,7 +61,9 @@ class Rule(KLCRule):
         if self.center_rect_polyline.fill_type != "background":
             msg = (
                 "Component background is filled with {0} color, recommended is filling"
-                " with {1} color".format(self.center_rect_polyline.fill_type, "background")
+                " with {1} color".format(
+                    self.center_rect_polyline.fill_type, "background"
+                )
             )
             if self.component.is_small_component_heuristics():
                 self.warning(msg)
