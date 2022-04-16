@@ -17,6 +17,10 @@ class KicadFileFormatError(ValueError):
     """any kind of problem discovered while parsing a KiCad file"""
 
 
+# KiCad can only handle multiples of 90 degrees
+VALID_ROTATIONS = frozenset({0, 90, 180, 270})
+
+
 def mil_to_mm(mil: float) -> float:
     return round(mil * 0.0254, 6)
 
@@ -381,6 +385,11 @@ class Pin(KicadSymbolBase):
         (name, name_effect) = cls._parse_name_or_number(sexpr)
         (number, number_effect) = cls._parse_name_or_number(sexpr, typ="number")
 
+        if rotation not in VALID_ROTATIONS:
+            raise ValueError(
+                f"Invalid 'rotation' attribute value for pin: {rotation}"
+                f" (must be one of {set(VALID_ROTATIONS)})"
+            )
         altfuncs = []
         alt_n = _get_array(sexpr, "alternate")
         for alt_sexpr in alt_n:
@@ -754,7 +763,8 @@ class Property(KicadSymbolBase):
     def set_pos_mil(self, x: float, y: float, rot: int = 0) -> None:
         self.posx = mil_to_mm(x)
         self.posy = mil_to_mm(y)
-        if rot in [0, 90, 180, 270]:
+        # TODO: verify whether we should really (silently) restrict the rotation of all properties
+        if rot in VALID_ROTATIONS:
             self.rotation = rot
 
     @classmethod
