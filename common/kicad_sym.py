@@ -171,14 +171,16 @@ class KicadSymbolBase:
     def dir_to_rotation(cls, d: str) -> int:
         if d == "R":
             return 0
-        if d == "U":
+        elif d == "U":
             return 90
-        if d == "L":
+        elif d == "L":
             return 180
-        if d == "D":
+        elif d == "D":
             return 270
-
-        raise NotImplemented()
+        else:
+            raise ValueError(
+                f"Invalid direction requested: {d} (should be one of: R / U / L /D"
+            )
 
 
 @dataclass
@@ -354,8 +356,8 @@ class Pin(KicadSymbolBase):
             return "L"
         elif self.rotation == 270:
             return "D"
-
-        raise NotImplemented
+        else:
+            raise NotImplementedError(f"Invalid 'rotation' of Pin: {self.rotation}")
 
     def is_duplicate(self, p: "Pin") -> bool:
         if (
