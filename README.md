@@ -1,5 +1,22 @@
-kicad-library-utils
-===============
+# KiCad Library Utils
+
+This repository contains a variety of tools related to the libraries used in [KiCad](https://kicad.org/):
+
+* symbols
+* footprints
+* 3D models
+
+These tools can be used for the development of the [official KiCad libraries](https://gitlab.com/kicad/libraries) as well as for custom (internal) libraries.
+
+The tools are currently mainly concerned with quality and style checks (e.g. for CI tests) according to the [KLC rules](https://klc.kicad.org/).
+
+Adding custom (internal) rules for your own libraries is a bit cumbersome at the moment (you need to maintain your private fork of this repository), but their usage is within the targeted scope of these tools.
+Your contribution for improving this situation is welcome.
+
+Other tools (beside style and quality checks) are welcome to this repository, too.
+
+
+# Repository content
 
 ## klc-check directory
 
