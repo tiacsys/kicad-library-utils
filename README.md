@@ -99,6 +99,29 @@ How to use
     # run the following 'h'elp command to see other options
     ./comparelibs.py -h
 
+# Contributing
+
+Please keep in mind, that this repository is mainly targeted at the [official KiCad libraries](gitlab.com/kicad/libraries/).
+Thus you should manage your custom rules outside of this repository.
+Re-usable infrastructure (e.g. for supporting custom rules) is welcome, of course.
+
+## Python code style
+
+The tools [black](https://black.readthedocs.io/) and [isort](https://pycqa.github.io/isort/) are used for formatting the code.
+You should apply this format before committing code:
+```shell
+make style
+```
+
+All python code should follow [PEP8](https://www.python.org/dev/peps/pep-0008/).
+This style and many other issues can be tested via [flake8](https://flake8.pycqa.org/en/latest/) (also executed as part of the CI tests):
+```shell
+make lint
+```
+
+Please refrain from using recently introduced features of the Python language, which are not yet supported by the most recent stable release of major distributions (e.g. Debian).
+
+
 ## Check before committing
 
 Usually, you commit the footprint (or symbol) and let CI check your job.
