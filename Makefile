@@ -1,7 +1,7 @@
 SPELLING_PATHS = $(wildcard *.md) docs src common klc-check test tools packages3d symbol-generators
 SPELLING_EXCLUDE_FILE = .codespell-excludes
 SPELLING_IGNORE_WORDS_FILE = .codespell-ignore-words
-SPELLING_SKIP_FILENAMES = .mypy_cache
+SPELLING_SKIP_FILENAMES = .mypy_cache *.csv
 
 
 .PHONY: help
@@ -23,7 +23,7 @@ spelling:
 	codespell \
 		--exclude-file "$(SPELLING_EXCLUDE_FILE)" \
 		--ignore-words "$(SPELLING_IGNORE_WORDS_FILE)" \
-		--skip "$(SPELLING_SKIP_FILENAMES)" \
+		$(patsubst %, --skip="%",$(SPELLING_SKIP_FILENAMES)) \
 		$(SPELLING_PATHS)
 
 
