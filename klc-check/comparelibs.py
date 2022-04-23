@@ -74,6 +74,13 @@ parser.add_argument(
         ' values to select multiple rules. e.g. "-e S3.1,EC02"'
     ),
 )
+parser.add_argument(
+    "--footprints",
+    help=(
+        "Path to footprint libraries (.pretty dirs). Specify with e.g."
+        ' "~/kicad/footprints/"'
+    ),
+)
 
 (args, extra) = parser.parse_known_args()
 printer = PrintColor(use_color=not args.nocolor)
@@ -116,12 +123,8 @@ design_breaking_changes = 0
 
 # create a SymbolCheck instance
 # add footprints dir if possible
-if "footprints" in extra:
-    fp = extra["footprints"]
-else:
-    fp = None
 sym_check = check_symbol.SymbolCheck(
-    None, args.exclude, Verbosity(2), fp, False if args.nocolor else True, silent=True
+    None, args.exclude, Verbosity(2), args.footprints, False if args.nocolor else True, silent=True
 )
 
 # iterate over all new libraries
