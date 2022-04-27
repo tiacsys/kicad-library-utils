@@ -75,7 +75,7 @@ parser.add_argument(
     ),
 )
 parser.add_argument(
-    "--footprints",
+    "--footprint_directory",
     help=(
         "Path to footprint libraries (.pretty dirs). Specify with e.g."
         ' "~/kicad/footprints/"'
@@ -124,7 +124,8 @@ design_breaking_changes = 0
 # create a SymbolCheck instance
 # add footprints dir if possible
 sym_check = check_symbol.SymbolCheck(
-    None, args.exclude, Verbosity(2), args.footprints, False if args.nocolor else True, silent=True
+    None, args.exclude, Verbosity(2), args.footprint_directory,
+    False if args.nocolor else True, silent=True
 )
 
 # iterate over all new libraries
