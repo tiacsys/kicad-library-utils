@@ -69,7 +69,7 @@ class Rule(KLCRule):
                 ):
                     if not self.power_errors:
                         self.error(
-                            "Power pins should be of type POWER INPUT or POWER OUTPUT"
+                            "Power pins should be of type POWER INPUT"
                         )
                     self.power_errors.append(pin)
                     self.errorExtra(
