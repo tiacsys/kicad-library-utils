@@ -823,10 +823,8 @@ class KicadSymbol(KicadSymbolBase):
         if len(pn) > 1:
             sx.append(pn)
 
-        if self.in_bom:
-            sx.append(["in_bom", "yes"])
-        if self.on_board:
-            sx.append(["on_board", "yes"])
+        sx.append(["in_bom", "yes" if self.in_bom else "no"])
+        sx.append(["on_board", "yes" if self.on_board else "no"])
         if self.is_power:
             sx.append(["power"])
         if self.hide_pin_numbers:
@@ -1092,12 +1090,10 @@ class KicadLibrary(KicadSymbolBase):
                     ) from exc
 
             # get flags
-            if _has_value(item, "in_bom"):
-                symbol.in_bom = True
+            symbol.in_bom = _get_value_of(item, "in_bom", "no") == "yes"
+            symbol.on_board = _get_value_of(item, "on_board", "no") == "yes"
             if _has_value(item, "power"):
                 symbol.is_power = True
-            if _has_value(item, "on_board"):
-                symbol.on_board = True
 
             # get pin-numbers properties
             pin_numbers_info = _get_array2(item, "pin_numbers")

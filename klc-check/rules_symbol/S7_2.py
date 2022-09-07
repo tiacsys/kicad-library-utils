@@ -57,6 +57,12 @@ class Rule(KLCRule):
                 if not value_prop.effects.is_hidden:
                     self.error("Graphical symbols have a hidden Value")
                     fail = True
+            if self.component.in_bom is True:
+                self.error("Graphical symbols must be 'Excluded from schematic bill of materials'")
+                fail = True
+            if self.component.on_board is True:
+                self.error("Graphical symbols must be 'Excluded from board'")
+                fail = True
 
         return fail
 
