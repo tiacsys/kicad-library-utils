@@ -234,7 +234,7 @@ def make_properties(family, device, package, width, height, value_offset):
     )
     (property "ki_fp_filters" "{footprint.footprint_filter}" (id 6) (at 0 0 0)
       (effects (font (size {font_width} {font_height})) hide)
-    )"""
+    )"""  # noqa: E501
     )
 
 
