@@ -519,6 +519,44 @@ conn_iec_din = {
     ),
 }
 
+conn_samtec = {
+    "Samtec_HSEC8-DV": CONNECTOR(
+        num_rows=2,
+        pin_per_row_range=[10 * (n + 1) for n in range(10)] + [9, 13, 25, 37, 49],
+        odd_count=False,
+        symbol_name_format=(
+            "HSEC8-1{num_pins_per_row:02d}-X-X-DV-X_2x{num_pins_per_row:02d}{suffix:s}"
+        ),
+        top_pin_number=[1, lambda num_pin_per_row: 2],
+        pin_number_generator=[
+            lambda old_number: old_number + 2,
+            lambda old_number: old_number + 2,
+        ],
+        description="Samtec card edge connector HSEC8 series, 2x{num_pins_per_row:d} contacts",
+        keywords="connector card-edge",
+        datasheet="https://suddendocs.samtec.com/prints/hsec8-1xxx-xx-xx-dv-x-xx-x-xx-mkt.pdf",
+        default_footprint="",  # no default footprint
+        footprint_filter=["Samtec*HSEC8*DV*P0.8mm*Socket*", "Samtec*HSEC8*DV*P0.8mm*Edge*"],
+        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        enclosing_rectangle=True,
+        mirror=False,
+        pin_gap_positions={
+            9: [3],
+            13: [5],
+            25: [5],
+            37: [20],
+            40: [21],
+            49: [26],
+            50: [26],
+            60: [31],
+            70: [31],
+            80: [31],
+            90: [31],
+            100: [31],
+        },
+    ),
+}
+
 
 def pinname_update_function(old_name, new_number):
     return "Pin_{}".format(new_number)
@@ -610,6 +648,14 @@ all_symbols = [
     {
         "lib_name": "Connector_IEC_DIN",
         "symbol_def": conn_iec_din,
+        "extra_pin": None,
+        "pn_modifier": "_",
+        "suffix": "",
+        "extra_pin_descr": "",
+    },
+    {
+        "lib_name": "Connector_Samtec_HSEC8",
+        "symbol_def": conn_samtec,
         "extra_pin": None,
         "pn_modifier": "_",
         "suffix": "",
