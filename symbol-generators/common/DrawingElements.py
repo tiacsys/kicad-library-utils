@@ -740,11 +740,14 @@ class DrawingArray(Drawing):
         number_of_instances,
         pinnumber_update_function=lambda x: x + 1,
         pinname_update_function=lambda old_name, new_number: new_number,
+        pin_gap_positions=[],   # add an extra steps (of distance) at the specified positions
     ):
         Drawing.__init__(self)
         for i in range(number_of_instances):
             self.append(deepcopy(original))
-            original.translate(distance)
+            num_steps = 2 if i in pin_gap_positions else 1
+            for _ in range(num_steps):
+                original.translate(distance)
             if isinstance(original, Drawing) or isinstance(original, DrawingPin):
                 original.updatePinNumber(
                     pinnumber_update_function=pinnumber_update_function,

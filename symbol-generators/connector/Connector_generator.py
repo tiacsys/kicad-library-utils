@@ -95,8 +95,12 @@ CONNECTOR = namedtuple(
         "graphic_type",
         "enclosing_rectangle",
         "mirror",
+        # adds an additional gap after the specified pin row to generate
+        # polarized connector symbols: None (default) or dict
+        "pin_gap_positions",
     ],
 )
+CONNECTOR.__new__.__defaults__ = (None, ) * len(CONNECTOR._fields)
 
 
 def num_gen_row_letter_first(old_number):
@@ -751,13 +755,22 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
     current_symbol.hide_pin_names = True
     current_symbol.pin_names_offset = kicad_sym.mil_to_mm(40)
 
+    # pin gaps
+    if (isinstance(series_params.pin_gap_positions, dict)):
+        pin_gap_positions = series_params.pin_gap_positions.get(num_pins_per_row, [])
+    elif (series_params.pin_gap_positions):
+        pin_gap_positions = series_params.pin_gap_positions
+    else:
+        pin_gap_positions = []
+    num_pin_gaps = len(pin_gap_positions)
+
     # ######################## reference points ################################
     num_pins_left_side = num_pins_per_row + (1 if series_params.odd_count else 0)
 
     top_left_pin_position = Point(
         {
             "x": -pin_length - body_width_per_row,
-            "y": pin_spacing_y * (num_pins_left_side - 1) / 2.0,
+            "y": pin_spacing_y * (num_pins_left_side + num_pin_gaps - 1) / 2.0,
         },
         grid=pin_grid,
     )
@@ -773,7 +786,8 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
 
     body_width = pin_spacing_y * series_params.num_rows
     body_bottom_right_corner = body_top_left_corner.translate(
-        {"x": body_width, "y": -pin_spacing_y * num_pins_left_side}, apply_on_copy=True
+        {"x": body_width, "y": -pin_spacing_y * (num_pins_left_side + num_pin_gaps)},
+        apply_on_copy=True
     )
 
     extra_pin = lib_params.get("extra_pin")
@@ -900,6 +914,7 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
             number_of_instances=num_pins_left_side,
             pinnumber_update_function=series_params.pin_number_generator[0],
             pinname_update_function=pinname_update_function,
+            pin_gap_positions=pin_gap_positions,
         )
     )
 
@@ -911,6 +926,7 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
                 number_of_instances=num_pins_per_row,
                 pinnumber_update_function=series_params.pin_number_generator[1],
                 pinname_update_function=pinname_update_function,
+                pin_gap_positions=pin_gap_positions,
             )
         )
 
