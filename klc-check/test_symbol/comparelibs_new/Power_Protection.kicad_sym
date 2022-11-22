@@ -11445,8 +11445,8 @@
       (effects (font (size 1.27 1.27)) hide)
     )
     (symbol "WE-TVS-82400102_0_1"
-      (rectangle (start -5.08 3.81) (end 5.08 -3.81)
-        (stroke (width 0) (type default) (color 0 0 0 0))
+      (rectangle (start -5.08 3.175) (end 5.08 -3.175)
+        (stroke (width 0.254) (type default) (color 0 0 0 0))
         (fill (type background))
       )
       (circle (center -4.064 0) (radius 0.127)

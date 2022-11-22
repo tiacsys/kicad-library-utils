@@ -6,11 +6,14 @@ components have been changed.
 """
 
 import argparse
+import difflib
 import filecmp
 import fnmatch
 import os
 import sys
 from glob import glob
+from time import time
+from _pytest.assertion.util import _compare_eq_any
 
 # Path to common directory
 common = os.path.abspath(
@@ -24,6 +27,7 @@ import check_symbol
 from kicad_sym import KicadLibrary
 from print_color import PrintColor
 from rulebase import Verbosity
+from sexpr import build_sexp, format_sexp
 
 
 def ExitError(msg):
@@ -197,6 +201,20 @@ for lib_name in new_libs:
         if new_sym[symname] != old_sym[symname]:
             if args.verbose:
                 printer.yellow(f"Changed '{lib_name}:{symname}'{derived_sym_info}")
+                print(f"\033[0Ksection_start:{int(time())}:symbol_diff[collapsed=true]\r\033[0K" +
+                      "Show symbol diff")
+                difflines = _compare_eq_any(new_sym[symname], old_sym[symname], 2)
+                for line in difflines:
+                    printer.yellow(line)
+                print(f"\033[0Ksection_end:{int(time())}:symbol_diff\r\033[0K")
+                print(f"\033[0Ksection_start:{int(time())}:symbol_diff[collapsed=true]\r\033[0K" +
+                      "Show s-expr diff")
+                new_sexpr = format_sexp(build_sexp(new_sym[symname].get_sexpr())).splitlines()
+                old_sexpr = format_sexp(build_sexp(old_sym[symname].get_sexpr())).splitlines()
+                difflines = [line.rstrip() for line in difflib.unified_diff(old_sexpr, new_sexpr)]
+                for line in difflines:
+                    printer.yellow(line)
+                print(f"\033[0Ksection_end:{int(time())}:symbol_diff\r\033[0K")
             if args.design_breaking_changes:
                 pins_moved = 0
                 nc_pins_moved = 0

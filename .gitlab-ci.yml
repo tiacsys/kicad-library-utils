@@ -2,6 +2,7 @@ image: python:latest
 
 before_script:
   - python3 -V
+  - pip install pytest
 
 symbol_rulechecker:
   rules:
