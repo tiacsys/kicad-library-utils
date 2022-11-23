@@ -17,6 +17,10 @@ term_regex = r"""(?mx)
        )"""
 
 
+class SexprError(ValueError):
+    pass
+
+
 def parse_sexp(sexp: str) -> Any:
     stack = []
     out = []
@@ -31,7 +35,8 @@ def parse_sexp(sexp: str) -> Any:
             stack.append(out)
             out = []
         elif term == "brackr":
-            assert stack, "Trouble with nesting of brackets"
+            if not stack:
+                raise SexprError("Trouble with nesting of brackets")
             tmpout, out = out, stack.pop(-1)
             out.append(tmpout)
         elif term == "num":
@@ -47,7 +52,8 @@ def parse_sexp(sexp: str) -> Any:
             raise NotImplementedError(
                 "The term '{}' with value '{}' is unknown.".format(term, value)
             )
-    assert not stack, "Trouble with nesting of brackets"
+    if stack:
+        raise SexprError("Trouble with nesting of brackets")
     return out[0]
 
 

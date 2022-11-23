@@ -179,7 +179,7 @@ class KicadSymbolBase:
             return 270
         else:
             raise ValueError(
-                f"Invalid direction requested: {d} (should be one of: R / U / L /D"
+                f"Invalid direction requested: {d} (should be one of: R / U / L / D"
             )
 
 
@@ -1052,7 +1052,13 @@ class KicadLibrary(KicadSymbolBase):
         lines = "".join(f_name.readlines())
 
         # parse s-expr
-        sexpr_data = sexpr.parse_sexp(lines)
+        try:
+            sexpr_data = sexpr.parse_sexp(lines)
+        except ValueError as exc:
+            raise KicadFileFormatError(
+                f"Problem while parsing the s-expr file: {exc}"
+            ) from None
+
         sym_list = _get_array(sexpr_data, "symbol", max_level=2)
         f_name.close()
 
@@ -1140,7 +1146,12 @@ class KicadLibrary(KicadSymbolBase):
 
                 # extract pins and graphical items
                 for pin in _get_array(unit_data, "pin"):
-                    symbol.pins.append(Pin.from_sexpr(pin, unit_idx, demorgan_idx))
+                    try:
+                        symbol.pins.append(Pin.from_sexpr(pin, unit_idx, demorgan_idx))
+                    except ValueError as valexc:
+                        raise KicadFileFormatError(
+                            f"Failed to parse symbol {partname}: {valexc}"
+                        ) from None
                 for circle in _get_array(unit_data, "circle"):
                     symbol.circles.append(
                         Circle.from_sexpr(circle, unit_idx, demorgan_idx)
