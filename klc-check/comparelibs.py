@@ -12,8 +12,12 @@ import fnmatch
 import os
 import sys
 from glob import glob
-from time import time
-from _pytest.assertion.util import _compare_eq_any
+
+PYTEST_AVAILABLE = True
+try:
+    from _pytest.assertion.util import _compare_eq_any
+except ImportError:
+    PYTEST_AVAILABLE = False
 
 # Path to common directory
 common = os.path.abspath(
@@ -201,20 +205,27 @@ for lib_name in new_libs:
         if new_sym[symname] != old_sym[symname]:
             if args.verbose:
                 printer.yellow(f"Changed '{lib_name}:{symname}'{derived_sym_info}")
-                print(f"\033[0Ksection_start:{int(time())}:symbol_diff[collapsed=true]\r\033[0K" +
-                      "Show symbol diff")
-                difflines = _compare_eq_any(new_sym[symname], old_sym[symname], 2)
-                for line in difflines:
-                    printer.yellow(line)
-                print(f"\033[0Ksection_end:{int(time())}:symbol_diff\r\033[0K")
-                print(f"\033[0Ksection_start:{int(time())}:symbol_diff[collapsed=true]\r\033[0K" +
-                      "Show s-expr diff")
+
+                if PYTEST_AVAILABLE:
+                    printer.start_fold_section("symbol_diff", "Show symbol diff")
+                    difflines = _compare_eq_any(new_sym[symname], old_sym[symname], 2)
+
+                    for line in difflines:
+                        printer.yellow(line)
+
+                    printer.end_fold_section("symbol_diff")
+
+                printer.start_fold_section("symbol_diff", "Show s-expr diff")
+
                 new_sexpr = format_sexp(build_sexp(new_sym[symname].get_sexpr())).splitlines()
                 old_sexpr = format_sexp(build_sexp(old_sym[symname].get_sexpr())).splitlines()
                 difflines = [line.rstrip() for line in difflib.unified_diff(old_sexpr, new_sexpr)]
+
                 for line in difflines:
                     printer.yellow(line)
-                print(f"\033[0Ksection_end:{int(time())}:symbol_diff\r\033[0K")
+
+                printer.end_fold_section("symbol_diff")
+
             if args.design_breaking_changes:
                 pins_moved = 0
                 nc_pins_moved = 0
