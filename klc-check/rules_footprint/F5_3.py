@@ -125,42 +125,36 @@ class Rule(KLCRule):
         if not layer:
             return []
 
-        # clone the lines, so we can remove them from the list
-        lines = layer[0:]
-        curr_line = lines.pop()
-        curr_point = getStartPoint(curr_line)
-        end_point = getEndPoint(curr_line)
-        tolerance = 0.0
+        # calculate degree of vertices of the graph
+        degree = [1]*2*len(layer)
 
-        while lines:
-            tolerance = 0.0
-            match = False
-            for line in lines:
-                if "angle" in line or "angle" in curr_line:
+        for i in range(len(layer)):
+            pi = [getStartPoint(layer[i]), getEndPoint(layer[i])]
+            # check for circles
+            if isSame(pi[0], pi[1], 0):
+                degree[i * 2] += 1
+                degree[i * 2 + 1] += 1
+
+            for j in range(i + 1, len(layer)):
+                pj = [getStartPoint(layer[j]), getEndPoint(layer[j])]
+
+                # check the line against the other one
+                tolerance = 1e-9
+                if "angle" in layer[i] or "angle" in layer[j]:
                     tolerance = 0.01
-                if isSame(curr_point, getStartPoint(line), tolerance):
-                    curr_line = line
-                    curr_point = getEndPoint(line)
-                    lines.remove(line)
-                    match = True
-                    break
-                if isSame(curr_point, getEndPoint(line), tolerance):
-                    curr_line = line
-                    curr_point = getStartPoint(line)
-                    lines.remove(line)
-                    match = True
-                    break
+                for ii in range(2):
+                    for jj in range(2):
+                        if isSame(pi[ii], pj[jj], tolerance):
+                            degree[i * 2 + ii] += 1
+                            degree[j * 2 + jj] += 1
 
-            # we should hit a continue
-            # if now, that means no line connects
-            if not match:
-                return [curr_line]
+        bad = []
+        for i in range(len(layer)):
+            # line is unconnected if one of it's vertices has odd degree
+            if degree[2*i] % 2 == 1 or degree[2*i + 1] % 2 == 1:
+                bad.append(layer[i])
 
-        # now check the if the last points match
-        if isSame(curr_point, end_point, tolerance):
-            return []
-        else:
-            return [curr_line]
+        return bad
 
     def check(self) -> bool:
         """
@@ -191,7 +185,7 @@ class Rule(KLCRule):
 
         self.courtyard = self.fCourtyard + self.bCourtyard
 
-        # Check for intersecting lines
+        # Check for closed courtyard outlines
         self.unconnected.extend(self.isClosed(self.fCourtyard))
         self.unconnected.extend(self.isClosed(self.bCourtyard))
 
