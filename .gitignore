@@ -3,3 +3,4 @@
 metrics.txt
 *.bak
 symbol-generators/**/*kicad_sym
+.vscode
