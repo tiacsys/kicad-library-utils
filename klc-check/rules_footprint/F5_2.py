@@ -155,6 +155,7 @@ class Rule(KLCRule):
         font = ref["font"]
 
         errors = []
+        warnings = []
 
         fh = font["height"]
         fw = font["width"]
@@ -165,7 +166,7 @@ class Rule(KLCRule):
             errors.append("RefDes aspect ratio should be 1:1")
 
         if fh < KLC_TEXT_SIZE_MIN or fh > KLC_TEXT_SIZE_MAX:
-            errors.append(
+            warnings.append(
                 "RefDes text size ({x}mm) is outside allowed range [{y}mm - {z}mm]".format(
                     x=fh, y=KLC_TEXT_SIZE_MIN, z=KLC_TEXT_SIZE_MAX
                 )
@@ -173,7 +174,7 @@ class Rule(KLCRule):
 
         # Font thickness
         if ft < KLC_TEXT_THICKNESS_MIN or ft > KLC_TEXT_THICKNESS_MAX:
-            errors.append(
+            warnings.append(
                 "RefDes text thickness ({x}mm) is outside allowed range [{y}mm - {z}mm]".format(
                     x=ft, y=KLC_TEXT_SIZE_MIN, z=KLC_TEXT_SIZE_MAX
                 )
@@ -188,6 +189,11 @@ class Rule(KLCRule):
             self.error("RefDes errors")
             for err in errors:
                 self.errorExtra(err)
+
+        if warnings:
+            self.warning("RefDes warnings")
+            for warning in warnings:
+                self.warningExtra(warning)
 
         return len(errors) > 0
 

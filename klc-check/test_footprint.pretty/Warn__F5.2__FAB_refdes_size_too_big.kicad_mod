@@ -1,4 +1,4 @@
-(module "Fail__F5.2__FAB_refdes_size_too_big" (layer "F.Cu") (tedit 5F9DC85C)
+(module "Warn__F5.2__FAB_refdes_size_too_big" (layer "F.Cu") (tedit 5F9DC85C)
   (descr "Resistor SMD 0201 (0603 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: https://www.vishay.com/docs/20052/crcw0201e3.pdf), generated with kicad-footprint-generator")
   (tags "resistor")
   (attr smd)
@@ -6,7 +6,7 @@
     (effects (font (size 1 1) (thickness 0.15)))
     (tstamp 28334937-ea67-41b7-a5ac-bf49f9f3b5e8)
   )
-  (fp_text value "Fail__F5.2__FAB_refdes_size_too_big" (at 0 1.05) (layer "F.Fab")
+  (fp_text value "Warn__F5.2__FAB_refdes_size_too_big" (at 0 1.05) (layer "F.Fab")
     (effects (font (size 1 1) (thickness 0.15)))
     (tstamp 104f0cd1-9e58-4a2f-978f-4c5331de9eb9)
   )
@@ -26,7 +26,7 @@
   (pad "" smd roundrect (at 0.345 0) (size 0.318 0.36) (layers "F.Paste") (roundrect_rratio 0.25) (tstamp bf040df8-784e-4bef-8085-36034b318e06))
   (pad "1" smd roundrect (at -0.32 0) (size 0.46 0.4) (layers "F.Cu" "F.Mask") (roundrect_rratio 0.25) (tstamp a5909cdc-76b2-44d9-8eef-8a0adce3bd21))
   (pad "2" smd roundrect (at 0.32 0) (size 0.46 0.4) (layers "F.Cu" "F.Mask") (roundrect_rratio 0.25) (tstamp 11a4557d-3ce6-431b-9b66-e6fd9350a7b4))
-  (model "${KISYS3DMOD}/test.3dshapes/Fail__F5.2__FAB_refdes_size_too_big.wrl"
+  (model "${KISYS3DMOD}/test.3dshapes/Warn__F5.2__FAB_refdes_size_too_big.wrl"
     (offset (xyz 0 0 0))
     (scale (xyz 1 1 1))
     (rotate (xyz 0 0 0))
