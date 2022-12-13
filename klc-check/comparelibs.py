@@ -19,6 +19,10 @@ try:
 except ImportError:
     PYTEST_AVAILABLE = False
 
+env_verbose_diff_limit = os.environ.get("VERBOSE_DIFF_LIMIT", "1048576")
+VERBOSE_DIFF_LIMIT = int(env_verbose_diff_limit) \
+    if env_verbose_diff_limit.isdigit() else 1024 * 1024  # 1MB
+
 # Path to common directory
 common = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
@@ -37,6 +41,21 @@ from sexpr import build_sexp, format_sexp
 def ExitError(msg):
     print(msg)
     sys.exit(-1)
+
+
+def print_colored_diff(printer: PrintColor, lines: list[str]):
+    for line in lines:
+        # Strip leading spaces because in some cases diff is indented.
+        # This may lead to some false positives but it's a tradeoff.
+        t = line.lstrip()
+        if t.startswith("+"):
+            printer.green(line)
+        elif t.startswith("-"):
+            printer.red(line)
+        elif t.startswith("?"):
+            printer.yellow(line)
+        else:
+            printer.regular(line)
 
 
 parser = argparse.ArgumentParser(
@@ -136,6 +155,7 @@ sym_check = check_symbol.SymbolCheck(
     False if args.nocolor else True, silent=True
 )
 
+verbose_diff_total = 0
 # iterate over all new libraries
 for lib_name in new_libs:
     lib_path = new_libs[lib_name]
@@ -206,14 +226,16 @@ for lib_name in new_libs:
             if args.verbose:
                 printer.yellow(f"Changed '{lib_name}:{symname}'{derived_sym_info}")
 
-                if PYTEST_AVAILABLE:
-                    printer.start_fold_section("symbol_diff", "Show symbol diff")
-                    difflines = _compare_eq_any(new_sym[symname], old_sym[symname], 2)
+                if PYTEST_AVAILABLE and verbose_diff_total < VERBOSE_DIFF_LIMIT:
+                    difflines = _compare_eq_any(new_sym[symname], old_sym[symname], 1)
+                    verbose_diff_total += sum(map(len, difflines), 0)
 
-                    for line in difflines:
-                        printer.yellow(line)
-
-                    printer.end_fold_section("symbol_diff")
+                    if verbose_diff_total < VERBOSE_DIFF_LIMIT:
+                        printer.start_fold_section("symbol_diff", "Show symbol diff")
+                        print_colored_diff(printer, difflines)
+                        printer.end_fold_section("symbol_diff")
+                    else:
+                        printer.yellow("Symbol diff exceeds log limit, skipping")
 
                 printer.start_fold_section("symbol_diff", "Show s-expr diff")
 
@@ -221,8 +243,7 @@ for lib_name in new_libs:
                 old_sexpr = format_sexp(build_sexp(old_sym[symname].get_sexpr())).splitlines()
                 difflines = [line.rstrip() for line in difflib.unified_diff(old_sexpr, new_sexpr)]
 
-                for line in difflines:
-                    printer.yellow(line)
+                print_colored_diff(printer, difflines)
 
                 printer.end_fold_section("symbol_diff")
 
