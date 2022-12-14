@@ -55,7 +55,7 @@ class Rule(KLCRule):
             for pin in self.type_errors:
                 self.errorExtra(
                     "{pin} should be of type NOT CONNECTED, but is of type {pintype}".format(
-                        pin=pinString(pin), pintype=etype
+                        pin=pinString(pin), pintype=pin.etype
                     )
                 )
 
