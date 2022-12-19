@@ -123,6 +123,9 @@ class KLCRuleBase:
 
     @property
     def url(self) -> str:
+        if self.name.startswith("EC"):
+            return "(extended check)"
+
         categories = {"F": "footprint", "G": "general", "M": "model", "S": "symbol"}
 
         category = categories[self.name[0]]
