@@ -51,9 +51,9 @@ def _parse_sexp_internal(re_iter) -> Any:
             yield list(_parse_sexp_internal(re_iter))
         elif rparen:
             break
-        elif bare_str:
+        elif bare_str is not None:
             yield bare_str
-        elif quoted_str:
+        elif quoted_str is not None:
             yield quoted_str.replace('\\"', '"')
         elif float_num:
             yield float(float_num)
@@ -210,9 +210,9 @@ def format_sexp(sexp: str, indentation_size: int = 2, max_nesting: int = 2) -> s
             out += indentation + float_num + ' '
         elif integer_num:
             out += indentation + integer_num + ' '
-        elif quoted_str:
+        elif quoted_str is not None:
             out += f'{indentation}"{quoted_str}" '
-        elif bare_str:
+        elif bare_str is not None:
             out += indentation + bare_str + ' '
 
     out += '\n'
