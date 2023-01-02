@@ -57,12 +57,17 @@ class KicadMod:
 
     SEXPR_BOARD_FILE_VERSION = 20210108
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str=None, data=None):
         self.filename: str = filename
 
-        # read the s-expression data
-        f = open(filename)
-        sexpr_data = "".join(f.readlines())
+        if data is not None:
+            sexpr_data = data
+        elif filename:
+            # read the s-expression data
+            with open(filename) as f:
+                sexpr_data = f.read()
+        else:
+            raise ValueError('Either filename or data must be given.')
 
         # parse s-expr
         sexpr_data = sexpr.parse_sexp(sexpr_data)
@@ -469,10 +474,10 @@ class KicadMod:
             if a:
                 pad_dict["rect_delta"] = a[0][1:]
 
-            # roundrect ratio
-            rr = self._getArray(pad, "roundrect_rratio")
-            if rr:
-                pad_dict["roundrect_rratio"] = rr[0][1]
+            pad_dict["roundrect_rratio"] = {}
+            a = self._getArray(pad, "roundrect_rratio")
+            if a:
+                pad_dict["roundrect_rratio"] = a[0][1]
 
             # drill
             pad_dict["drill"] = {}

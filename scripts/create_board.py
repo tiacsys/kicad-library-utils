@@ -4,12 +4,14 @@ import sys
 
 from pathlib import Path
 
-KICAD_NIGHTLY_PATH = "/usr/lib/kicad-nightly/lib/python3/dist-packages"
+try:
+    import pcbnew
+except ImportError:
+    KICAD_NIGHTLY_PATH = "/usr/lib/kicad-nightly/lib/python3/dist-packages"
+    if KICAD_NIGHTLY_PATH not in sys.path:
+        sys.path.insert(0, KICAD_NIGHTLY_PATH)
 
-if KICAD_NIGHTLY_PATH not in sys.path:
-    sys.path.insert(0, KICAD_NIGHTLY_PATH)
-
-import pcbnew
+    import pcbnew
 
 print("KiCad version", pcbnew.FullVersion())
 

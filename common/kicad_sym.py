@@ -1065,7 +1065,7 @@ class KicadLibrary(KicadSymbolBase):
         return sexpr.build_sexp(sx)
 
     @classmethod
-    def from_file(cls, filename: str) -> "KicadLibrary":
+    def from_file(cls, filename: str, data=None) -> "KicadLibrary":
         """
         Parse a symbol library from a file.
 
@@ -1074,14 +1074,15 @@ class KicadLibrary(KicadSymbolBase):
         library = KicadLibrary(filename)
 
         # read the s-expression data
-        with open(filename) as f:
-            # parse s-expr
-            try:
-                sexpr_data = sexpr.parse_sexp(f.read())
-            except ValueError as exc:
-                raise KicadFileFormatError(
-                    f"Problem while parsing the s-expr file: {exc}"
-                ) from None
+        try:
+            if data:
+                sexpr_data = sexpr.parse_sexp(data)
+            else:
+                with open(filename) as f:
+                    # parse s-expr
+                    sexpr_data = sexpr.parse_sexp(f.read())
+        except ValueError as exc:
+            raise KicadFileFormatError(f"Problem while parsing the s-expr file: {exc}") from None
         sym_list = _get_array(sexpr_data, "symbol", max_level=2)
 
         # Because of the various file format changes in the development of kicad v6 and v7, we want
@@ -1089,7 +1090,7 @@ class KicadLibrary(KicadSymbolBase):
         # not work as expected. So just don't load them at all.
         version = _get_value_of(sexpr_data, "version")
         if str(version) != "20220914":
-            raise KicadFileFormatError('Version of symbol file is not "20220914"')
+            raise KicadFileFormatError(f'Version of symbol file is "{version}", not "20220914"')
 
         # itertate over symbol
         for item in sym_list:

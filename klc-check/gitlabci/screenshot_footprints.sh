@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
+
 source $(dirname ${BASH_SOURCE[0]})/common.sh
 
 LAYERS="F.Cu,B.Cu,F.SilkS,B.SilkS,F.Fab,B.Fab,F.CrtYd,B.CrtYd,F.Adhes,B.Adhes"
@@ -13,10 +15,10 @@ for change in $CHANGES; do
             "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
         echo "Exporting svg"
         kicad-cli-nightly pcb export svg --page-size-mode 2 -l "$LAYERS" \
-            -o "$CI_BUILDS_DIR/tmp/board.svg" "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
+            -o "screenshots/$change.svg" "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
         echo
         echo "Converting to png"
         mkdir -p screenshots/$(dirname "$change")
-        inkscape -w 800 -b "#001023" "$CI_BUILDS_DIR/tmp/board.svg" -o "screenshots/$change.png"
+        inkscape -w 800 -b "#001023" "screenshots/$change.svg" -o "screenshots/$change.png"
     fi
 done

@@ -3,4 +3,7 @@ max-line-length = 120
 # E203: compatibility with black formatting (whitespace before colon)
 # E402: top-level imports should be placed before code; TODO: remove as soon as sys.path is not manipulated anymore
 # F901: TODO: remove as soon as https://gitlab.com/kicad/libraries/kicad-library-utils/-/merge_requests/429 is merged
-extend-ignore = E203,E402,F901
+# E252: Leads to inconsistent whitespace when enabled along with E251
+extend-ignore = E203,E402,F901,E252
+per-file-ignores =
+    html_diff.py:E251,E226
