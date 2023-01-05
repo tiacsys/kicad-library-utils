@@ -471,7 +471,10 @@ class Circle(KicadSymbolBase):
 
 @dataclass
 class Arc(KicadSymbolBase):
-    # (arc (start -5.08 -1.27) (mid 0 -6.35) (end 5.08 -1.27)
+    #  (arc (start -3.302 3.175) (mid -3.937 2.54) (end -3.302 1.905)
+    #    (stroke (width 0.254) (type default) (color 0 0 0 0))
+    #    (fill (type none))
+    #  )
     startx: float
     starty: float
     endx: float
@@ -492,7 +495,9 @@ class Arc(KicadSymbolBase):
             ["mid", self.midx, self.midy],
             ["end", self.endx, self.endy],
         ]
-        sx.append(["stroke", ["width", self.stroke_width]])
+        sx.append(["stroke", ["width", self.stroke_width],
+                             ["type", "default"],
+                             ["color", 0, 0, 0, 0]])
         sx.append(["fill", ["type", self.fill_type]])
         return sx
 

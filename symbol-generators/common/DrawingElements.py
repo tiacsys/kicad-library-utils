@@ -123,36 +123,6 @@ class DrawingPin:
         self.num = pinnumber_update_function(self.num)
         self.name = pinname_update_function(self.name, self.num)
 
-    def __pinShapeRender(self):
-        if (
-            self.visibility is DrawingPin.PinVisibility.INVISIBLE
-            or self.style is not DrawingPin.PinStyle.SHAPE_LINE
-        ):
-            return " {visibility:s}{style:s}".format(
-                visibility=self.visibility, style=self.style
-            )
-        else:
-            return ""
-
-    def __str__(self):
-        # X name pin X Y length PinOrientation sizenum sizename part dmg type shape
-        return (
-            "X {name:s} {num:s} {at:s} {pin_length:d} {orientation:s} {sizenumber:d}"
-            " {sizename:d} {unit_idx:d} {deMorgan_idx:d} {el_type:s}{shape}\n".format(
-                name=self.name,
-                num=str(self.num),
-                at=self.at,
-                pin_length=self.pin_length,
-                orientation=self.orientation,
-                sizenumber=self.fontsize_pinnumber,
-                sizename=self.fontsize_pinname,
-                unit_idx=self.unit_idx,
-                deMorgan_idx=self.deMorgan_idx,
-                el_type=self.el_type,
-                shape=self.__pinShapeRender(),
-            )
-        )
-
     def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
         obj.at.translate(distance)
@@ -213,20 +183,6 @@ class DrawingRectangle:
             self.fill = fill
         else:
             raise TypeError("fill needs to be of type ElementFill")
-
-    def __str__(self):
-        # S X1 Y1 X2 Y2 part dmg pen fill
-        return (
-            "S {start:s} {end:s} {unit_idx:d} {deMorgan_idx:d} {line_width:d}"
-            " {fill:s}\n".format(
-                start=self.start,
-                end=self.end,
-                unit_idx=self.unit_idx,
-                deMorgan_idx=self.deMorgan_idx,
-                line_width=self.line_width,
-                fill=self.fill,
-            )
-        )
 
     def toPolyline(self):
         p1 = Point(self.start)
@@ -303,20 +259,6 @@ class DrawingPolyline:
         self.points = []
         for point in points:
             self.points.append(Point(point))
-
-    def __str__(self):
-        # P count part dmg pen X Y ... fill
-        return (
-            "P {count:d} {unit_idx:d} {deMorgan_idx:d} {line_width} {points:s}"
-            " {fill:s}\n".format(
-                count=len(self.points),
-                unit_idx=self.unit_idx,
-                deMorgan_idx=self.deMorgan_idx,
-                points=" ".join(str(p) for p in self.points),
-                fill=self.fill,
-                line_width=self.line_width,
-            )
-        )
 
     def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
@@ -400,28 +342,6 @@ class DrawingArc:
         else:
             raise TypeError("fill needs to be of type ElementFill")
 
-    def __str__(self):
-        # A X Y radius start end part dmg pen fill Xstart Ystart Xend Yend
-        start = Point(distance=self.radius, angle=self.angle_start / 10).translate(
-            self.at
-        )
-        end = Point(distance=self.radius, angle=self.angle_end / 10).translate(self.at)
-        return (
-            "A {cp:s} {r:d} {angle_start:d} {angle_end:d} {unit_idx:d} {deMorgan_idx:d}"
-            " {line_width:d} {fill:s} {p_start:s} {p_end:s}\n".format(
-                cp=self.at,
-                r=self.radius,
-                angle_start=self.angle_start,
-                angle_end=self.angle_end,
-                unit_idx=self.unit_idx,
-                deMorgan_idx=self.deMorgan_idx,
-                fill=self.fill,
-                line_width=self.line_width,
-                p_start=start,
-                p_end=end,
-            )
-        )
-
     def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
@@ -469,17 +389,6 @@ class DrawingCircle:
             self.fill = fill
         else:
             raise TypeError("fill needs to be of type ElementFill")
-
-    def __str__(self):
-        # C X Y radius part dmg pen fill
-        return "C {cp:s} {r:d} {unit_idx:d} {deMorgan_idx:d} {line_width:d} {fill:s}\n".format(
-            cp=self.at,
-            r=self.radius,
-            unit_idx=self.unit_idx,
-            deMorgan_idx=self.deMorgan_idx,
-            fill=self.fill,
-            line_width=self.line_width,
-        )
 
     def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
@@ -578,25 +487,6 @@ class DrawingText:
                 "halign needs to be of type DrawingText.HorizontalAlignment"
             )
 
-    def __str__(self):
-        # T angle X Y size hidden part dmg text italic bold Halign Valign
-        return (
-            "T {angle:d} {at:s} {size:d} {hidden:d} {unit_idx:d} {deMorgan_idx:d}"
-            ' "{text:s}" {italic:s} {bold:s} {Halign:s} {Valign:s}\n'.format(
-                angle=int(self.angle * 10),
-                at=self.at,
-                size=self.size,
-                hidden=self.hidden,
-                unit_idx=self.unit_idx,
-                deMorgan_idx=self.deMorgan_idx,
-                text=self.text,
-                italic=self.font_type,
-                bold=self.font_weight,
-                Halign=self.halign,
-                Valign=self.valign,
-            )
-        )
-
     def translate(self, distance, apply_on_copy=False):
         obj = self if not apply_on_copy else deepcopy(self)
 
@@ -673,17 +563,6 @@ class Drawing:
                 "trying to append an illegal type to Drawing. Maybe something is not"
                 " yet implemented."
             )
-
-    def __str__(self):
-        drawing = "DRAW\n"
-        drawing += "".join(sorted(str(i) for i in self.arc))
-        drawing += "".join(sorted(str(i) for i in self.circle))
-        drawing += "".join(sorted(str(i) for i in self.text))
-        drawing += "".join(sorted(str(i) for i in self.rectangle))
-        drawing += "".join(sorted(str(i) for i in self.polyline))
-        drawing += "".join(sorted(str(i) for i in self.pins))
-        drawing += "ENDDRAW\n"
-        return drawing
 
     def mapOnAll(self, function, **kwargs):
         for element in self.arc:
@@ -779,23 +658,21 @@ class Drawing:
         for a in self.arc:
             start = Point(distance=a.radius, angle=a.angle_start / 10).translate(a.at)
             end = Point(distance=a.radius, angle=a.angle_end / 10).translate(a.at)
+            mi = Point(distance=a.radius, angle=(a.angle_start - a.angle_end) / 10).translate(a.at)
 
             arc = kicad_sym.Arc(
-                kicad_sym.mil_to_mm(start.x),
-                kicad_sym.mil_to_mm(start.y),
-                kicad_sym.mil_to_mm(end.x),
-                kicad_sym.mil_to_mm(end.y),
-                kicad_sym.mil_to_mm(a.at.x),
-                kicad_sym.mil_to_mm(a.at.y),
-                kicad_sym.mil_to_mm(a.radius),
-                a.angle_start / 10,
-                a.angle_end / 10,
+                startx=kicad_sym.mil_to_mm(start.x),
+                starty=kicad_sym.mil_to_mm(start.y),
+                endx=kicad_sym.mil_to_mm(end.x),
+                endy=kicad_sym.mil_to_mm(end.y),
+                midx=kicad_sym.mil_to_mm(mi.x),
+                midy=kicad_sym.mil_to_mm(mi.y),
+                stroke_width=kicad_sym.mil_to_mm(a.line_width),
+                fill_type=a.fill,
+                unit=a.unit_idx,
+                demorgan=a.deMorgan_idx
             )
 
-            arc.stroke_width = kicad_sym.mil_to_mm(a.line_width)
-            arc.fill_type = a.fill
-            arc.unit = a.unit_idx
-            arc.demorgan = a.deMorgan_idx
             symbol.arcs.append(arc)
 
         for c in self.circle:

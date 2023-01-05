@@ -62,8 +62,8 @@ body_outline_line_width = 10
 inner_graphics_line_width = 6
 
 inner_graphic_width = 50
-inner_graphic_male_neutral_height = 10
-inner_graphic_female_radius = 20
+inner_graphic_pin_neutral_height = 10
+inner_graphic_socket_radius = 20
 inner_graphic_screw_radius = 25
 inner_graphic_screw_slit_width = 10
 
@@ -124,18 +124,18 @@ conn_screw_terminal = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_terminal_block,
-        graphic_type=3,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=3,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     )
 }
 
-conn_male_female = {
-    "single_row_male": CONNECTOR(
+conn_pin_socket = {
+    "single_row_pin": CONNECTOR(
         num_rows=1,
         pin_per_row_range=pin_per_row_range,
         odd_count=False,
-        symbol_name_format="Conn_01x{num_pins_per_row:02d}_Male{suffix:s}",
+        symbol_name_format="Conn_01x{num_pins_per_row:02d}_Pin{suffix:s}",
         top_pin_number=[1],
         pin_number_generator=[lambda old_number: old_number + 1],
         description=(
@@ -145,15 +145,15 @@ conn_male_female = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_single_row,
-        graphic_type=1,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=1,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=False,
         mirror=True,
     ),
-    "single_row_female": CONNECTOR(
+    "single_row_socket": CONNECTOR(
         num_rows=1,
         pin_per_row_range=pin_per_row_range,
         odd_count=False,
-        symbol_name_format="Conn_01x{num_pins_per_row:02d}_Female{suffix:s}",
+        symbol_name_format="Conn_01x{num_pins_per_row:02d}_Socket{suffix:s}",
         top_pin_number=[1],
         pin_number_generator=[lambda old_number: old_number + 1],
         description=(
@@ -163,7 +163,7 @@ conn_male_female = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_single_row,
-        graphic_type=2,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=2,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=False,
         mirror=False,
     ),
@@ -184,7 +184,7 @@ conn_generic = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_single_row,
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -206,7 +206,7 @@ conn_generic = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_dual_row,
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -228,7 +228,7 @@ conn_generic = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_dual_row,
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -251,7 +251,7 @@ conn_generic = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_dual_row,
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -274,7 +274,7 @@ conn_generic = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_dual_row,
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -295,7 +295,7 @@ conn_generic = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_dual_row,
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -316,7 +316,7 @@ conn_generic = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_dual_row,
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -338,7 +338,7 @@ conn_generic = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=filter_dual_row_odd_count,
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -357,7 +357,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*1x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -373,7 +373,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -389,7 +389,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -405,7 +405,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -421,7 +421,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -443,7 +443,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -465,7 +465,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -487,7 +487,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -509,7 +509,7 @@ conn_iec_din = {
         datasheet="~",  # generic symbol, no datasheet, ~ to make travis happy
         default_footprint="",  # generic symbol, no default footprint
         footprint_filter=["DIN41612*2x*"],
-        graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
+        graphic_type=0,  # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
     ),
@@ -573,7 +573,7 @@ MOUNT_PIN = {
 all_symbols = [
     {
         "lib_name": "Connector",
-        "symbol_def": merge_dicts(conn_screw_terminal, conn_male_female),
+        "symbol_def": merge_dicts(conn_screw_terminal, conn_pin_socket),
         "extra_pin": None,
         "pn_modifier": "_",
         "suffix": "",
@@ -617,14 +617,15 @@ all_symbols = [
 def innerArtwork(type=0):
     artwork = Drawing()
 
+    # 0 = neutral, 1 = pin, 2 = socket, 3 = screw terminal
     if type == 0:
         artwork.append(
             DrawingRectangle(
-                start=Point({"x": 0, "y": inner_graphic_male_neutral_height // 2}),
+                start=Point({"x": 0, "y": inner_graphic_pin_neutral_height // 2}),
                 end=Point(
                     {
                         "x": inner_graphic_width,
-                        "y": -inner_graphic_male_neutral_height // 2,
+                        "y": -inner_graphic_pin_neutral_height // 2,
                     }
                 ),
                 fill=ElementFill.NO_FILL,
@@ -636,12 +637,12 @@ def innerArtwork(type=0):
         artwork.append(
             DrawingRectangle(
                 start=Point(
-                    {"x": from_edge, "y": inner_graphic_male_neutral_height // 2}
+                    {"x": from_edge, "y": inner_graphic_pin_neutral_height // 2}
                 ),
                 end=Point(
                     {
                         "x": inner_graphic_width,
-                        "y": -inner_graphic_male_neutral_height // 2,
+                        "y": -inner_graphic_pin_neutral_height // 2,
                     }
                 ),
                 fill=ElementFill.FILL_FOREGROUND,
@@ -658,7 +659,7 @@ def innerArtwork(type=0):
         artwork.append(
             DrawingArc(
                 at=Point({"x": inner_graphic_width, "y": 0}),
-                radius=inner_graphic_female_radius,
+                radius=inner_graphic_socket_radius,
                 angle_start=901,
                 angle_end=-901,
                 line_width=inner_graphics_line_width,
@@ -669,7 +670,7 @@ def innerArtwork(type=0):
                 points=[
                     Point({"x": 0, "y": 0}),
                     Point(
-                        {"x": inner_graphic_width - inner_graphic_female_radius, "y": 0}
+                        {"x": inner_graphic_width - inner_graphic_socket_radius, "y": 0}
                     ),
                 ],
                 line_width=inner_graphics_line_width,
@@ -742,7 +743,7 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
             num_pins=pincount,
             extra_pin=lib_params.get("extra_pin_descr", ""),
         )
-        + ", script generated (kicad-library-utils/symbol-generators/connector/)",
+        + ", script generated",
         fp_filter,
     )
     library.symbols.append(current_symbol)
