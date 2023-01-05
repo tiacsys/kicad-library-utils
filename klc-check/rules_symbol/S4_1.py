@@ -32,18 +32,16 @@ class Rule(KLCRule):
         return len(self.violating_pins) > 0
 
     def checkDuplicatePins(self) -> bool:
-        # look for duplicate pin numbers
-        duplicate = False
-        test_pins = list(self.component.pins)
-        for pin0 in test_pins[:]:
-            for pin1 in test_pins[:]:
-                if pin0 != pin1 and pin0.is_duplicate(pin1):
-                    duplicate = True
-                    self.error("Pin {n} is duplicated:".format(n=pin0.number))
-                    self.errorExtra(pinString(pin0))
-                    break
+        test_pins = self.component.pins
+        seen = set()
+        for pin in test_pins:
+            identity = (pin.number, pin.demorgan, pin.unit)
+            if identity in seen:
+                self.error("Pin {n} is duplicated:".format(n=pin.number))
+                self.errorExtra(pinString(pin))
+            seen.add(identity)
 
-        return duplicate
+        return len(seen) != len(test_pins)  # true iff there are duplicates
 
     def checkPinLength(
         self, errorPinLength: int = 49, warningPinLength: int = 99

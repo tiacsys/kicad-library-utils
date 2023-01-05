@@ -7,6 +7,7 @@ import re
 import sys
 import time
 import traceback
+from functools import lru_cache
 from glob import glob  # enable windows wildcards
 from multiprocessing import JoinableQueue, Lock, Process, Queue
 from typing import List, Optional, Tuple
@@ -150,6 +151,10 @@ class SymbolCheck:
         )
         return (symbol_error_count, symbol_warning_count)
 
+    @lru_cache(maxsize=None)
+    def _load_library(self, filename):
+        return KicadLibrary.from_file(filename)
+
     def check_library(
         self, filename: str, component=None, pattern=None, is_unittest: bool = False
     ) -> Tuple[int, int]:
@@ -165,7 +170,7 @@ class SymbolCheck:
             return (1, 0)
 
         try:
-            library = KicadLibrary.from_file(filename)
+            library = self._load_library(filename)
         except KicadFileFormatError as e:
             self.printer.red("Could not parse library: %s. (%s)" % (filename, e))
             if self.verbosity:

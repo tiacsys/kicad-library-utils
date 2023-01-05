@@ -359,15 +359,6 @@ class Pin(KicadSymbolBase):
         else:
             raise NotImplementedError(f"Invalid 'rotation' of Pin: {self.rotation}")
 
-    def is_duplicate(self, p: "Pin") -> bool:
-        if (
-            p.number == self.number
-            and p.unit == self.unit
-            and p.demorgan == self.demorgan
-        ):
-            return True
-        return False
-
     @classmethod
     def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> "Pin":
         is_global = False
