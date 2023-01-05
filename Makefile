@@ -1,7 +1,7 @@
 SPELLING_PATHS = $(wildcard *.md) docs src common klc-check test tools packages3d symbol-generators
 SPELLING_EXCLUDE_FILE = .codespell-excludes
 SPELLING_IGNORE_WORDS_FILE = .codespell-ignore-words
-SPELLING_SKIP_FILENAMES = .mypy_cache *.csv
+SPELLING_SKIP_FILENAMES = .mypy_cache *.csv stm32_generator.py
 
 
 .PHONY: help

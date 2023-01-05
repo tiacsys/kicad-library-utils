@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 
-import argparse
-import logging
-import multiprocessing
+import pathlib
 import os
 import re
+import time
+import math
+import json
 import sys
-from itertools import repeat
+from collections import defaultdict
+import warnings
+import fnmatch
+from itertools import groupby
+from dataclasses import dataclass, field
 
-from lxml import etree
+import requests
+import click
+from bs4 import BeautifulSoup
+import tqdm
 
 common = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
@@ -27,517 +35,270 @@ from DrawingElements import Drawing, DrawingPin, DrawingRectangle, ElementFill
 from Point import Point
 
 
+# Match everything before the first separator, which may be one of [space], /, -.
+# However, do match dashes (-) when they are the last character in the name (VREF-)
+_PINNAME_MATCH = re.compile("[^ /-]*(-$)?")
+
+
+@dataclass
 class DataPin:
-    _PIN_TYPES_MAPPING = {
-        "Power": DrawingPin.PinElectricalType.EL_TYPE_POWER_INPUT,
-        "I/O": DrawingPin.PinElectricalType.EL_TYPE_BIDIR,
-        "Reset": DrawingPin.PinElectricalType.EL_TYPE_INPUT,
-        "Boot": DrawingPin.PinElectricalType.EL_TYPE_INPUT,
-        "MonoIO": DrawingPin.PinElectricalType.EL_TYPE_BIDIR,
-        "NC": DrawingPin.PinElectricalType.EL_TYPE_NC,
-        "Clock": DrawingPin.PinElectricalType.EL_TYPE_INPUT,
-    }
+    num: str  # may also be an BGA pin coordinate
+    name: str
+    pintype: str
+    altfuncs: list = field(default_factory=list)
+    graphical_type: str = 'other'
+    electrical_type: str = 'input'
 
-    def __init__(self, number, name, pintype):
-        self.num = number
-        self.name = name
-        self.pintype = pintype
-        self.altfuncs = []
+    def __post_init__(self):
+        # Maps regex for {XML pintype}/{XML pin name} to {graphical}/{electrical} type.
+        # Graphical type is used by this script further down to determine placement,
+        # and electrical type is saved in the symbol for KiCad's electrical rule check.
+        type_lookup = {r'(Power|MonoIO)/VREF':   'special_power/input',
+                       r'Power/VCAP':            'vcap/power_output',
+                       r'Power/(VDD|VBAT|VLCD)': 'vdd/power_input',
+                       r'Power/VSS':             'vss/power_input',
+                       r'Power/VFB':             'other/input',
+                       r'Power/VLCD':            'vdd/power_output',
+                       r'Power/REGOFF':          'other/input',
+                       r'Power/RFU':             'nc/nc',
+                       r'Power/PDR_ON':          'other/input',
+                       r'Power/PWR_(ON|LP)':     'other/output',
+                       r'Power/IRROFF':          'other/input',
+                       r'Power/NPOR':            'other/input',
+                       r'Power/':                'special_power/power_input',
+                       r'(I/O|MonoIO)/(.*-)?OSC_(IN|OUT)':      'clock/input',
+                       r'I/O/(OPAMP|AOP).*':     'other/input',
+                       r'I/O':                   'port/bidir',
+                       r'Clock/P([A-Z)([0-9]+)': 'port/bidir',
+                       r'Clock/':                'clock/input',
+                       r'Reset/':                'reset/input',
+                       r'Boot/':                 'boot/input',
+                       r'NC/':                   'nc/nc',
+                       r'MonoIO/':               'monoio/bidir',
+                       }
 
-    def to_drawing_pin(self, **kwargs):
-        # Get the el_type for the DrawingPin
-        el_type = DataPin._PIN_TYPES_MAPPING[self.pintype]
-        # Get visibility based on el_type
-        if el_type == DrawingPin.PinElectricalType.EL_TYPE_NC:
-            visibility = DrawingPin.PinVisibility.INVISIBLE
+        name_lookup = {
+            "PC14OSC32_IN": "PC14",
+            "PC15OSC32_OUT": "PC15",
+            "PF11BOOT0": "PF11",
+        }
+
+        self.name = name_lookup.get(self.name, _PINNAME_MATCH.match(self.name).group())
+
+        for k, v in type_lookup.items():
+            if re.match(k, f'{self.pintype}/{self.name}'):
+                self.graphical_type, self.electrical_type = v.split('/')
+                break
         else:
-            visibility = DrawingPin.PinVisibility.VISIBLE
-        # Make the DrawingPin
-        return DrawingPin(
-            Point(0, 0),
-            self.num,
-            name=self.name,
-            el_type=el_type,
-            visibility=visibility,
-            altfuncs=self.altfuncs,
-            **kwargs,
-        )
+            self.graphical_type = 'other'
+
+    def draw(self, pin_length=200, direction='left', x=0, y=0, visible=True):
+        visibility = DrawingPin.PinVisibility.VISIBLE if visible else DrawingPin.PinVisibility.INVISIBLE # NOQA
+        orientation = getattr(DrawingPin.PinOrientation, direction.upper())
+        el_type = getattr(DrawingPin.PinElectricalType, f'EL_TYPE_{self.electrical_type.upper()}')
+
+        # invisible stacked power pins should have passive electrical type or the linter gets angry
+        if self.electrical_type == 'power_input' and not visible:
+            el_type = DrawingPin.PinElectricalType.EL_TYPE_PASSIVE
+
+        return DrawingPin(Point(x, y), self.num, orientation=orientation, visibility=visibility,
+                          pin_length=pin_length, name=self.name, altfuncs=self.altfuncs,
+                          el_type=el_type)
 
 
 class Device:
     _name_search = re.compile(r"^(.+)\((.+)\)(.+)$")
-    _number_findall = re.compile(r"\d+")
     _pincount_search = re.compile(r"^[a-zA-Z]+([0-9]+)$")
-    _pinname_split = re.compile("[ /-]+")
     _pkgname_sub = re.compile(r"([a-zA-Z]+)([0-9]+)(-.*|)")
 
-    _SPECIAL_PIN_MAPPING = {
-        "PC14OSC32_IN": ["PC14"],
-        "PC15OSC32_OUT": ["PC15"],
-        "PF11BOOT0": ["PF11"],
-        "OSC_IN": [""],
-        "OSC_OUT": [""],
-        "VREF-": ["VREF-"],
-        "VREFSD-": ["VREFSD-"],
+    # useful command for identifying datasheets in pdftotext output:
+    # sha256sum (ag '^[^a-zA-Z]*[0-9][^a-zA-Z]*This (pin|ball) should' -l|sed s/.txt/.pdf/|sort)
+    _NC_OVERRIDES = {
+        # These parts have some NC pins with very specific requirements that are sadly not marked
+        # in the source XML. The affected parts are all in TFBGA240 packages. On their sister
+        # models, these pins are used for the internal switchmode regulator.
+        # See https://gitlab.com/kicad/libraries/kicad-symbols/-/issues/3135
+        r'STM32H74[23]X.*H.|STM32H750X.*H.|STM32H753X.*H.': {
+            'F1': ('Power', 'VDD_OR_VSS'),
+            'F2': ('Power', 'VSS'),
+            'G2': ('Power', 'VSS')
+        },
     }
-    _SPECIAL_TYPES_MAPPING = {"RCC_OSC_IN": "Clock", "RCC_OSC_OUT": "Clock"}
-    _POWER_PAD_FIX_PACKAGES = {"UFQFPN32", "UFQFPN48", "VFQFPN36"}
+    _POWER_PAD_FIX_PACKAGES = {"UFQFPN32", "UFQFPN48", "VFQFPN36", "VFQFPN68"}
     _FOOTPRINT_MAPPING = {
-        "EWLCSP49-DIE447": "Package_CSP:ST_WLCSP-49_Die447",
-        "EWLCSP66-DIE411": "Package_CSP:ST_WLCSP-66_Die411",
-        "LFBGA100": "Package_BGA:LFBGA-100_10x10mm_Layout10x10_P0.8mm",
-        "LFBGA144": "Package_BGA:LFBGA-144_10x10mm_Layout12x12_P0.8mm",
-        "LQFP32": "Package_QFP:LQFP-32_7x7mm_P0.8mm",
-        "LQFP48": "Package_QFP:LQFP-48_7x7mm_P0.5mm",
-        "LQFP64": "Package_QFP:LQFP-64_10x10mm_P0.5mm",
-        "LQFP100": "Package_QFP:LQFP-100_14x14mm_P0.5mm",
-        "LQFP144": "Package_QFP:LQFP-144_20x20mm_P0.5mm",
-        "LQFP176": "Package_QFP:LQFP-176_24x24mm_P0.5mm",
-        "LQFP208": "Package_QFP:LQFP-208_28x28mm_P0.5mm",
-        "TFBGA64": "Package_BGA:TFBGA-64_5x5mm_Layout8x8_P0.5mm",
-        "TFBGA100": "Package_BGA:TFBGA-100_8x8mm_Layout10x10_P0.8mm",
-        "TFBGA216": "Package_BGA:TFBGA-216_13x13mm_Layout15x15_P0.8mm",
-        "TFBGA240": "Package_BGA:TFBGA-265_14x14mm_Layout17x17_P0.8mm",
-        "TSSOP14": "Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
-        "TSSOP20": "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm",
-        "UFBGA64": "Package_BGA:UFBGA-64_5x5mm_Layout8x8_P0.5mm",
-        "UFBGA100": "Package_BGA:UFBGA-100_7x7mm_Layout12x12_P0.5mm",
-        "UFBGA132": "Package_BGA:UFBGA-132_7x7mm_Layout12x12_P0.5mm",
-        # ST uses the name "UFBGA144" for two sizes of BGA, and there's no way
-        # I can tell to pick them apart besides chip names
-        "UFBGA144-7X7": "Package_BGA:UFBGA-144_7x7mm_Layout12x12_P0.5mm",
-        "UFBGA144-10X10": "Package_BGA:UFBGA-144_10x10mm_Layout12x12_P0.8mm",
-        "UFBGA169": "Package_BGA:UFBGA-169_7x7mm_Layout13x13_P0.5mm",
-        "UFBGA176": "Package_BGA:UFBGA-201_10x10mm_Layout15x15_P0.65mm",
-        "UFQFPN20": "Package_DFN_QFN:ST_UFQFPN-20_3x3mm_P0.5mm",
-        "UFQFPN28": "Package_DFN_QFN:QFN-28_4x4mm_P0.5mm",
-        "UFQFPN32": "Package_DFN_QFN:QFN-32-1EP_5x5mm_P0.5mm_EP3.45x3.45mm",
-        "UFQFPN48": "Package_DFN_QFN:QFN-48-1EP_7x7mm_P0.5mm_EP5.6x5.6mm",
-        "VFQFPN36": "Package_DFN_QFN:QFN-36-1EP_6x6mm_P0.5mm_EP4.1x4.1mm",
-        "WLCSP25-DIE425": "Package_CSP:ST_WLCSP-25_Die425",
-        "WLCSP25-DIE444": "Package_CSP:ST_WLCSP-25_Die444",
-        "WLCSP25-DIE457": "Package_CSP:ST_WLCSP-25_Die457",
-        "WLCSP36-DIE417": "Package_CSP:ST_WLCSP-36_Die417",
-        "WLCSP36-DIE440": "Package_CSP:ST_WLCSP-36_Die440",
-        "WLCSP36-DIE445": "Package_CSP:ST_WLCSP-36_Die445",
-        "WLCSP36-DIE458": "Package_CSP:ST_WLCSP-36_Die458",
-        "WLCSP49-DIE423": "Package_CSP:ST_WLCSP-49_Die423",
-        "WLCSP49-DIE431": "Package_CSP:ST_WLCSP-49_Die431",
-        "WLCSP49-DIE433": "Package_CSP:ST_WLCSP-49_Die433",
-        "WLCSP49-DIE435": "Package_CSP:ST_WLCSP-49_Die435",
-        "WLCSP49-DIE438": "Package_CSP:ST_WLCSP-49_Die438",
-        "WLCSP49-DIE439": "Package_CSP:ST_WLCSP-49_Die439",
-        "WLCSP49-DIE447": "Package_CSP:ST_WLCSP-49_Die447",
-        "WLCSP49-DIE448": "Package_CSP:ST_WLCSP-49_Die448",
-        "WLCSP63-DIE427": "Package_CSP:ST_WLCSP-63_Die427",
-        "WLCSP64-DIE414": "Package_CSP:ST_WLCSP-64_Die414",
-        "WLCSP64-DIE427": "Package_CSP:ST_WLCSP-64_Die427",
-        "WLCSP64-DIE435": "Package_CSP:ST_WLCSP-64_Die435",
-        "WLCSP64-DIE436": "Package_CSP:ST_WLCSP-64_Die436",
-        "WLCSP64-DIE441": "Package_CSP:ST_WLCSP-64_Die441",
-        "WLCSP64-DIE442": "Package_CSP:ST_WLCSP-64_Die442",
-        "WLCSP64-DIE462": "Package_CSP:ST_WLCSP-64_Die462",
-        "WLCSP66-DIE411": "Package_CSP:ST_WLCSP-66_Die411",
-        "WLCSP66-DIE432": "Package_CSP:ST_WLCSP-66_Die432",
-        "WLCSP72-DIE415": "Package_CSP:ST_WLCSP-72_Die415",
-        "WLCSP81-DIE415": "Package_CSP:ST_WLCSP-81_Die415",
-        "WLCSP81-DIE421": "Package_CSP:ST_WLCSP-81_Die421",
-        "WLCSP81-DIE463": "Package_CSP:ST_WLCSP-81_Die463",
-        "WLCSP90-DIE413": "Package_CSP:ST_WLCSP-90_Die413",
-        "WLCSP100-DIE422": "Package_CSP:ST_WLCSP-100_Die422",
-        "WLCSP100-DIE446": "Package_CSP:ST_WLCSP-100_Die446",
-        "WLCSP100-DIE452": "Package_CSP:ST_WLCSP-100_Die452",
-        "WLCSP100-DIE461": "Package_CSP:ST_WLCSP-100_Die461",
-        "WLCSP104-DIE437": "Package_CSP:ST_WLCSP-104_Die437",
-        "WLCSP143-DIE419": "Package_CSP:ST_WLCSP-143_Die419",
-        "WLCSP143-DIE449": "Package_CSP:ST_WLCSP-143_Die449",
-        "WLCSP144-DIE470": "Package_CSP:ST_WLCSP-144_Die470",
-        "WLCSP168-DIE434": "Package_CSP:ST_WLCSP-168_Die434",
-        "WLCSP180-DIE451": "Package_CSP:ST_WLCSP-180_Die451",
+            "SO8N":         ("Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",                         "SO*3.9x4.9mm*P1.27mm*"), # NOQA
+            "LFBGA100":     ("Package_BGA:LFBGA-100_10x10mm_Layout10x10_P0.8mm",            "*LFBGA*10x10mm*Layout10x10*P0.8mm*"), # NOQA
+            "LFBGA144":     ("Package_BGA:LFBGA-144_10x10mm_Layout12x12_P0.8mm",            "*LFBGA*10x10mm*Layout12x12*P0.8mm*"), # NOQA
+            "LFBGA354":     ("Package_BGA:ST_LFBGA-354_16x16mm_Layout19x19_P0.8mm",         "*LFBGA*16x16mm*Layout19x19*P0.8mm*"), # NOQA
+            "LFBGA448":     ("Package_BGA:ST_LFBGA-448_18x18mm_Layout22x22_P0.8mm",         "*LFBGA*18x18mm*Layout22x22*P0.8mm*"), # NOQA
+            "LQFP32":       ("Package_QFP:LQFP-32_7x7mm_P0.8mm",                            "LQFP*7x7mm*P0.8mm*"), # NOQA
+            "LQFP48":       ("Package_QFP:LQFP-48_7x7mm_P0.5mm",                            "LQFP*7x7mm*P0.5mm*"), # NOQA
+            "LQFP64":       ("Package_QFP:LQFP-64_10x10mm_P0.5mm",                          "LQFP*10x10mm*P0.5mm*"), # NOQA
+            "LQFP80-12X12": ("Package_QFP:LQFP-80_12x12mm_P0.5mm",                          "LQFP*12x12mm*P0.5mm*"), # NOQA
+            "LQFP80-14X14": ("Package_QFP:LQFP-80_14x14mm_P0.65mm",                         "LQFP*14x14mm*P0.65mm*"), # NOQA
+            "LQFP100":      ("Package_QFP:LQFP-100_14x14mm_P0.5mm",                         "LQFP*14x14mm*P0.5mm*"), # NOQA
+            "LQFP128":      ("Package_QFP:LQFP-128_14x14mm_P0.4mm",                         "LQFP*14x14mm*P0.4mm*"), # NOQA
+            "LQFP144":      ("Package_QFP:LQFP-144_20x20mm_P0.5mm",                         "LQFP*20x20mm*P0.5mm*"), # NOQA
+            "LQFP176":      ("Package_QFP:LQFP-176_24x24mm_P0.5mm",                         "LQFP*24x24mm*P0.5mm*"), # NOQA
+            "LQFP208":      ("Package_QFP:LQFP-208_28x28mm_P0.5mm",                         "LQFP*28x28mm*P0.5mm*"), # NOQA
+            "TFBGA64":      ("Package_BGA:TFBGA-64_5x5mm_Layout8x8_P0.5mm",                 "TFBGA*5x5mm*Layout8x8*P0.5mm*"), # NOQA
+            "TFBGA100":     ("Package_BGA:TFBGA-100_8x8mm_Layout10x10_P0.8mm",              "TFBGA*8x8mm*Layout10x10*P0.8mm*"), # NOQA
+            "TFBGA216":     ("Package_BGA:TFBGA-216_13x13mm_Layout15x15_P0.8mm",            "TFBGA*13x13mm*Layout15x15*P0.8mm*"), # NOQA
+            "TFBGA225":     ("Package_BGA:ST_TFBGA-225_13x13mm_Layout15x15_P0.8mm",         "*TFBGA*13x13mm*Layout15x15*P0.8mm*"), # NOQA
+            "TFBGA240":     ("Package_BGA:TFBGA-265_14x14mm_Layout17x17_P0.8mm",            "TFBGA*14x14mm*Layout17x17*P0.8mm*"), # NOQA
+            "TFBGA257":     ("Package_BGA:ST_TFBGA-257_10x10mm_Layout19x19_P0.5mmP0.65mm",  "*TFBGA*10x10mm*Layout19x19*P0.5mmP0.65mm*"), # NOQA
+            "TFBGA361":     ("Package_BGA:ST_TFBGA-361_12x12mm_Layout23x23_P0.5mmP0.65mm",  "*TFBGA*12x12mm*Layout23x23*P0.5mmP0.65mm*"), # NOQA
+            "TSSOP14":      ("Package_SO:TSSOP-14_4.4x5mm_P0.65mm",                         "TSSOP*4.4x5mm*P0.65mm*"), # NOQA
+            "TSSOP20":      ("Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm",                       "TSSOP*4.4x6.5mm*P0.65mm*"), # NOQA
+            "UFBGA64":      ("Package_BGA:UFBGA-64_5x5mm_Layout8x8_P0.5mm",                 "*UFBGA*5x5mm*Layout8x8*P0.5mm*"), # NOQA
+            "UFBGA73":      ("Package_BGA:ST_UFBGA-73_5x5mm_Layout9x9_P0.5mm",              "*UFBGA*5x5mm*Layout9x9*P0.5mm*"), # NOQA
+            "UFBGA100":     ("Package_BGA:UFBGA-100_7x7mm_Layout12x12_P0.5mm",              "*UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
+            "UFBGA121":     ("Package_BGA:ST_UFBGA-121_6x6mm_Layout11x11_P0.5mm",           "*UFBGA*6x6mm*Layout11x11*P0.5mm*"), # NOQA
+            "UFBGA129":     ("Package_BGA:ST_UFBGA-129_7x7mm_Layout13x13_P0.5mm",           "*UFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
+            "UFBGA132":     ("Package_BGA:UFBGA-132_7x7mm_Layout12x12_P0.5mm",              "*UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
+            "UFBGA144-7X7": ("Package_BGA:UFBGA-144_7x7mm_Layout12x12_P0.5mm",              "*UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
+            "UFBGA144-10X10":("Package_BGA:UFBGA-144_10x10mm_Layout12x12_P0.8mm",           "*UFBGA*10x10mm*Layout12x12*P0.8mm*"), # NOQA
+            "UFBGA169":     ("Package_BGA:UFBGA-169_7x7mm_Layout13x13_P0.5mm",              "*UFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
+            "UFBGA176":     ("Package_BGA:UFBGA-201_10x10mm_Layout15x15_P0.65mm",           "*UFBGA*10x10mm*Layout15x15*P0.65mm*"), # NOQA
+            "UFQFPN20":     ("Package_DFN_QFN:ST_UFQFPN-20_3x3mm_P0.5mm",                   "ST*UFQFPN*3x3mm*P0.5mm*"), # NOQA
+            "UFQFPN28":     ("Package_DFN_QFN:QFN-28_4x4mm_P0.5mm",                         "QFN*4x4mm*P0.5mm*"), # NOQA
+            "UFQFPN32":     ("Package_DFN_QFN:QFN-32-1EP_5x5mm_P0.5mm_EP3.45x3.45mm",       "QFN*1EP*5x5mm*P0.5mm*"), # NOQA
+            "VFQFPN36":     ("Package_DFN_QFN:QFN-36-1EP_6x6mm_P0.5mm_EP4.1x4.1mm",         "QFN*1EP*6x6mm*P0.5mm*"), # NOQA
+            "UFQFPN48":     ("Package_DFN_QFN:QFN-48-1EP_7x7mm_P0.5mm_EP5.6x5.6mm",         "QFN*1EP*7x7mm*P0.5mm*"), # NOQA
+            "VFQFPN68":     ("Package_DFN_QFN:QFN-68-1EP_8x8mm_P0.4mm_EP6.4x6.4mm",         "QFN*1EP*8x8mm*P0.4mm*"), # NOQA
     }
-    _FPFILTER_MAPPING = {
-        "EWLCSP49-DIE447": "ST_WLCSP*Die447*",
-        "EWLCSP66-DIE411": "ST_WLCSP*Die411*",
-        "LFBGA100": "LFBGA*10x10mm*Layout10x10*P0.8mm*",
-        "LFBGA144": "LFBGA*10x10mm*Layout12x12*P0.8mm*",
-        "LQFP32": "LQFP*7x7mm*P0.8mm*",
-        "LQFP48": "LQFP*7x7mm*P0.5mm*",
-        "LQFP64": "LQFP*10x10mm*P0.5mm*",
-        "LQFP100": "LQFP*14x14mm*P0.5mm*",
-        "LQFP144": "LQFP*20x20mm*P0.5mm*",
-        "LQFP176": "LQFP*24x24mm*P0.5mm*",
-        "LQFP208": "LQFP*28x28mm*P0.5mm*",
-        "TFBGA64": "TFBGA*5x5mm*Layout8x8*P0.5mm*",
-        "TFBGA100": "TFBGA*8x8mm*Layout10x10*P0.8mm*",
-        "TFBGA216": "TFBGA*13x13mm*Layout15x15*P0.8mm*",
-        "TFBGA240": "TFBGA*14x14mm*Layout17x17*P0.8mm*",
-        "TSSOP14": "TSSOP*4.4x5mm*P0.65mm*",
-        "TSSOP20": "TSSOP*4.4x6.5mm*P0.65mm*",
-        "UFBGA64": "UFBGA*5x5mm*Layout8x8*P0.5mm*",
-        "UFBGA100": "UFBGA*7x7mm*Layout12x12*P0.5mm*",
-        "UFBGA132": "UFBGA*7x7mm*Layout12x12*P0.5mm*",
-        "UFBGA144-7X7": "UFBGA*7x7mm*Layout12x12*P0.5mm*",
-        "UFBGA144-10X10": "UFBGA*10x10mm*Layout12x12*P0.8mm*",
-        "UFBGA169": "UFBGA*7x7mm*Layout13x13*P0.5mm*",
-        "UFBGA176": "UFBGA*10x10mm*Layout15x15*P0.65mm*",
-        "UFQFPN20": "ST*UFQFPN*3x3mm*P0.5mm*",
-        "UFQFPN28": "QFN*4x4mm*P0.5mm*",
-        "UFQFPN32": "QFN*1EP*5x5mm*P0.5mm*",
-        "UFQFPN48": "QFN*1EP*7x7mm*P0.5mm*",
-        "VFQFPN36": "QFN*1EP*6x6mm*P0.5mm*",
-        "WLCSP25-DIE425": "ST_WLCSP*Die425*",
-        "WLCSP25-DIE444": "ST_WLCSP*Die444*",
-        "WLCSP25-DIE457": "ST_WLCSP*Die457*",
-        "WLCSP36-DIE417": "ST_WLCSP*Die417*",
-        "WLCSP36-DIE440": "ST_WLCSP*Die440*",
-        "WLCSP36-DIE445": "ST_WLCSP*Die445*",
-        "WLCSP36-DIE458": "ST_WLCSP*Die458*",
-        "WLCSP49-DIE423": "ST_WLCSP*Die423*",
-        "WLCSP49-DIE431": "ST_WLCSP*Die431*",
-        "WLCSP49-DIE433": "ST_WLCSP*Die433*",
-        "WLCSP49-DIE435": "ST_WLCSP*Die435*",
-        "WLCSP49-DIE438": "ST_WLCSP*Die438*",
-        "WLCSP49-DIE439": "ST_WLCSP*Die439*",
-        "WLCSP49-DIE447": "ST_WLCSP*Die447*",
-        "WLCSP49-DIE448": "ST_WLCSP*Die448*",
-        "WLCSP63-DIE427": "ST_WLCSP*Die427*",
-        "WLCSP64-DIE414": "ST_WLCSP*Die414*",
-        "WLCSP64-DIE427": "ST_WLCSP*Die427*",
-        "WLCSP64-DIE435": "ST_WLCSP*Die435*",
-        "WLCSP64-DIE436": "ST_WLCSP*Die436*",
-        "WLCSP64-DIE441": "ST_WLCSP*Die441*",
-        "WLCSP64-DIE442": "ST_WLCSP*Die442*",
-        "WLCSP64-DIE462": "ST_WLCSP*Die462*",
-        "WLCSP66-DIE411": "ST_WLCSP*Die411*",
-        "WLCSP66-DIE432": "ST_WLCSP*Die432*",
-        "WLCSP72-DIE415": "ST_WLCSP*Die415*",
-        "WLCSP81-DIE415": "ST_WLCSP*Die415*",
-        "WLCSP81-DIE421": "ST_WLCSP*Die421*",
-        "WLCSP81-DIE463": "ST_WLCSP*Die463*",
-        "WLCSP90-DIE413": "ST_WLCSP*Die413*",
-        "WLCSP100-DIE422": "ST_WLCSP*Die422*",
-        "WLCSP100-DIE446": "ST_WLCSP*Die446*",
-        "WLCSP100-DIE452": "ST_WLCSP*Die452*",
-        "WLCSP100-DIE461": "ST_WLCSP*Die461*",
-        "WLCSP104-DIE437": "ST_WLCSP*Die437*",
-        "WLCSP143-DIE419": "ST_WLCSP*Die419*",
-        "WLCSP143-DIE449": "ST_WLCSP*Die449*",
-        "WLCSP144-DIE470": "ST_WLCSP*Die470*",
-        "WLCSP168-DIE434": "ST_WLCSP*Die434*",
-        "WLCSP180-DIE451": "ST_WLCSP*Die451*",
+    _WLCSP_MAP = {
+            'ST_WLCSP-100_Die495': ('Package_CSP:ST_WLCSP-100_4.40x4.38mm_Layout10x10_P0.4mm_Offcenter', '*'), # NOQA
+            'ST_WLCSP-100_Die471': ('Package_CSP:ST_WLCSP-100_4.437x4.456mm_Layout10x10_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-115_Die483': ('Package_CSP:ST_WLCSP-115_3.73x4.15mm_P0.35mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-115_Die461': ('Package_CSP:ST_WLCSP-115_4.63x4.15mm_P0.4mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-132_Die480': ('Package_CSP:ST_WLCSP-132_4.57x4.37mm_Layout12x11_P0.35mm', '*'), # NOQA
+            'ST_WLCSP-156_Die450': ('Package_CSP:ST_WLCSP-156_4.96x4.64mm_Layout13x12_P0.35mm', '*'), # NOQA
+            'ST_WLCSP-18_Die466': ('Package_CSP:ST_WLCSP-18_1.86x2.14mm_P0.4mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-25_Die460': ('Package_CSP:ST_WLCSP-25_2.30x2.48mm_Layout5x5_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-36_Die464': ('Package_CSP:ST_WLCSP-36_2.58x3.07mm_Layout6x6_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-49_Die468': ('Package_CSP:ST_WLCSP-49_3.15x3.13mm_Layout7x7_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-64_Die479': ('Package_CSP:ST_WLCSP-64_3.56x3.52mm_Layout8x8_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-81_Die469': ('Package_CSP:ST_WLCSP-81_4.02x4.27mm_Layout9x9_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-81_Die472': ('Package_CSP:ST_WLCSP-81_4.36x4.07mm_Layout9x9_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-20_Die456': ('Package_CSP:ST_WLCSP-20_1.94x2.40mm_Layout4x5_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-49_Die494': ('Package_CSP:ST_WLCSP-49_3.30x3.38mm_Layout7x7_P0.4mm_Offcenter', '*'), # NOQA
+            'ST_WLCSP-52_Die467': ('Package_CSP:ST_WLCSP-52_3.09x3.15mm_P0.4mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-90_Die482': ('Package_CSP:ST_WLCSP-90_4.20x3.95mm_P0.4mm_Stagger', '*'), # NOQA
     }
 
-    pdfinfo = {}
-
-    def __init__(self, xmlfile, pdfdir):
-        logging.debug(xmlfile)
-        self.xmlfile = xmlfile
-        self.pdfdir = pdfdir
-        self.name = ""
-        self.package = ""
-        self.footprint = ""
+    def __init__(self, xml):
         self.pins = []
-        self.derived_symbols = []
 
-        self.read_info()
-
-    def read_info(self):
-        self.tree = etree.parse(self.xmlfile)
-        self.root = self.tree.getroot()
-
-        self.ns = {"a": self.root.nsmap[None]}  # I hate XML
-
-        name = self.root.get("RefName")
-
-        # Get all the part names for this part
-        name_match = Device._name_search.search(name)
-        if name_match:
-            pre = name_match.group(1)
-            post = name_match.group(3)
-            s = name_match.group(2).split("-")
-            self.name = pre + s[0] + post
-            for a in s[1:]:
-                self.derived_symbols.append(pre + a + post)
-        else:
-            self.name = name
+        soup = BeautifulSoup(xml.read_text(), features='xml').find('Mcu')
+        self.name = soup['RefName'].replace('(', '_').replace(')', '_')
 
         # Get the package code
-        self.package = self.root.get("Package")
-        # Differentiate the WLCSP packages by die code
-        if "WLCSP" in self.package:
-            die = self.root.xpath("a:Die", namespaces=self.ns)[0].text
-            self.package += f"-{die}"
-        # Pick the right size of UFBGA144
-        if self.package == "UFBGA144":
-            if self.name in {
-                "STM32F412ZEJx",
-                "STM32F413ZGJx",
-                "STM32F423ZHJx",
-                "STM32F446ZCJx",
-                "STM32L4R9ZGJx",
-                "STM32L4S9ZIJx",
-            }:
-                self.package += "-10X10"
-            elif self.name in {"STM32F446ZCHx", "STM32F723ZCIx", "STM32F733ZEIx"}:
-                self.package += "-7X7"
-            else:
-                logging.warning(
-                    f"Unable to determine package variant for"
-                    f" device {self.name}, package {self.package}"
-                )
+        package = soup['Package']
 
-        # Get the footprint for this package
-        try:
-            self.footprint = Device._FOOTPRINT_MAPPING[self.package]
-        except KeyError:
-            logging.warning(
-                f"No footprint found for device {self.name}, package {self.package}"
-            )
-            self.footprint = ""
+        if package == "UFBGA144":
+            # ST uses the name "UFBGA144" for two sizes of BGA, and there's no way to tell to pick
+            # them apart besides the part number's package ID letter
+            try:
+                package += {
+                        'H': '-7X7',
+                        'I': '-7X7',
+                        'J': '-10X10',
+                        }[self.name[-2]]
+            except KeyError:
+                tqdm.tqdm.write('Unable to determine UFBGA144 variant (7x7mm or 10x10mm) '
+                                f'for device {self.name}')
+
+        elif package == "LQFP80":
+            # Same as above
+            try:
+                package += {
+                        'T': '-12X12',
+                        'S': '-14X14',
+                        }[self.name[-2]]
+            except KeyError:
+                tqdm.tqdm.write('Unable to determine LQFP80 variant '
+                                f'(12x12mm/p0.5 or 14x14mm/p0.65) for device {self.name}')
+
+        self.package = package
+
+        if re.fullmatch('LGA[0-9]*', package):
+            # These are RF SoMs that for some reason has an STM32 PN and ended
+            # up in features.xml. Ignore them.
+            self.footprint_filters = '*'
+            self.footprint = ''
+
+        elif (m := re.fullmatch(r'E?WLCSP([0-9]*)', package)):
+            # Differentiate the WLCSP packages by die code
+            die = soup.find('Die').text.title()
+
+            if m.group(1) == '59' and die == 'Die497':
+                # This chip has no datasheet, is not on ST's website and cannot be bought.
+                self.footprint_filters = '*'
+                self.footprint = ''
+
+            elif m.group(1) == '99' and die == 'Die415':
+                # This particular package is not documented in the chip's datasheet.
+                self.footprint_filters = '*'
+                self.footprint = ''
+
+            else:
+                pkg = f'ST_WLCSP-{m.group(1)}_{die}'
+
+                if pkg in self._WLCSP_MAP:
+                    self.footprint, self.footprint_filters = self._WLCSP_MAP[pkg]
+                else:
+                    self.footprint_filters = f'ST*WLCSP*{die}*'
+                    self.footprint = f'Package_CSP:{pkg}'
+
+        elif package in self._FOOTPRINT_MAPPING:
+            self.footprint, self.footprint_filters = self._FOOTPRINT_MAPPING[self.package]
+
+        else:
+            tqdm.tqdm.write('No footprint/footprint filters found for '
+                            f'device {self.name}, package {self.package}')
+            self.footprint_filters = '*'
+            self.footprint = ''
+
+        for pattern, nc_override in self._NC_OVERRIDES.items():
+            if re.fullmatch(pattern, self.name):
+                break
+        else:
+            nc_override = {}
 
         # Read the information for each pin
-        for child in self.root.xpath("a:Pin", namespaces=self.ns):
-            # Create object and read attributes
-            newpin = DataPin(
-                child.get("Position"), child.get("Name"), child.get("Type")
-            )
+        for child in soup.find_all('Pin'):
+            pos, name, pintype = child['Position'], child['Name'], child['Type']
 
-            if newpin.name in Device._SPECIAL_PIN_MAPPING:
-                newpin.name = Device._SPECIAL_PIN_MAPPING[newpin.name][0]
-            else:
-                newpin.name = Device._pinname_split.split(newpin.name)[0]
+            # Apply overrides for semantically relevant pins that are not properly described in the
+            # XML.
+            # NOTE: The VDD*_Unused pins must not be mapped to NCs. They are necessary when
+            # designing a board that should be upwards-compatible.
+            if name in ('NC', 'DNU'):
+                pintype, name = nc_override.get(pos, ('NC', name))
 
-            # Fix type for NC pins
-            if newpin.name == "NC":
-                newpin.pintype = "NC"
+            altfuncs = []
+            for signal in child.find_all('Signal'):
+                altfunction = signal['Name']
+                if altfunction != 'GPIO':
+                    altfuncs.append(kicad_sym.AltFunction(altfunction, 'bidirectional', 'line'))
 
-            # Get alternate functions
-            for signal in child.xpath("a:Signal", namespaces=self.ns):
-                altfunction = signal.get("Name")
-                if altfunction not in ["GPIO"]:
-                    newpin.altfuncs.append(
-                        kicad_sym.AltFunction(altfunction, "bidirectional", "line")
-                    )
-                # If the pin doesn't have a name, use the first alt function
-                if not newpin.name:
-                    newpin.name = altfunction
-                # If an alt function corresponds to a pin type, set that
-                if altfunction in Device._SPECIAL_TYPES_MAPPING:
-                    newpin.pintype = Device._SPECIAL_TYPES_MAPPING[altfunction]
-            self.pins.append(newpin)
+            self.pins.append(DataPin(pos, name, pintype, altfuncs))
 
         # If this part has a power pad, we have to add it manually
-        if (
-            self.root.get("HasPowerPad") == "true"
-            or self.package in Device._POWER_PAD_FIX_PACKAGES
-        ):
+        if (soup['HasPowerPad'] == 'true' or self.package in Device._POWER_PAD_FIX_PACKAGES):
             # Read pin count from package name
             packPinCountR = Device._pincount_search.search(self.package)
             powerpinnumber = str(int(packPinCountR.group(1)) + 1)
-            logging.info(
-                f"Device {name} with powerpad, package {self.package}, power pin:"
-                f" {powerpinnumber}"
-            )
             # Create power pad pin
             powerpadpin = DataPin(powerpinnumber, "VSS", "Power")
             self.pins.append(powerpadpin)
 
-        # Parse information for documentation
-        self.core = self.root.xpath("a:Core", namespaces=self.ns)[0].text
-        self.family = self.root.get("Family")
-        self.line = self.root.get("Line")
-        try:
-            self.freq = self.root.xpath("a:Frequency", namespaces=self.ns)[0].text
-        except IndexError:
-            # Not all chips have a frequency specification
-            logging.info("Unknown frequency")
-            self.freq = None
-        self.ram = [r.text for r in self.root.xpath("a:Ram", namespaces=self.ns)]
-        self.io = self.root.xpath("a:IONb", namespaces=self.ns)[0].text
-        self.flash = [f.text for f in self.root.xpath("a:Flash", namespaces=self.ns)]
-        try:
-            self.voltage = [
-                self.root.xpath("a:Voltage", namespaces=self.ns)[0].get(
-                    "Min", default="--"
-                ),
-                self.root.xpath("a:Voltage", namespaces=self.ns)[0].get(
-                    "Max", default="--"
-                ),
-            ]
-        except IndexError:
-            # Not all chips have a voltage specification
-            logging.info("Unknown voltage")
-            self.voltage = None
-
-        # Get the datasheet filename
-        self.pdf = self.readpdf()
-
         # Merge any duplicated pins
-        self.merge_duplicate_pins()
-
-    def create_symbol(self, lib):
-        # Make strings for DCM entries
-        freqstr = f"{self.freq}MHz, " if self.freq else ""
-        voltstr = f"{self.voltage[0]}-{self.voltage[1]}V, " if self.voltage else ""
-        pkgstr = self._pkgname_sub.sub(r"\1-\2", self.package)
-        desc_fmt = (
-            f"{self.core} MCU, {{flash}}KB flash, "
-            f"{{ram}}KB RAM, {freqstr}{voltstr}{self.io} GPIO, "
-            f"{pkgstr}"
-        )
-        keywords = f"{self.core} {self.family} {self.line}"
-        datasheet = (
-            ""
-            if self.pdf is None
-            else (f"https://www.st.com/resource/en/datasheet/{self.pdf}")
-        )
-
-        # Get footprint filters
-        try:
-            footprint_filters = Device._FPFILTER_MAPPING[self.package]
-        except KeyError:
-            footprint_filters = ""
-            logging.warning(
-                f"No footprint filters found for device"
-                f" {self.name}, package {self.package}"
-            )
-
-        libname = os.path.basename(lib.filename)
-        libname = os.path.splitext(libname)[0]
-
-        # Make the symbol
-        self.symbol = kicad_sym.KicadSymbol.new(
-            self.name,
-            libname,
-            "U",
-            self.footprint,
-            datasheet,
-            keywords,
-            desc_fmt.format(flash=self.flash[0], ram=self.ram[0]),
-            footprint_filters,
-        )
-
-        lib.symbols.append(self.symbol)
-
-        # Draw the symbol
-        self.draw_symbol()
-
-        # Add derived symbols
-        for i, derived_sym_name in enumerate(self.derived_symbols):
-            f = 0 if len(self.flash) == 1 else i + 1
-            r = 0 if len(self.ram) == 1 else i + 1
-
-            description = desc_fmt.format(flash=self.flash[f], ram=self.ram[r])
-
-            derived_symbol = kicad_sym.KicadSymbol.new(
-                derived_sym_name,
-                libname,
-                "U",
-                self.footprint,
-                datasheet,
-                keywords,
-                description,
-                footprint_filters,
-            )
-
-            derived_symbol.extends = self.symbol.name
-
-            parent_property = self.symbol.get_property("Reference")
-            derived_symbol.get_property("Reference").posx = parent_property.posx
-            derived_symbol.get_property("Reference").posy = parent_property.posy
-            derived_symbol.get_property(
-                "Reference"
-            ).effects.h_justify = parent_property.effects.h_justify
-
-            parent_property = self.symbol.get_property("Value")
-            derived_symbol.get_property("Value").posx = parent_property.posx
-            derived_symbol.get_property("Value").posy = parent_property.posy
-            derived_symbol.get_property(
-                "Value"
-            ).effects.h_justify = parent_property.effects.h_justify
-
-            parent_property = self.symbol.get_property("Footprint")
-            derived_symbol.get_property("Footprint").posx = parent_property.posx
-            derived_symbol.get_property("Footprint").posy = parent_property.posy
-            derived_symbol.get_property(
-                "Footprint"
-            ).effects.h_justify = parent_property.effects.h_justify
-            derived_symbol.get_property(
-                "Footprint"
-            ).effects.is_hidden = parent_property.effects.is_hidden
-
-            lib.symbols.append(derived_symbol)
-
-    def xcompare(self, x, y):
-        for a, b in zip(x, y):
-            if a != b and a != "x" and b != "x":
-                return False
-        return True
-
-    @classmethod
-    def readpdfinfo(cls, pdfdir):
-        for _, _, filenames in os.walk(pdfdir):
-            files = [fn for fn in filenames if fn.endswith(".pdf.par")]
-            break
-
-        for pdf in files:
-            p = open(os.path.join(pdfdir, pdf), "r", encoding="utf-8")
-            for line in p:
-                line = line.strip()
-                if line.find("STM32") >= 0:
-                    # Remove commas and then split string
-                    candidatenames = line.translate(str.maketrans(",", " ")).split()
-                    for candidatename in candidatenames:
-                        # Associate file with every device name
-                        cls.pdfinfo[candidatename] = pdf
-                # Assume that the device names are always at the beginning of file
-                if not line.startswith("STM32"):
-                    break
-
-    def readpdf(self):
-        # Read device names from PDFs if we haven't yet
-        if not Device.pdfinfo:
-            Device.readpdfinfo(self.pdfdir)
-
-        s = self.name
-        # logging.debug("NEW: " + s)
-        # logging.debug(Device.pdfinfo)
-        winners = set()
-        for key, value in Device.pdfinfo.items():
-            # Some heuristic here
-            minussplit = key.split("-")
-            variants = minussplit[0].split("/")
-            if len(minussplit) > 1:
-                suffix = "x" + "x".join(minussplit[1:])
-            else:
-                suffix = ""
-            strings = [suffix + variants[0]]
-            for var in variants[1:]:
-                strings.append(strings[0][: -len(var)] + var + suffix)
-            for string in strings:
-                if self.xcompare(s, string):
-                    winners.add(value)
-
-        # logging.debug(winners)
-        if len(winners) == 1:
-            return winners.pop()[:-4]
-        else:
-            if winners:
-                logging.warning(
-                    f"Multiple datasheets determined for device {self.name} ({winners})"
-                )
-            else:
-                logging.warning(
-                    f"Datasheet could not be determined for device {self.name}"
-                )
-            return None
-
-    def merge_duplicate_pins(self):
         pinNumMap = {}
         removePins = []
         for pin in self.pins:
             if pin.num in pinNumMap:
-                logging.info(f"Duplicated pin {pin.num} in part {self.name}, merging")
                 mergedPin = pinNumMap[pin.num]
                 mergedPin.name += f"/{pin.name}"
                 removePins.append(pin)
@@ -547,327 +308,326 @@ class Device:
         for pin in removePins:
             self.pins.remove(pin)
 
+    def create_symbol(self, lib, keywords, desc, datasheet):
+        # Make the symbol
+        self.symbol = kicad_sym.KicadSymbol.new(self.name, lib.filename, "U", self.footprint,
+                                                datasheet, keywords, desc, self.footprint_filters)
+
+        lib.symbols.append(self.symbol)
+
+        # Draw the symbol
+        self.draw_symbol()
+
     def draw_symbol(self):
-        resetPins = []
-        bootPins = []
-        powerPins = []
-        clockPins = []
-        ncPins = []
-        otherPins = []
-        ports = {}
-
-        topPins = []
-        bottomPins = []
-
-        # Get pin length
         pin_length = 100 if all(len(pin.num) < 3 for pin in self.pins) else 200
 
+        pins = defaultdict(lambda: [])
         # Classify pins
         for pin in self.pins:
-            # I/O pins - uncertain orientation
-            if (pin.pintype == "I/O" or pin.pintype == "Clock") and pin.name.startswith(
-                "P"
-            ):
-                port = pin.name[1]
-                pin_num = int(Device._number_findall.findall(pin.name)[0])
-                try:
-                    ports[port][pin_num] = pin.to_drawing_pin(pin_length=pin_length)
-                except KeyError:
-                    ports[port] = {}
-                    ports[port][pin_num] = pin.to_drawing_pin(pin_length=pin_length)
-            # Clock pins go on the left
-            elif pin.pintype == "Clock":
-                clockPins.append(
-                    pin.to_drawing_pin(
-                        pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT,
-                    )
-                )
-            # Power pins
-            elif pin.pintype == "Power" or pin.name.startswith("VREF"):
-                # Positive pins go on the top
-                if pin.name.startswith("VDD") or pin.name.startswith("VBAT"):
-                    topPins.append(
-                        pin.to_drawing_pin(
-                            pin_length=pin_length,
-                            orientation=DrawingPin.PinOrientation.DOWN,
-                        )
-                    )
-                # Negative pins go on the bottom
-                elif pin.name.startswith("VSS"):
-                    bottomPins.append(
-                        pin.to_drawing_pin(
-                            pin_length=pin_length,
-                            orientation=DrawingPin.PinOrientation.UP,
-                        )
-                    )
-                # Other pins go on the left
-                else:
-                    powerPins.append(
-                        pin.to_drawing_pin(
-                            pin_length=pin_length,
-                            orientation=DrawingPin.PinOrientation.RIGHT,
-                        )
-                    )
-            # Reset pins go on the left
-            elif pin.pintype == "Reset":
-                resetPins.append(
-                    pin.to_drawing_pin(
-                        pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT,
-                    )
-                )
-            # Boot pins go on the left
-            elif pin.pintype == "Boot":
-                bootPins.append(
-                    pin.to_drawing_pin(
-                        pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT,
-                    )
-                )
-            # NC pins go in their own group
-            elif pin.pintype == "NC":
-                ncPins.append(
-                    pin.to_drawing_pin(
-                        pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT,
-                    )
-                )
-            # Other pins go on the left
+            pins[pin.graphical_type].append(pin)
+
+        def pinkey(pin):
+            """ Split pin name into alphabetic and numeric parts and parse numeric parts, for
+            sorting. Example:
+
+            'DDR1_DQ15B' -> ('DDR', 1, '_DQ', 15, 'B')
+            """
+            return tuple([int(num) if num else char
+                          for num, char in re.findall('([0-9]+)|([^0-9]+)', pin.name)])
+
+        pins = defaultdict(lambda: [], {
+                k: sorted(v, key=pinkey) for k, v in pins.items()
+            })
+
+        def split_groups(pins, expr=r'.*'):
+            """ Split pin list by either a regex or a list of regexes.
+
+            If a single regex is given: Split list into one group for each distinct match value.
+            E.g. for input P1A, P1B, P2A, P2B:
+
+            'P.' -> [P1A, P1B], [P2A, P2B]
+
+            If a list of regexis is given: Split the list into one group for each matching regex.
+            e.g. for input USB_DP, USB_DM, ANA0, ANA1:
+
+            ['USB.*', 'ANA.*'] -> [USB_DP, USB_DM], [ANA0, ANA1]
+            """
+            if isinstance(expr, str):
+                pins = sorted(((re.match(expr, pin.name).group(0), pin) for pin in pins),
+                              key=lambda e: e[0])
             else:
-                otherPins.append(
-                    pin.to_drawing_pin(
-                        pin_length=pin_length,
-                        orientation=DrawingPin.PinOrientation.RIGHT,
-                    )
-                )
+                expr = [re.compile(e) for e in [*expr, r'.*']]
 
-        # Apply pins to sides
-        leftGroups = []
-        rightGroups = []
+                def match_pin(pin):
+                    return next(i for i, e in enumerate(expr) if e.fullmatch(pinkey(pin)[0]))
 
-        leftSpace = 0
-        rightSpace = 0
+                pins = sorted(((match_pin(pin), pin) for pin in pins),
+                              key=lambda e: e[0])
+            return [[e for key, e in group] for _key, group in groupby(pins, key=lambda e: e[0])]
 
-        # Special groups go to the left
-        if resetPins:
-            leftGroups.append(resetPins)
-        if bootPins:
-            leftGroups.append(bootPins)
-        if powerPins:
-            leftGroups.append(sorted(powerPins, key=lambda p: p.name))
-        if clockPins:
-            leftGroups.append(clockPins)
-        if otherPins:
-            leftGroups.append(otherPins)
+        monoio_groups = [
+                'DDR_BA.*',
+                'DDR_A.*',
+                'DDR_DQM.*',
+                'DDR_DQS.*',
+                'DDR_DQ.*',
+                'DDR_.*',
+                'JTCK|JTDI|JTDO|JTMS|NJTRST',
+                'USB.*|OTG.*',
+                'PDR.*|BYPASS_REG.*',
+                'ANA.*']
+        left = [pins['reset'],
+                pins['boot'],
+                pins['special_power'],
+                pins['clock'],
+                pins['other'],
+                *split_groups(pins['monoio'], monoio_groups),
+                pins['vcap']]
 
-        # Count the space needed for special groups
-        for group in leftGroups:
-            leftSpace += len(group) + 1
+        unhandled = [pin.name for pin in pins['port'] if not re.match('P[A-Z][0-9]+', pin.name)]
+        if unhandled:
+            warnings.warn('Unhandled I/O pin name(s):'+' '.join(unhandled))
+        # Split IO port pins in spaced groups by port number (i.e. PB0...15 [space] PC0...15 ...)
+        right = split_groups(pins['port'], r'P.|.*')
 
-        # Add ports to the right, counting the space needed
-        for _, port in sorted(ports.items()):
-            pins = [pin for _, pin in sorted(port.items())]
-            rightSpace += len(pins) + 1
-            rightGroups.append(pins)
+        # [[1,2,3],[],[],[4,5,6],[7,8,9],[]] ->  [1, 2, 3, None, 4, 5, 6, None, 7, 8, 9]
+        spaced = lambda groups: [e for group in groups for alt in [group, [None]] # NOQA
+                                 for e in alt if group][:-1]
+        spaced_len = lambda l: len(spaced(l)) # NOQA
 
-        # Move ports to the left from the right until moving one more would
-        # make the symbol get taller.
-        maxSize = max(leftSpace, rightSpace)
-        movedSpace = 0
-        movedGroups = []
-        while True:
-            groupToMove = rightGroups[-1]
-            newLeftSpace = leftSpace + len(groupToMove) + 1
-            newRightSpace = rightSpace - len(groupToMove) - 1
-            newSize = max(newLeftSpace, newRightSpace)
-            if newSize >= maxSize:
-                break
-            maxSize = newSize
-            leftSpace = newLeftSpace
-            rightSpace = newRightSpace
-
-            movedSpace += len(groupToMove) + 1
-
-            movedGroups.append(groupToMove)
-            rightGroups.pop()
+        # Balance out pins on left and right sides
+        while spaced_len(left) < spaced_len(right[:-1]):
+            left.insert(-1, right.pop())  # insert before VCAP pin group
 
         # Calculate height of the symbol
-        box_height = max(leftSpace, rightSpace) * 100
+        box_height = max(spaced_len(left), spaced_len(right))*100 + 200
 
         # Calculate the width of the symbol
-        def round_up(x, y):
-            return (x + y - 1) // y * y
+        name_width = lambda pins: max(len(p.name)*47 for p in pins if p) if pins else 0 # NOQA
 
-        def pin_group_max_width(group):
-            return max(len(p.name) * 47 for p in group)
+        spaced_left, spaced_right = spaced(left), spaced(right)
+        names_left, names_right = name_width(spaced_left), name_width(spaced_right)
 
-        left_width = round_up(
-            max(pin_group_max_width(group) for group in (leftGroups + movedGroups)), 100
-        )
-        right_width = round_up(
-            max(pin_group_max_width(group) for group in rightGroups), 100
-        )
-        top_width = len(topPins) * 100
-        bottom_width = len(bottomPins) * 100
-        middle_width = 100 + max(top_width, bottom_width)
-        box_width = left_width + middle_width + right_width
+        stacked_vss = {key: list(group)
+                       for key, group in groupby(pins['vss'], lambda pin: pin.name)}
+        # this depends on dict being ordered
+        pins['vss'] = [group[0] for group in stacked_vss.values()]
+
+        spaced_top, spaced_bottom = pins['vdd'], pins['vss']
+        top_width, bottom_width = len(spaced_top)*100, len(spaced_bottom)*100
+
+        box_width = math.ceil(
+                (names_left + max(top_width, bottom_width) + names_right + 100) / 100) * 100
 
         drawing = Drawing()
+        drawing.append(DrawingRectangle(
+                Point(0, 0), Point(box_width, box_height), unit_idx=0,
+                fill=ElementFill.FILL_BACKGROUND))
 
-        # Add the body rectangle
-        drawing.append(
-            DrawingRectangle(
-                Point(0, 0),
-                Point(box_width, box_height),
-                unit_idx=0,
-                fill=ElementFill.FILL_BACKGROUND,
-            )
-        )
+        for i, pin in enumerate(spaced_left, start=1):
+            if pin:
+                drawing.append(pin.draw(pin_length, 'right', x=-pin_length, y=box_height - i*100))
 
-        # Add the moved pins (bottom left)
-        y = 100
-        for group in reversed(movedGroups):
-            for pin in reversed(group):
-                pin.at = Point(-pin_length, y)
-                pin.orientation = DrawingPin.PinOrientation.RIGHT
-                drawing.append(pin)
-                y += 100
-            y += 100
+        for i, pin in enumerate(spaced_right, start=1):
+            if pin:
+                drawing.append(pin.draw(pin_length, 'left',
+                                        x=box_width+pin_length, y=box_height - i*100))
 
-        # Add the left pins (top left)
-        y = box_height - 100
-        for group in leftGroups:
-            for pin in group:
-                pin.at = Point(-pin_length, y)
-                pin.orientation = DrawingPin.PinOrientation.RIGHT
-                drawing.append(pin)
-                y -= 100
-            y -= 100
+        last_top_x = 0
+        for i, pin in enumerate(spaced_top, start=1):
+            if pin:
+                # memorize position to later put component value here
+                last_top_x = ((box_width - top_width)//100//2 + i)*100
+                drawing.append(pin.draw(pin_length, 'down',
+                                        x=last_top_x, y=box_height+pin_length))
 
-        # Add the right pins
-        y = 100
-        for group in reversed(rightGroups):
-            for pin in reversed(group):
-                pin.at = Point(box_width + pin_length, y)
-                pin.orientation = DrawingPin.PinOrientation.LEFT
-                drawing.append(pin)
-                y += 100
-            y += 100
+        for i, pin in enumerate(spaced_bottom, start=1):
+            if pin:
+                x = ((box_width - bottom_width)//100//2 + i)*100
+                drawing.append(pin.draw(pin_length, 'up', x=x, y=-pin_length))
 
-        # Add the top pins
-        x = (left_width + (100 + middle_width) // 2 - top_width // 2) // 100 * 100
-        for pin in sorted(topPins, key=lambda p: p.name):
-            pin.at = Point(x, box_height + pin_length)
-            pin.orientation = DrawingPin.PinOrientation.DOWN
-            drawing.append(pin)
-            x += 100
-        last_top_x = x
+                if pin.graphical_type == 'vss':
+                    for stacked in stacked_vss[pin.name][1:]:
+                        drawing.append(stacked.draw(pin_length, 'up', x=x, y=-pin_length,
+                                                    visible=False))
 
-        # Add the bottom pins
-        x = (left_width + (100 + middle_width) // 2 - bottom_width // 2) // 100 * 100
-        for pin in sorted(bottomPins, key=lambda p: p.name):
-            pin.at = Point(x, -pin_length)
-            pin.orientation = DrawingPin.PinOrientation.UP
-            drawing.append(pin)
-            x += 100
-
-        # Add the NC pins
-        y = 100
-        for pin in ncPins:
-            pin.at = Point(0, y)
-            pin.orientation = DrawingPin.PinOrientation.RIGHT
-            drawing.append(pin)
-            y += 100
-        y += 100
+        for i, pin in enumerate(pins['nc']):
+            if pin:
+                # x=0 because of https://klc.kicad.org/symbol/s4/s4.6/
+                drawing.append(pin.draw(pin_length, 'right', x=0, y=i*100,
+                                        visible=False))
 
         # Center the symbol
-        translate_center = Point(
-            -box_width // 2 // 100 * 100, -box_height // 2 // 100 * 100
-        )
-        drawing.translate(translate_center)
+        cx, cy = -math.floor(box_width / 2 / 100) * 100, -math.floor(box_height / 2 / 100) * 100
+        drawing.translate(Point(cx, cy))
 
         property = self.symbol.get_property("Reference")
-        pos = Point(0, box_height + 50).translate(translate_center)
-        property.set_pos_mil(pos.x, pos.y, 0)
+        property.set_pos_mil(cx, cy + box_height + 50, 0)
         property.effects.h_justify = "left"
 
         property = self.symbol.get_property("Value")
-        pos = Point(last_top_x, box_height + 50).translate(translate_center)
-        property.set_pos_mil(pos.x, pos.y, 0)
+        property.set_pos_mil(cx+last_top_x+100, cy+box_height+50, 0)
         property.effects.h_justify = "left"
 
         property = self.symbol.get_property("Footprint")
-        pos = translate_center
-        property.set_pos_mil(pos.x, pos.y, 0)
+        property.set_pos_mil(cx, cy, 0)
         property.effects.h_justify = "right"
         property.effects.is_hidden = True
 
         drawing.appendToSymbol(self.symbol)
 
 
-def run_pdf2txt(pdffile, pdfdir):
-    pdffile = os.path.join(pdfdir, pdffile)
-    pdfparsedfile = pdffile + ".par"
-    if not os.path.isfile(pdfparsedfile) and pdffile.endswith(".pdf"):
-        logging.info(f"Converting: {pdffile}")
-        os.system("pdf2txt.py -o " + pdfparsedfile + " " + pdffile)
+@click.command()
+@click.option('--part-number', '-p', 'part_number_pattern', default='*',
+              help='Filter part numbers by glob')
+@click.option('--verify-datasheets/--no-verify-datasheets',
+              help='Verify datasheet URLs exists')
+@click.option('--skip-without-footprint/--keep-without-footprint', default=False,
+              help='Skip generating symbols for which no footprint could be found')
+@click.option('--skip-without-datasheet/--keep-without-datasheet', default=False,
+              help='Skip generating symbols for which no datasheet could be found')
+@click.option('--url-cache', type=click.Path(file_okay=True, dir_okay=False,
+                                             path_type=pathlib.Path),
+              help='JSON cache file for datasheet URLs')
+@click.argument('cubemx_mcu_db_dir', type=click.Path(file_okay=False, dir_okay=True,
+                                                     path_type=pathlib.Path))
+@click.argument('output_file', type=click.Path(file_okay=True, dir_okay=False))
+def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, url_cache,
+        skip_without_footprint, skip_without_datasheet):
+    soup = BeautifulSoup((cubemx_mcu_db_dir / 'families.xml').read_text(), features='xml')
+    files = defaultdict(lambda: [])
+    for tag in soup.find_all('Mcu', recursive=True):
+        if not fnmatch.fnmatch(tag['RPN'].lower(), part_number_pattern.lower()):
+            continue
 
+        # Parse information for documentation
+        frequency = tag.find("Frequency")
+        frequency = f'{frequency.text} MHz, ' if frequency else ''
+        ram = int(tag.find('Ram').text)
+        flash = int(tag.find('Flash').text)
+        io = int(tag.find('IONb').text)
+        voltage = tag.find('Voltage')
+        voltage = f'{voltage["Min"]}-{voltage["Max"]}V, ' if voltage else ''
+        refname = tag['RefName']
+        package = tag['PackageName']
+        core = tag.find('Core').text
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Generator for STM32 microcontroller symbols"
-    )
-    parser.add_argument(
-        "xmldir", help="Directory containing ONLY valid STM32 XML files"
-    )
-    parser.add_argument("pdfdir", help="Directory containing STM32 datasheet PDFs")
-    parser.add_argument(
-        "-v", "--verbose", action="count", default=0, help="Print more information"
-    )
+        # Make strings for DCM entries
+        desc = (
+            f"STMicroelectronics {core} MCU, {{flash}}KB flash, "
+            f"{{ram}}KB RAM, {frequency}{voltage}{io} GPIO, {{package}}"
+        )
+        keywords = f'{tag.find("Core").text} {tag.parent.parent["Name"]} {tag.parent["Name"]}'
+        datasheet = f'https://www.st.com/resource/en/datasheet/{tag["RPN"].lower()}.pdf'
 
-    args = parser.parse_args()
+        files[tag['Name']].append((desc, keywords, datasheet, flash, ram, refname, package))
 
-    if not os.path.isdir(args.xmldir) or not os.path.isdir(args.pdfdir):
-        parser.error("xmldir and pdfdir must be directories")
+    print(f'Found {sum(len(e) for e in files)} part variants.')
+    print('Generating symbols...')
 
-    if args.verbose == 0:
-        loglevel = logging.WARNING
-    elif args.verbose == 1:
-        loglevel = logging.INFO
-    elif args.verbose >= 2:
-        loglevel = logging.DEBUG
+    lib = kicad_sym.KicadLibrary(output_file)
 
-    logging.basicConfig(format="%(levelname)s:%(message)s", level=loglevel)
+    url_cache_d = {}
 
-    # Parse text from PDFs
-    for _, _, filenames in os.walk(args.pdfdir):
-        filenames.sort()
-        with multiprocessing.Pool() as pool:
-            pool.starmap(run_pdf2txt, zip(filenames, repeat(args.pdfdir)))
+    if url_cache and url_cache.is_file():
+        try:
+            url_cache_d = json.loads(pathlib.Path(url_cache).read_text())
+        except:  # noqa: E722
+            print('URL cache invalid, resetting.', file=sys.stderr)
 
-    # Load devices from XML, sorted by family
-    libraries = {}
-    for _, _, filenames in os.walk(args.xmldir):
-        filenames.sort()
-        for xmlfile in filenames:
-            if xmlfile.startswith("STM"):
-                # Load information about the part(s)
-                mcu = Device(os.path.join(args.xmldir, xmlfile), args.pdfdir)
-                # If there isn't a SymbolGenerator for this family yet, make one
-                if mcu.family not in libraries:
-                    libraries[mcu.family] = kicad_sym.KicadLibrary(
-                        f"MCU_ST_{mcu.family}.kicad_sym"
-                    )
-                # If the part has a datasheet PDF, make a symbol for it
-                if mcu.pdf is not None:
-                    mcu.create_symbol(libraries[mcu.family])
-        break
+    def verify_datasheet(datasheet):
+        if not verify_datasheets:
+            return datasheet
 
-    # Write libraries
-    for gen in libraries.values():
-        gen.write()
+        if datasheet in url_cache_d:
+            return url_cache_d[datasheet]
+
+        res = requests.head(datasheet, allow_redirects=True)
+
+        if res.status_code == 200:
+            url_cache_d[datasheet] = datasheet
+            return datasheet
+
+        for cutoff in [-5, -6]:
+            if res.status_code != 404:
+                break
+
+            # try cutting off one letter from the part number
+            testurl = datasheet[:cutoff] + '.pdf'
+            res = requests.head(testurl, allow_redirects=True)
+            if res.status_code == 200:
+                tqdm.tqdm.write(f'Datasheet for {refname} unexpectedly found at {testurl} instead '
+                                f'of {datasheet}')
+                url_cache_d[datasheet] = testurl
+                return testurl
+
+        tqdm.tqdm.write(f'Datasheet for {refname} not found at {datasheet} '
+                        f'(Status code {res.status_code})')
+        return ''
+
+    for filename, variants in tqdm.tqdm(files.items(), desc=pathlib.Path(output_file).stem):
+        xml = cubemx_mcu_db_dir / f'{filename}.xml'
+
+        desc, keywords, datasheet, flash, ram, _refname, package = variants[0]
+        datasheet = verify_datasheet(datasheet)
+
+        if len(variants) == 1:
+            desc = desc.format(flash=flash, ram=ram, package=package)
+        else:
+            flashes = [flash for _desc, _keywords, _datasheet, flash, _ram, _refname, _package
+                       in variants]
+            ramses = [ram for _desc, _keywords, _datasheet, _flash, ram, _refname, _package
+                      in variants]
+            packages = '/'.join(sorted(set(package
+                                for _desc, _keywords, _datasheet, _flash, _ram, _refname, package
+                                in variants)))
+            minf, maxf = min(flashes), max(flashes)
+            minr, maxr = min(ramses), max(ramses)
+            desc = desc.format(package=packages,
+                               flash=f'{minf}-{maxf}' if minf != maxf else str(minf),
+                               ram=f'{minr}-{maxr}' if minr != maxr else str(minr))
+
+        dev = Device(xml)
+
+        if skip_without_footprint and not dev.footprint:
+            continue
+        if skip_without_datasheet and not datasheet:
+            continue
+
+        dev.create_symbol(lib, keywords=keywords, desc=desc, datasheet=datasheet)
+
+        if len(variants) > 1:
+            for desc, keywords, datasheet, flash, ram, refname, package in variants:
+                desc = desc.format(flash=flash, ram=ram, package=package)
+
+                derived_symbol = kicad_sym.KicadSymbol.new(
+                    refname, lib.filename, "U", dev.footprint,
+                    datasheet, keywords, desc,
+                    dev.footprint_filters,
+                )
+
+                derived_symbol.extends = dev.name
+
+                def clone_formatting(dest, src, name):
+                    src, dest = src.get_property(name), dest.get_property(name)
+                    dest.posx = src.posx
+                    dest.posy = src.posy
+                    dest.effects = src.effects
+
+                clone_formatting(derived_symbol, dev.symbol, 'Reference')
+                clone_formatting(derived_symbol, dev.symbol, 'Value')
+                clone_formatting(derived_symbol, dev.symbol, 'Footprint')
+
+                lib.symbols.append(derived_symbol)
+
+    print('Writing library file...')
+    if url_cache:
+        url_cache.write_text(json.dumps(url_cache_d))
+    now = time.time()
+    lib.write()
+    after = time.time()
+    print(f'Wrote library file in {after-now:.6f} s')
 
 
 if __name__ == "__main__":
-    main()
+    cli()

@@ -5,19 +5,18 @@ STM32 devices.
 
 ## Prerequisites
 
-* XML files, taken from STM32CubeMX install (from db/mcu folder).
-* Datasheet PDFs, downloaded from ST's website.  The helper tool
-  `stm32_get_datasheets.py` will download all available STM32 datasheets into
-  `./stm32_datasheets/`.
-* [pdfminer](https://github.com/euske/pdfminer) tool.
+* Python packages listed in requirements.txt. Note that lxml depends on libxml2,
+  which should be installed on your system already. When in doubt, try to
+  install lxml using your distro's package manager.
+* XML files, taken from STM32CubeMX install (from db/mcu folder). If you do not
+  have a copy of the IDE around, you can get a copy of these files here:
+  https://gitlab.com/neinseg/stm32square/-/tree/release
 
 ## Running
 
-If you have the correct XML files, just run
-`./stm32_generator.py xmldir pdfdir`, where `xmldir` is a directory containing
-all the necessary XML files, and `pdfdir` is a directory containing all the PDF
-files (e.g. `./stm32_datasheets/`).  Make sure the XML files have the correct
-format as there is no error checking.
+If you have the correct XML files, `./generate_all_libraries.sh xmldir` , where
+`xmldir` is a directory containing all the necessary XML files. Note that the
+script will do a few thousand network requests to validate the computed
+datasheet URLs on its first run. The responses are cached, and during subsequent
+runs only those URLs that could not be found the last time will be re-requested.
 
-Mining data from the pdf files takes time, expect about 1-2 minutes per
-datasheet and CPU core.
