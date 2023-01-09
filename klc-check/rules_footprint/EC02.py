@@ -11,7 +11,7 @@ class Rule(KLCRule):
         bad_pads = []
         for pad in self.module.pads:
             if pad['type'] == 'smd' and pad['shape'] == 'rect':
-                bad_pads.append(pad['number'])
+                bad_pads.append(str(pad['number']))
 
         if bad_pads:
             self.warning("Rectangular SMD pad")
