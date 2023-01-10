@@ -15,7 +15,7 @@ help:
 
 .PHONY: lint
 lint:
-	python3 -m flake8 --max-line-length 120 .
+	python3 -m flake8 .
 
 
 .PHONY: spelling
