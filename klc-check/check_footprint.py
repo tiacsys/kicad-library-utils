@@ -124,7 +124,7 @@ def do_rulecheck(module, rules, metrics) -> Tuple[int, int]:
             printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
             rule.processOutput(printer, verbosity, args.silent)
 
-        elif rule.hasErrors():
+        if rule.hasErrors():
             if args.log:
                 lib_name = os.path.basename(os.path.dirname(module.filename)).replace(
                     ".pretty", ""
@@ -135,7 +135,7 @@ def do_rulecheck(module, rules, metrics) -> Tuple[int, int]:
                 if args.fixmore and rule.needsFixMore:
                     rule.fixmore()
                 rule.fix()
-                rule.processOutput(printer, args.verbose, args.silent)
+                rule.processOutput(printer, verbosity, args.silent)
                 rule.recheck()
 
     # No messages?
