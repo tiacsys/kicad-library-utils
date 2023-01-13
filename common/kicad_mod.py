@@ -469,6 +469,11 @@ class KicadMod:
             if a:
                 pad_dict["rect_delta"] = a[0][1:]
 
+            # roundrect ratio
+            rr = self._getArray(pad, "roundrect_rratio")
+            if rr:
+                pad_dict["roundrect_rratio"] = rr[0][1]
+
             # drill
             pad_dict["drill"] = {}
             drill = self._getArray(pad, "drill")
@@ -1223,6 +1228,12 @@ class KicadMod:
 
         # Layers
         fp_pad.append({"layers": pad["layers"]})
+
+        # RoundRect Radius Ratio?
+        if pad["shape"] == "roundrect":
+            rratio = pad.get("roundrect_rratio", 0)
+            if rratio:
+                fp_pad.append({"roundrect_rratio": rratio})
 
         se.addItems(fp_pad, newline=False)
 
