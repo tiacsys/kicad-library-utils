@@ -192,6 +192,9 @@ class Color(KicadSymbolBase):
     b: int
     a: int
 
+    def get_sexpr(self):
+        return ["color", self.r, self.g, self.b, self.a]
+
 
 @dataclass
 class TextEffect(KicadSymbolBase):
@@ -338,10 +341,14 @@ class Pin(KicadSymbolBase):
         sx.append(["length", self.length])
         if self.is_hidden:
             sx.append("hide")
-        sx.append(["name", self.quoted_string(self.name), self.name_effect.get_sexpr()])
-        sx.append(
-            ["number", self.quoted_string(self.number), self.number_effect.get_sexpr()]
-        )
+        name_sx: list[Any] = ["name", self.quoted_string(self.name)]
+        if self.name_effect:
+            name_sx.append(self.name_effect.get_sexpr())
+        sx.append(name_sx)
+        number_sx: list[Any] = ["number", self.quoted_string(self.number)]
+        if self.number_effect:
+            number_sx.append(self.number_effect.get_sexpr())
+        sx.append(number_sx)
         for altfn in self.altfuncs:
             sx.append(altfn.get_sexpr())
 
@@ -428,12 +435,18 @@ class Circle(KicadSymbolBase):
     demorgan: int = 0
 
     def get_sexpr(self) -> List[Any]:
+        stroke_sx = ["stroke", ["width", self.stroke_width]]
+        if self.stroke_color:
+            stroke_sx.append(self.stroke_color.get_sexpr())
+        fill_sx = ["fill", ["type", self.fill_type]]
+        if self.fill_color:
+            fill_sx.append(self.fill_color.get_sexpr())
         sx = [
             "circle",
             ["center", self.centerx, self.centery],
             ["radius", self.radius],
-            ["stroke", ["width", self.stroke_width]],
-            ["fill", ["type", self.fill_type]],
+            stroke_sx,
+            fill_sx,
         ]
         return sx
 
@@ -480,16 +493,20 @@ class Arc(KicadSymbolBase):
     demorgan: int = 0
 
     def get_sexpr(self) -> List[Any]:
+        stroke_sx = ["stroke", ["width", self.stroke_width]]
+        if self.stroke_color:
+            stroke_sx.append(self.stroke_color.get_sexpr())
+        fill_sx = ["fill", ["type", self.fill_type]]
+        if self.fill_color:
+            fill_sx.append(self.fill_color.get_sexpr())
         sx = [
             "arc",
             ["start", self.startx, self.starty],
             ["mid", self.midx, self.midy],
             ["end", self.endx, self.endy],
+            stroke_sx,
+            fill_sx,
         ]
-        sx.append(["stroke", ["width", self.stroke_width],
-                             ["type", "default"],
-                             ["color", 0, 0, 0, 0]])
-        sx.append(["fill", ["type", self.fill_type]])
         return sx
 
     @classmethod
@@ -541,13 +558,19 @@ class Polyline(KicadSymbolBase):
     demorgan: int = 0
 
     def get_sexpr(self):
-        pts_list = [x.get_sexpr() for x in self.points]
+        pts_list: list[Any] = [x.get_sexpr() for x in self.points]
         pts_list.insert(0, "pts")
+        stroke_sx = ["stroke", ["width", self.stroke_width]]
+        if self.stroke_color:
+            stroke_sx.append(self.stroke_color.get_sexpr())
+        fill_sx = ["fill", ["type", self.fill_type]]
+        if self.fill_color:
+            fill_sx.append(self.fill_color.get_sexpr())
         sx = [
             "polyline",
             pts_list,
-            ["stroke", ["width", self.stroke_width]],
-            ["fill", ["type", self.fill_type]],
+            stroke_sx,
+            fill_sx,
         ]
         return sx
 
@@ -676,12 +699,18 @@ class Rectangle(KicadSymbolBase):
         return r
 
     def get_sexpr(self) -> List[Any]:
+        stroke_sx = ["stroke", ["width", self.stroke_width]]
+        if self.stroke_color:
+            stroke_sx.append(self.stroke_color.get_sexpr())
+        fill_sx = ["fill", ["type", self.fill_type]]
+        if self.fill_color:
+            fill_sx.append(self.fill_color.get_sexpr())
         sx = [
             "rectangle",
             ["start", self.startx, self.starty],
             ["end", self.endx, self.endy],
-            ["stroke", ["width", self.stroke_width]],
-            ["fill", ["type", self.fill_type]],
+            stroke_sx,
+            fill_sx,
         ]
         return sx
 
@@ -754,8 +783,9 @@ class Property(KicadSymbolBase):
             self.quoted_string(self.value),
             ["id", self.idd],
             ["at", self.posx, self.posy, self.rotation],
-            self.effects.get_sexpr(),
         ]
+        if self.effects:
+            sx.append(self.effects.get_sexpr())
         return sx
 
     def set_pos_mil(self, x: float, y: float, rot: int = 0) -> None:
@@ -807,11 +837,11 @@ class KicadSymbol(KicadSymbolBase):
     def get_sexpr(self) -> List[str]:
         # add header
         full_name = self.quoted_string("{}".format(self.name))
-        sx = ["symbol", full_name]
+        sx: list[Any] = ["symbol", full_name]
         if self.extends:
             sx.append(["extends", self.quoted_string(self.extends)])
 
-        pn = ["pin_names"]
+        pn: list[Any] = ["pin_names"]
         if self.pin_names_offset != 0.508:
             pn.append(["offset", self.pin_names_offset])
         if self.hide_pin_names:
@@ -834,7 +864,7 @@ class KicadSymbol(KicadSymbolBase):
         for d in range(0, self.demorgan_count + 1):
             for u in range(0, self.unit_count + 1):
                 hdr = self.quoted_string("{}_{}_{}".format(self.name, u, d))
-                sx_i = ["symbol", hdr]
+                sx_i: list[Any] = ["symbol", hdr]
                 for pin in (
                     self.arcs
                     + self.circles
@@ -998,7 +1028,7 @@ class KicadSymbol(KicadSymbolBase):
         if len(self.pins) <= 2:
             return True
 
-        filled_rect = self.get_center_rectangle(range(self.unit_count))
+        filled_rect = self.get_center_rectangle(list(range(self.unit_count)))
 
         # if there is no filled rectangle as symbol outline and we have 3 or 4 pins, we assume this
         # is a small symbol
