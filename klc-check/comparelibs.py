@@ -13,11 +13,6 @@ import os
 import sys
 from glob import glob
 
-PYTEST_AVAILABLE = True
-try:
-    from _pytest.assertion.util import _compare_eq_any
-except ImportError:
-    PYTEST_AVAILABLE = False
 
 env_verbose_diff_limit = os.environ.get("VERBOSE_DIFF_LIMIT", "1048576")
 VERBOSE_DIFF_LIMIT = int(env_verbose_diff_limit) \
@@ -155,7 +150,6 @@ sym_check = check_symbol.SymbolCheck(
     False if args.nocolor else True, silent=True
 )
 
-verbose_diff_total = 0
 # iterate over all new libraries
 for lib_name in new_libs:
     lib_path = new_libs[lib_name]
@@ -225,17 +219,6 @@ for lib_name in new_libs:
         if new_sym[symname] != old_sym[symname]:
             if args.verbose:
                 printer.yellow(f"Changed '{lib_name}:{symname}'{derived_sym_info}")
-
-                if PYTEST_AVAILABLE and verbose_diff_total < VERBOSE_DIFF_LIMIT:
-                    difflines = _compare_eq_any(new_sym[symname], old_sym[symname], 1)
-                    verbose_diff_total += sum(map(len, difflines), 0)
-
-                    if verbose_diff_total < VERBOSE_DIFF_LIMIT:
-                        printer.start_fold_section("symbol_diff", "Show symbol diff")
-                        print_colored_diff(printer, difflines)
-                        printer.end_fold_section("symbol_diff")
-                    else:
-                        printer.yellow("Symbol diff exceeds log limit, skipping")
 
                 printer.start_fold_section("symbol_diff", "Show s-expr diff")
 
