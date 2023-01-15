@@ -1088,8 +1088,8 @@ class KicadLibrary(KicadSymbolBase):
         # to ensure that this parser is only used with v6 files. Any other version will most likely
         # not work as expected. So just don't load them at all.
         version = _get_value_of(sexpr_data, "version")
-        if str(version) != "20211014":
-            raise KicadFileFormatError('Version of symbol file is not "20211014"')
+        if str(version) != "20220914":
+            raise KicadFileFormatError('Version of symbol file is not "20220914"')
 
         # itertate over symbol
         for item in sym_list:
