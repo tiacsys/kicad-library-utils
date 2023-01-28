@@ -9,7 +9,7 @@
             {{ diff_syntax_css|safe }}
         </style>
     </head>
-    <body>
+    <body id="body">
         <div class="header">
             <div class="control-buttons">
                 {{prev_button|safe}}
@@ -29,12 +29,12 @@
             </div>
         </div>
         <div class="sidebar">
-            <a href="#metadata">Metadata</a>
-            <a href="#visual-diff">Visual diff</a>
-            <a id="layer-view-button" href="#layer-view">Layer view</a>
-            <a id="render-tab-button" href="#render">Render</a>
+            <a href="#metadata" id="btn-m">Metadata</a>
+            <a href="#visual-diff" id="btn-v">Visual diff</a>
+            <a id="layer-view-button" id="btn-l" href="#layer-view">Layer view</a>
+            <a id="render-tab-button" id="btn-r" href="#render">Render</a>
             <!--a href="#datasheet-diff">Datasheet diff</a-->
-            <a href="#code-diff">Code diff</a>
+            <a href="#code-diff" id="btn-c">Code diff</a>
             <div id="unit-sel">
             <span>Unit</span>
             </div>

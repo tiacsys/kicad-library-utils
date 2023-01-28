@@ -454,3 +454,25 @@ document.getElementById('index-button').addEventListener('click', event => {
     document.getElementById('index').classList.toggle('index-bt-toggle');
 });
 
+// listen for all keydown events
+document.getElementById('body').addEventListener('keydown', event => {
+    var eId;
+    switch (event.key) {
+        case "ArrowLeft":
+            eId = "nav-bt-prev"
+            break;
+        case "ArrowRight":
+            eId = "nav-bt-next"
+            break;
+        case "ArrowUp":
+        case "ArrowDown":
+        default:
+            eId = "btn-" + event.key;
+            break;
+    }
+    // click the link if we can find one for this key
+    const lnk= document.getElementById(eId);
+    if (lnk) {
+         lnk.click();
+    }
+});
