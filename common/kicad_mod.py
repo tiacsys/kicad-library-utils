@@ -601,16 +601,16 @@ class KicadMod:
                             s = self._getArray(primitive, "start")
                             if s:
                                 p["start"] = {"x": s[0][1], "y": s[0][2]}
+                            # Read the arc's mid
+                            p["mid"] = {}
+                            s = self._getArray(primitive, "mid")
+                            if s:
+                                p["mid"] = {"x": s[0][1], "y": s[0][2]}
                             # Read the arc's end
                             p["end"] = {}
                             e = self._getArray(primitive, "end")
                             if e:
                                 p["end"] = {"x": e[0][1], "y": e[0][2]}
-                            # Read the arc's angle
-                            p["angle"] = {}
-                            n = self._getArray(primitive, "angle")
-                            if n:
-                                p["angle"] = n[0][1]
                         elif primitive[0] == "gr_circle":
                             # Read the line's start
                             p["center"] = {}
@@ -783,6 +783,7 @@ class KicadMod:
         # change arcs position
         for arc in self.arcs:
             arc["start"] = _rotatePoint(arc["start"], degrees)
+            arc["mid"] = _rotatePoint(arc["mid"], degrees)
             arc["end"] = _rotatePoint(arc["end"], degrees)
 
         # change pads positions
@@ -1180,12 +1181,13 @@ class KicadMod:
         se.startGroup("fp_arc", newline=True, indent=False)
 
         start = arc["start"]
+        mid = arc["mid"]
         end = arc["end"]
 
         fp_arc = [
             {"start": [start["x"], start["y"]]},
+            {"mid": [mid["x"], mid["y"]]},
             {"end": [end["x"], end["y"]]},
-            {"angle": arc["angle"]},
             {"layer": arc["layer"]},
             {"width": arc["width"]},
         ]
