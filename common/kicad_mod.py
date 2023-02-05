@@ -399,27 +399,32 @@ class KicadMod:
                 p3x = arc_dict["end"]["x"]
                 p3y = arc_dict["end"]["y"]
 
-                # make square names
-                p1x_2 = p1x * p1x
-                p1y_2 = p1y * p1y
-                p2x_2 = p2x * p2x
-                p2y_2 = p2y * p2y
-                p3x_2 = p3x * p3x
-                p3y_2 = p3y * p3y
+                if math.sqrt((p1x - p3x)**2 + (p1y - p3y)**2) < 1e-7:
+                    # start and end points match --> center is half way between
+                    # start(=end) and mid
+                    rx, ry = 0.5 * (p1x + p2x), 0.5 * (p1y + p2y)
+                else:
+                    # make square names
+                    p1x_2 = p1x * p1x
+                    p1y_2 = p1y * p1y
+                    p2x_2 = p2x * p2x
+                    p2y_2 = p2y * p2y
+                    p3x_2 = p3x * p3x
+                    p3y_2 = p3y * p3y
 
-                # Calculte coordinates of the Center (rx,ry) from the three points
-                # using formula found on http://ambrsoft.com/TrigoCalc/Circle3D.htm
-                A = 2 * (p1x * (p2y - p3y) - p1y * (p2x - p3x) + p2x * p3y - p3x * p2y)
-                rx = (
-                    ((p1x_2 + p1y_2) * (p2y - p3y))
-                    + ((p2x_2 + p2y_2) * (p3y - p1y))
-                    + ((p3x_2 + p3y_2) * (p1y - p2y))
-                ) / A
-                ry = (
-                    ((p1x_2 + p1y_2) * (p3x - p2x))
-                    + ((p2x_2 + p2y_2) * (p1x - p3x))
-                    + ((p3x_2 + p3y_2) * (p2x - p1x))
-                ) / A
+                    # Calculte coordinates of the Center (rx,ry) from the three points
+                    # using formula found on http://ambrsoft.com/TrigoCalc/Circle3D.htm
+                    A = 2 * (p1x * (p2y - p3y) - p1y * (p2x - p3x) + p2x * p3y - p3x * p2y)
+                    rx = (
+                        ((p1x_2 + p1y_2) * (p2y - p3y))
+                        + ((p2x_2 + p2y_2) * (p3y - p1y))
+                        + ((p3x_2 + p3y_2) * (p1y - p2y))
+                    ) / A
+                    ry = (
+                        ((p1x_2 + p1y_2) * (p3x - p2x))
+                        + ((p2x_2 + p2y_2) * (p1x - p3x))
+                        + ((p3x_2 + p3y_2) * (p2x - p1x))
+                    ) / A
 
                 # Then get diff between  vectors End-Center, Start-Center
                 Diff = math.atan2(p3y - ry, p3x - rx) - math.atan2(p1y - ry, p1x - rx)
