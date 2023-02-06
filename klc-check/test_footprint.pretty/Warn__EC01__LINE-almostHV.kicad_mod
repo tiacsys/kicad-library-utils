@@ -24,7 +24,7 @@
   (fp_line (start 0.7 -0.35) (end 0.7 0.35) (layer "F.CrtYd") (width 0.05) (tstamp 80cab1d5-9780-4a34-ac2f-fbae90b5d476))
   (fp_line (start -0.7 -0.35) (end 0.7 -0.35) (layer "F.CrtYd") (width 0.05) (tstamp e061bfdc-5f2e-417a-be37-78dad3091774))
 
-  (model "${KICAD6_3DMODEL_DIR}/test_footprint.3dshapes/Warn__EC01__LINE-almostHV.wrl"
+  (model "${KICAD7_3DMODEL_DIR}/test_footprint.3dshapes/Warn__EC01__LINE-almostHV.wrl"
     (offset (xyz 0 0 0))
     (scale (xyz 1 1 1))
     (rotate (xyz 0 0 0))

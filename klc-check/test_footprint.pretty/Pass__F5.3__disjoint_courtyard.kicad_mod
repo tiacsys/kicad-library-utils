@@ -60,7 +60,7 @@
   (fp_rect (start -2.9 -4.3) (end 2.9 -1.8) (layer "F.Fab") (width 0.1) (fill none) (tstamp dc3fe435-797e-42df-8bc8-189debf1cc04))
   (pad "" np_thru_hole oval (at 0 4.15) (size 2.5 2) (drill oval 2.5 2) (layers F&B.Cu *.Mask) (tstamp 167c6c45-88e8-466b-8e3b-8bd77359c54b))
   (pad "" np_thru_hole oval (at 0 -4.15) (size 2.5 2) (drill oval 2.5 2) (layers F&B.Cu *.Mask) (tstamp 5d8087a9-5ec3-4f52-ab77-d7cc499c310f))
-  (model "${KICAD6_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F5.3__disjoint_courtyard.wrl"
+  (model "${KICAD7_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F5.3__disjoint_courtyard.wrl"
     (offset (xyz 0 0 0))
     (scale (xyz 1 1 1))
     (rotate (xyz 0 0 0))

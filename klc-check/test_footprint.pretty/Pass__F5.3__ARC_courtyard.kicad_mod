@@ -56,7 +56,7 @@
   (fp_arc (start -0.85 -1.7) (mid 0 -2.55) (end 0.85 -1.7) (layer "F.Fab") (width 0.1) (tstamp 3e3aead6-e8e8-49bc-b448-d3d9b97616e4))
   (pad "1" smd roundrect (at -1.5 0) (size 2 1) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (tstamp a788b178-ac3a-4b1f-82c2-171c634677f4))
   (pad "2" smd roundrect (at 1.5 0) (size 2 1) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (tstamp 2e4b869c-f859-4570-b939-e02e0793da3b))
-  (model "${KICAD6_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F5.3__ARC_courtyard.wrl"
+  (model "${KICAD7_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F5.3__ARC_courtyard.wrl"
     (offset (xyz 0 0 0))
     (scale (xyz 1 1 1))
     (rotate (xyz 0 0 0))
