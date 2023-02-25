@@ -121,7 +121,7 @@ def build_symlib_index(libfile):
     for match in re.finditer(r'\(\W*symbol\W*\s"(\S+)"\s|(\r?\n)', text, re.MULTILINE):
         symbol_name, newline = match.groups()
 
-        if symbol_name and not re.fullmatch(r'.*_[0-9]_[0-9]', symbol_name):
+        if symbol_name and not re.fullmatch(r'.*_[0-9]+_[0-9]+', symbol_name):
             if last_name:
                 yield last_name, (last_start, lineno)
             last_name, last_start = symbol_name, lineno
