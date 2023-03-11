@@ -588,7 +588,16 @@ class KicadMod:
                             p["pts"] = []
                             pts = self._getArray(primitive, "pts")
                             for pt in pts[0][1:]:
-                                p["pts"].append({"x": pt[1], "y": pt[2]})
+                                if pt[0] == "xy":
+                                    p["pts"].append({"x": pt[1], "y": pt[2]})
+                                elif pt[0] == "arc":
+                                    # in case there is an arc part of a polygon, add start/mid/end
+                                    for name in ["start", "mid", "end"]:
+                                        s = self._getArray(pt, name)
+                                        if s:
+                                            p["pts"].append({"x": s[0][1], "y": s[0][2]})
+                                else:
+                                    raise ValueError(f"unhandled primitive '{pt[0]}' in custom pad shape polygon")
                         elif primitive[0] == "gr_line":
                             # Read the line's start
                             p["start"] = {}
