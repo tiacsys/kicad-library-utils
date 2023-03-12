@@ -781,9 +781,11 @@ class Property(KicadSymbolBase):
             "property",
             self.quoted_string(self.name),
             self.quoted_string(self.value),
-            ["id", self.idd],
-            ["at", self.posx, self.posy, self.rotation],
         ]
+        if self.idd != None:
+            sx.append(["id", self.idd])
+        sx.append(["at", self.posx, self.posy, self.rotation])
+        
         if self.effects:
             sx.append(self.effects.get_sexpr())
         return sx
@@ -1047,7 +1049,7 @@ class KicadLibrary(KicadSymbolBase):
     filename: str
     symbols: List[KicadSymbol] = field(default_factory=list)
     generator: str = "kicad-library-utils"
-    version: str = "20211014"
+    version: str = "20220914"
 
     def write(self) -> None:
         lib_file = open(self.filename, "w")
