@@ -782,10 +782,10 @@ class Property(KicadSymbolBase):
             self.quoted_string(self.name),
             self.quoted_string(self.value),
         ]
-        if self.idd != None:
+        if self.idd is not None:
             sx.append(["id", self.idd])
         sx.append(["at", self.posx, self.posy, self.rotation])
-        
+
         if self.effects:
             sx.append(self.effects.get_sexpr())
         return sx
