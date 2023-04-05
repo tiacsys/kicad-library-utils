@@ -11,8 +11,8 @@ term_regex = r"""(?mx)
     \s*(?:
         (\()|
         (\))|
-        ([+-]?\d+\.\d+(?=[\ \)]))|
-        (\-?\d+(?=[\ \)]))|
+        ([+-]?\d+\.\d+(?=[\ \)\n]))|
+        (\-?\d+(?=[\ \)\n]))|
         "((?:[^"]|(?<=\\)")*)"|
         ([^(^)\s]+)
        )"""
@@ -178,17 +178,30 @@ def build_sexp(exp, indent='  ') -> str:
             joined += build_sexp(elem, indent=f'{indent}  ')
         return joined + ')'
 
-    if exp == '':
-        return '""'
-
-    return str(exp)
+    if isinstance(exp, str) and (len(exp) == 0 or re.search(r"[\s\(\)]", exp)):
+        return '"%s"' % exp.replace('"', r'\"')
+    elif isinstance(exp, float):
+        return str(exp)
+    elif isinstance(exp, int):
+        return str(exp)
+    elif isinstance(exp, str):
+        return exp
+    else:
+        # We have neither a string, float, int, or a list:
+        # we should never ever get here since this means to export an unexpected
+        # data type. In case we do we should probably raise an exception
+        if exp is None:
+            # export None as an empty string
+            return '""'
+        else:
+            return str(exp)
 
 
 def format_sexp(sexp: str, indentation_size: int = 2, max_nesting: int = 2) -> str:
     out = ''
     n = 0
     for match in re.finditer(term_regex, sexp):
-        indentation = ""
+        indentation = "" if out[-1:] != ")" else " "
         lparen, rparen, float_num, integer_num, quoted_str, bare_str = match.groups()
         if lparen:
             if out:
@@ -221,13 +234,32 @@ def format_sexp(sexp: str, indentation_size: int = 2, max_nesting: int = 2) -> s
 
 if __name__ == "__main__":
     sexp = """ ( ( data "quoted data" 123 4.5)
-         (data "with \\"escaped quotes\\"")
-         (data (123 (4.5) "(more" "data)")))"""
+         (data "with \\"escaped quotes\\" and 'dashes'" and empty "" text)
+         (data (123 (4.5) "(more" "data)") after parantesis))"""
 
     print("Input S-expression:")
     print(sexp)
     parsed = parse_sexp(sexp)
-    print("\nParsed to Python:", parsed)
+    print("\nParsed to Python:\n%s" % parsed)
 
     print("\nThen back to: '%s'" % build_sexp(parsed))
     print("\nThen back to: '%s'" % format_sexp(build_sexp(parsed)))
+
+    def check(reparsed):
+        if (parsed == reparsed):
+            print("\nSuccess: Parsed and re-parsed match!")
+            return True
+        else:
+            print("\nERROR: parsed and reparesed fail")
+            print("parsed   = %s" % parsed)
+            print("reparsed = %s" % reparsed)
+            return False
+
+    print("\nThen back to:\n'%s'" % build_sexp(parsed))
+    reparsed1 = parse_sexp(build_sexp(parsed))
+    ok = check(reparsed1)
+    print("\nThen formatted to:\n'%s'" % format_sexp(build_sexp(parsed)))
+    reparsed2 = parse_sexp(format_sexp(build_sexp(parsed)))
+    ok = check(reparsed2) and ok
+    if not ok:
+        raise ImportError("parsed and re-parsed s-expressions differ")
