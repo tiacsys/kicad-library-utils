@@ -47,19 +47,32 @@ def render_polyline(elem, **style):
     yield bbox(*points), Tag('path', **style, d=path_data)
 
 
+def distance_between(p1, p2):
+    dx = p2[0] - p1[0]
+    dy = p2[1] - p1[1]
+    return math.sqrt(dx * dx + dy * dy)
+
+
 # https://stackoverflow.com/questions/28910718/give-3-points-and-a-plot-circle
 def define_circle(p1, p2, p3):
     """
     Returns the center and radius of the circle passing the given 3 points.
     In case the 3 points form a line, raises a ValueError.
     """
+
     temp = p2[0] * p2[0] + p2[1] * p2[1]
     bc = (p1[0] * p1[0] + p1[1] * p1[1] - temp) / 2
     cd = (temp - p3[0] * p3[0] - p3[1] * p3[1]) / 2
     det = (p1[0] - p2[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p2[1])
 
     if abs(det) < 1.0e-6:
-        raise ValueError()
+        # could be three points very, very close or co-incident
+        if distance_between(p2, p1) < 1.0e-6 and distance_between(p3, p2) < 1.0e-6:
+            # zero sized, centre on midpoint (though any point would do as they're so close)
+            return ((p2[0], p2[0]), 0)
+
+        # otherwise they're far apart but in a line
+        raise ValueError(f'Attempted to define a circle by 3 collinear points: {p1}, {p2}, {p3}')
 
     # Center of circle
     cx = (bc*(p2[1] - p3[1]) - cd*(p1[1] - p2[1])) / det
@@ -72,7 +85,7 @@ def define_circle(p1, p2, p3):
 def render_arc(arc, **style):
     x1, y1 = arc.startx, -arc.starty
     x2, y2 = arc.endx, -arc.endy
-    (cx, cy), r = define_circle((x1, y1), (arc.midx, arc.midy), (x2, y2))
+    (cx, cy), r = define_circle((x1, y1), (arc.midx, -arc.midy), (x2, y2))
 
     x1r = x1 - cx
     y1r = y1 - cy
