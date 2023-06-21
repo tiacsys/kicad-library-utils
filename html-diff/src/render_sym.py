@@ -29,19 +29,19 @@ def elem_style(elem):
                 'stroke_linejoin': 'round'}
 
 
-def render_rect(elem, **style):
+def render_rect(sym, elem, **style):
     x, y = min(elem.startx, elem.endx), min(-elem.starty, -elem.endy)
     w, h = max(elem.startx, elem.endx)-x, max(-elem.starty, -elem.endy)-y
     yield (x, y, x+w, y+h), Tag('rect', **style, x=x, y=y, width=w, height=h)
 
 
-def render_circle(elem, **style):
+def render_circle(sym, elem, **style):
     x, y = elem.centerx, -elem.centery
     r = max(0.2, elem.radius)
     yield (x-r, y-r, x+r, y+r), Tag('circle', **style, cx=x, cy=y, r=r)
 
 
-def render_polyline(elem, **style):
+def render_polyline(sym, elem, **style):
     points = [(pt.x, -pt.y) for pt in elem.points]
     path_data = 'M ' + ' L '.join(f'{x:.6f} {y:.6f}' for x, y in points)
     yield bbox(*points), Tag('path', **style, d=path_data)
@@ -82,7 +82,7 @@ def define_circle(p1, p2, p3):
     return ((cx, cy), radius)
 
 
-def render_arc(arc, **style):
+def render_arc(sym, arc, **style):
     x1, y1 = arc.startx, -arc.starty
     x2, y2 = arc.endx, -arc.endy
     (cx, cy), r = define_circle((x1, y1), (arc.midx, -arc.midy), (x2, y2))
@@ -102,7 +102,7 @@ def render_arc(arc, **style):
     yield (cx-r, cy-r, cx+r, cy+r), Tag('path', **style, d=d)
 
 
-def render_text(elem, **style):
+def render_text(sym, elem, **style):
     content = getattr(elem, 'text', getattr(elem, 'value', None))
     assert content is not None
     x, y = elem.posx, -elem.posy
@@ -146,7 +146,7 @@ def text_elem(x, y, rot, content, effects, style):
                             text_anchor=anchor, **style, **xform, **style_extra)
 
 
-def render_pin(elem, **style):
+def render_pin(sym, elem, **style):
     if elem.is_hidden:
         return
 
@@ -191,29 +191,34 @@ def render_pin(elem, **style):
     else:
         t_rot = 0
 
-    elem.name_effect.h_justify = 'left'
-    if rot in (180, 270):
-        elem.name_effect.h_justify = {
-            'left': 'right',
-            'right': 'left'
-        }.get(elem.name_effect.h_justify)
+    # Use the global symbol property to decide if the text appears at all
+    if not sym.hide_pin_names:
+        e = l + sym.pin_names_offset
+        elem.name_effect.h_justify = 'left'
+        if rot in (180, 270):
+            elem.name_effect.h_justify = {
+                'left': 'right',
+                'right': 'left'
+            }.get(elem.name_effect.h_justify)
 
-    k = 0.4
-    e = l + k
-    nx, ny = {
-        0: (x1+e, y1),
-        90: (x1, y1-e),
-        180: (x1-e, y1),
-        270: (x1, y1+e), }[rot]
-    yield from text_elem(nx, ny, t_rot, elem.name, elem.name_effect, {'class': 'l-any-f'})
+        nx, ny = {
+            0: (x1+e, y1),
+            90: (x1, y1-e),
+            180: (x1-e, y1),
+            270: (x1, y1+e), }[rot]
 
-    elem.number_effect.v_justify = 'top'
-    nx, ny = {
-        0: (x1+l/2, y1-k),
-        90: (x1-k, y1-l/2),
-        180: (x1-l/2, y1-k),
-        270: (x1-k, y1+l/2), }[rot]
-    yield from text_elem(nx, ny, t_rot, elem.number, elem.number_effect, {'class': 'l-any-f'})
+        yield from text_elem(nx, ny, t_rot, elem.name, elem.name_effect, {'class': 'l-any-f'})
+
+    if not sym.hide_pin_numbers:
+        k = 0.4
+        elem.number_effect.v_justify = 'top'
+        nx, ny = {
+            0: (x1+l/2, y1-k),
+            90: (x1-k, y1-l/2),
+            180: (x1-l/2, y1-k),
+            270: (x1-k, y1+l/2), }[rot]
+
+        yield from text_elem(nx, ny, t_rot, elem.number, elem.number_effect, {'class': 'l-any-f'})
 
 
 def _render_sym_internal(sym, unit=1):
@@ -227,7 +232,7 @@ def _render_sym_internal(sym, unit=1):
             (render_text, sym.properties)]:
         for elem in elems:
             if not hasattr(elem, 'unit') or elem.unit in (0, unit):  # bad API
-                for bbox, tag in fun(elem, **elem_style(elem)):  # NOQA: F402
+                for bbox, tag in fun(sym, elem, **elem_style(elem)):  # NOQA: F402
                     yield bbox, tag
 
 
