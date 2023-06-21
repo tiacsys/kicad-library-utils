@@ -24,7 +24,7 @@ def elem_style(elem):
             classes += ' l-any-f'
 
         return {'class': classes,
-                'stroke_width': getattr(elem, 'stroke_width', 0.2),
+                'stroke_width': max(0.2, getattr(elem, 'stroke_width', 0)),
                 'stroke_linecap': 'round',
                 'stroke_linejoin': 'round'}
 
@@ -37,7 +37,7 @@ def render_rect(elem, **style):
 
 def render_circle(elem, **style):
     x, y = elem.centerx, -elem.centery
-    r = elem.radius
+    r = max(0.2, elem.radius)
     yield (x-r, y-r, x+r, y+r), Tag('circle', **style, cx=x, cy=y, r=r)
 
 
