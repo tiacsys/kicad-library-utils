@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import geometry
 import sexpr
 
 __version__ = '8.0'
@@ -483,6 +484,10 @@ class Circle(KicadSymbolBase):
             demorgan=demorgan,
         )
 
+    @property
+    def center(self) -> geometry.Point:
+        return Point(self.centerx, self.centery)
+
 
 @dataclass
 class Arc(KicadSymbolBase):
@@ -546,18 +551,51 @@ class Arc(KicadSymbolBase):
             demorgan=demorgan,
         )
 
+    @property
+    def start(self) -> geometry.Point:
+        return geometry.Point(self.startx, self.starty)
+
+    @property
+    def end(self) -> geometry.Point:
+        return geometry.Point(self.endx, self.endy)
+
+    @property
+    def midpoint(self) -> geometry.Point:
+        return geometry.Point(self.midx, self.midy)
+
 
 @dataclass
 class Point(KicadSymbolBase):
-    x: float
-    y: float
+    """
+    A point in a KiCad symbol
+    """
+
+    _pt: geometry.Point
+
+    def __init__(self, x, y):
+        self._pt = geometry.Point(x, y)
+
+    @property
+    def pt(self) -> geometry.Point:
+        """
+        Get the geometric point underlying this object
+        """
+        return self._pt
+
+    @property
+    def x(self) -> float:
+        return self._pt.x
+
+    @property
+    def y(self) -> float:
+        return self._pt.y
 
     @classmethod
     def new_mil(cls, x: float, y: float) -> "Point":
         return cls(mil_to_mm(x), mil_to_mm(y))
 
     def get_sexpr(self):
-        return ["xy", self.x, self.y]
+        return ["xy", self._pt.x, self._pt.y]
 
 
 @dataclass
@@ -654,6 +692,13 @@ class Polyline(KicadSymbolBase):
         (stroke, sline, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
         return Polyline(pts, stroke, sline, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
+
+    def get_segs(self):
+        """
+        Generate the geometric segments of this polyline
+        """
+        for i in range(len(self.points) - 1):
+            yield (geometry.Seg2D(self.points[i].pt, self.points[i + 1].pt))
 
 
 @dataclass
@@ -1139,7 +1184,9 @@ class KicadLibrary(KicadSymbolBase):
                     # parse s-expr
                     sexpr_data = sexpr.parse_sexp(f.read())
         except ValueError as exc:
-            raise KicadFileFormatError(f"Problem while parsing the s-expr file: {exc}") from None
+            raise KicadFileFormatError(
+                f"Problem while parsing the s-expr file: {exc}"
+            ) from None
         sym_list = _get_array(sexpr_data, "symbol", max_level=2)
 
         # Because of the various file format changes in the development of kicad v6 and v7, we want
