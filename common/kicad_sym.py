@@ -729,6 +729,10 @@ class Text(KicadSymbolBase):
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
         return Text(text, posx, posy, rotation, effects, unit=unit, demorgan=demorgan)
 
+    @property
+    def pos(self):
+        return geometry.Point(self.posx, self.posy)
+
 
 @dataclass
 class Rectangle(KicadSymbolBase):

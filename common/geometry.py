@@ -29,8 +29,13 @@ class Vec2D:
     def __str__(self) -> str:
         return f"({self.x}, {self.y})"
 
-    def __hash__(self) -> int:
-        return hash((self.x, self.y))
+    @staticmethod
+    def lexicographic_key(vec) -> tuple:
+        """
+        Get a lexicographically-sorted tuple that allows to strictly order vectors
+        when sorting.
+        """
+        return (vec.x, vec.y)
 
     @property
     def angle(self) -> float:
@@ -79,8 +84,13 @@ class Point:
     def __str__(self) -> str:
         return f"Point({self.vec.x}, {self.vec.y})"
 
-    def __hash__(self) -> int:
-        return hash(self.vec)
+    @staticmethod
+    def lexicographic_key(pt) -> tuple:
+        """
+        Get a lexicographically-sorted tuple that allows to strictly order points
+        when sorting.
+        """
+        return Vec2D.lexicographic_key(pt.vec)
 
     def from_origin(self) -> Vec2D:
         """
@@ -112,40 +122,44 @@ class Seg2D:
     A 2D line segment, which is defined as a line joining two points
     """
 
-    p1: Point
-    p2: Point
-    # cache the vector as we need it for nearly everything
-    _vec: Vec2D
+    start: Point
+    end: Point
 
-    def __init__(self, p1, p2):
-        self.p1 = p1
-        self.p2 = p2
-        self._vec = p1.vec_to(p2)
-
-    def __hash__(self) -> int:
-        return hash((self.p1, self.p2))
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
 
     def __abs__(self) -> float:
-        return abs(self._vec)
+        return abs(self.vector)
 
     def __str__(self) -> str:
-        return f"Seg(({self.p1.x}, {self.p1.y}) -> ({self.p2.x}, {self.p2.y}))"
+        return f"Seg(({self.start.x}, {self.start.y}) -> ({self.end.x}, {self.end.y}))"
 
     @property
     def vector(self) -> Vec2D:
         """
         Get the vector of the segment (i.e. the line if p1 was the origin)
         """
-        return self._vec
+        return self.start.vec_to(self.end)
 
     @property
     def length(self) -> float:
-        return abs(self._vec)
+        return abs(self.vector)
 
     @property
     def angle(self) -> float:
-        return self._vec.angle
+        return self.vector.angle
 
     @property
     def manhattan_length(self) -> float:
-        return self._vec.manhattan_length
+        return self.vector.manhattan_length
+
+    def lexicographically_ordered(self) -> "Seg2D":
+        """
+        Get a segment that has both points in lexicographic order
+
+        So P(A, B).lexicographically_ordered() and P(B, A).lexicographically_ordered()
+        will return the same result
+        """
+        s_e = sorted((self.start, self.end), key=Point.lexicographic_key)
+        return Seg2D(s_e[0], s_e[1])

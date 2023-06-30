@@ -3,6 +3,26 @@ import math
 
 from rules_symbol.rule import KLCRule
 
+import geometry
+
+# class RoundedPoint:
+
+#     def __init__(self, pt, tol):
+#         self._tol = tol
+#         self._round_x = round(pt.x / tol)
+#         self._round_y = round(pt.y / tol)
+#         self._pt = geometry.Point(_round_x, _round_y)
+
+#     def _roundoff_length(self, l: float) -> int:
+#         """
+#         Returns an integer that will be the same for lengths that are within dl
+#         of each other
+#         """
+#         return round(l / self.smallLength)
+
+#     def __hash__(self):
+#         return self.
+
 
 class Rule(KLCRule):
     """Basic geometry checks"""
@@ -12,7 +32,7 @@ class Rule(KLCRule):
 
     smallLength = 0.1  # in mm, about 4 thou
 
-    def _check_degenerate_arcs(self):
+    def _check_degenerate_arcs(self) -> None:
         for arc in self.component.arcs:
             d_start_mid = arc.start.distance_to(arc.midpoint)
             d_end_mid = arc.end.distance_to(arc.midpoint)
@@ -24,10 +44,10 @@ class Rule(KLCRule):
                 )
             elif d_start_end < self.smallLength:
                 self.warning(
-                    f"Arc starts and ends in the same place ({arc.start}): is it a circle?"
+                    f"Arc starts and ends in the same, or nearly the same, place ({arc.start}): is it a circle?"
                 )
 
-    def _check_degenerate_polylines(self):
+    def _check_degenerate_polylines(self) -> None:
         for polyline in self.component.polylines:
             n_points = len(polyline.points)
             segment_i = 0
@@ -55,52 +75,156 @@ class Rule(KLCRule):
                     if theta_deviation > 0 and theta_deviation < self.verySmallAngle:
                         degrees = math.degrees(theta)
                         self.warning(
-                            "Polyline contains a segment that is nearly but not exactly horizontal or vertical "
+                            "Polyline contains a segment that is nearly, but not exactly, horizontal or vertical "
                             f"(segment {segment_i + 1} of {n_points - 1}): "
                             f"segment {seg} is {degrees:04f} degrees"
                         )
 
                     segment_i += 1
 
-    def _check_duplicate_segments(self):
-        segs = {}
+    def _check_nearly_closed_polylines(self):
+        for polyline in self.component.polylines:
+            n_points = len(polyline.points)
+            # can't close a single segment
+            if n_points < 3:
+                continue
 
+            first_point = polyline.points[0].pt
+            last_point = polyline.points[-1].pt
+
+            if (
+                self._points_almost_equal(first_point, last_point)
+                and first_point != last_point
+            ):
+                self.warning(
+                    f"Polyline with {n_points} points nearly, but not quite, closed: "
+                    f"start is {first_point}, end is {last_point}"
+                )
+
+    def _check_degenerate_texts(self) -> None:
+        for text in self.component.texts:
+            if len(text.text) == 0:
+                self.warning(f"Text at {text.pos} has no content")
+
+    def _lengths_almost_equal(self, l1, l2) -> bool:
+        return abs(l2 - l1) < self.smallLength
+
+    def _points_almost_equal(self, p1, p2) -> bool:
+        return p1.distance_to(p2) < self.smallLength
+
+    def _check_duplicate_segments(self) -> None:
+        def _segs_almost_equal(s1, s2) -> bool:
+            return (
+                s1.start.distance_to(s2.start) < self.smallLength
+                and s1.end.distance_to(s2.end) < self.smallLength
+            )
+
+        all_segs = []
         for polyline in self.component.polylines:
             for seg in polyline.get_segs():
-                if seg in segs:
-                    self.warning(f"The same segment exists multiple times: {seg}")
-                else:
-                    segs[seg] = True
+                # order all segs the same way (A->B is the same as B->A for this purpose)
+                all_segs.append((seg.lexicographically_ordered(), polyline.unit))
 
-    def _check_duplicate_circles(self):
-        circles = {}
+        for i in range(len(all_segs)):
+            for j in range(i + 1, len(all_segs)):
+                if all_segs[i][1] != all_segs[j][1]:
+                    # different units is OK
+                    continue
+                s1 = all_segs[i][0]
+                s2 = all_segs[j][0]
+                if _segs_almost_equal(s1, s2):
+                    if s1 == s2:
+                        self.warning(f"The same segment appears multiple times: {s1}")
+                    else:
+                        self.warning(f"The segment {s1} is very similar to: {s2}")
 
-        for circle in self.component.circles:
-            circ_key = (circle.center.pt.from_origin(), circle.radius)
-            if circ_key in circles:
-                self.warning(
-                    "The same circle geometry exists multiple times:"
-                    f"{circle.center.pt}, radius {circle.radius}"
-                )
-            else:
-                circles[circ_key] = True
+    def _check_duplicate_circles(self) -> None:
+        def _circles_almost_equal(c1, c2) -> bool:
+            return c1.center.pt.distance_to(
+                c2.center.pt
+            ) < self.smallLength and self._lengths_almost_equal(c1.radius, c2.radius)
 
-    def _check_duplicate_arcs(self):
-        arcs = {}
+        for i in range(len(self.component.circles)):
+            for j in range(i + 1, len(self.component.circles)):
+                c1 = self.component.circles[i]
+                c2 = self.component.circles[j]
 
-        for arc in self.component.arcs:
-            arc_key = (
-                arc.start.from_origin(),
-                arc.midpoint.from_origin(),
-                arc.end.from_origin(),
+                if c1.unit == c2.unit and _circles_almost_equal(c1, c2):
+                    if c1 == c2:
+                        self.warning(
+                            "The same circle appears multiple times: "
+                            f"center {c1.center}, radius {c1.radius}"
+                        )
+                    else:
+                        self.warning(
+                            "The circle geometry"
+                            f"(center {c1.center}, radius {c1.radius}) "
+                            "is very similar to: "
+                            f"(center {c2.center}, radius {c2.radius})"
+                        )
+
+    def _check_duplicate_arcs(self) -> None:
+        def _arcs_almost_equal(a1, a2) -> bool:
+            # arcs can go either way and they're still the same
+            a1_s_e_ordered = sorted(
+                (a1.start, a1.end), key=geometry.Point.lexicographic_key
             )
-            if arc_key in arcs:
-                self.warning(
-                    "The same arc geometry exists multiple times:"
-                    f"{arc.start}, midpoint {arc.midpoint}, end {arc.end}"
-                )
-            else:
-                arcs[arc_key] = True
+            a2_s_e_ordered = sorted(
+                (a2.start, a2.end), key=geometry.Point.lexicographic_key
+            )
+
+            return (
+                self._points_almost_equal(a1_s_e_ordered[0], a2_s_e_ordered[0])
+                and self._points_almost_equal(a1_s_e_ordered[1], a2_s_e_ordered[1])
+                and self._points_almost_equal(a1.midpoint, a2.midpoint)
+            )
+
+        for i in range(len(self.component.arcs)):
+            for j in range(i + 1, len(self.component.arcs)):
+                a1 = self.component.arcs[i]
+                a2 = self.component.arcs[j]
+
+                if a1.unit == a2.unit and _arcs_almost_equal(a1, a2):
+                    if a1 == a2:
+                        self.warning(
+                            "The same arc geometry exists multiple times: "
+                            f"{a1.start}, midpoint {a1.midpoint}, end {a1.end}"
+                        )
+                    else:
+                        self.warning(
+                            "The arc geometry "
+                            f"({a1.start}, midpoint {a1.midpoint}, end {a1.end}) "
+                            "is very similar to "
+                            f"({a2.start}, midpoint {a2.midpoint}, end {a2.end})"
+                        )
+
+    def _check_duplicate_texts(self) -> None:
+        def _texts_almost_equal(t1, t2) -> bool:
+            # arcs can go either way and they're still the same
+            return (
+                self._points_almost_equal(t1.pos, t2.pos)
+                and t1.text == t2.text
+                and t1.effects == t2.effects
+            )
+
+        for i in range(len(self.component.texts)):
+            for j in range(i + 1, len(self.component.texts)):
+                t1 = self.component.texts[i]
+                t2 = self.component.texts[j]
+
+                if t1.unit == t2.unit and _texts_almost_equal(t1, t2):
+                    if t1 == t2:
+                        self.warning(
+                            "The same text exists multiple times: "
+                            f"'{t1.text}' at {t1.pos}"
+                        )
+                    else:
+                        self.warning(
+                            "The text "
+                            f"'{t1.text}' at {t1.pos} "
+                            "is very similar to "
+                            f"({t2.text}' at {t2.pos}"
+                        )
 
     def check(self):
         """
@@ -108,6 +232,8 @@ class Rule(KLCRule):
         """
         self._check_degenerate_arcs()
         self._check_degenerate_polylines()
+        self._check_nearly_closed_polylines()
+        self._check_degenerate_texts()
 
         # very small circles are just dots
         # and that's probably OK
@@ -115,6 +241,7 @@ class Rule(KLCRule):
         self._check_duplicate_segments()
         self._check_duplicate_circles()
         self._check_duplicate_arcs()
+        self._check_duplicate_texts()
 
         return 0  # There is no KLC rule for this so this check only generates warnings
 
