@@ -35,7 +35,7 @@ from DrawingElements import (
 from Point import Point
 
 # ##############################  Parameters ##################################
-pin_per_row_range = range(1, 41)
+pin_per_row_range = range(1, 61)
 # For some dual row connectors all numbering schemes generate the same symbol for the 1 pin per row
 # variant.
 pin_per_row_range_dual = range(2, 41)
