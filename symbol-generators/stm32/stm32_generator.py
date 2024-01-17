@@ -65,6 +65,7 @@ class DataPin:
                        r'Power/PWR_(ON|LP)':     'other/output',
                        r'Power/IRROFF':          'other/input',
                        r'Power/NPOR':            'other/input',
+                       r'I/O/PWR_CPU_ON':        'other/output',
                        r'Power/':                'special_power/power_input',
                        r'(I/O|MonoIO)/(.*-)?OSC_(IN|OUT)':      'clock/input',
                        r'I/O/(OPAMP|AOP).*':     'other/input',
@@ -129,6 +130,7 @@ class Device:
             "SO8N":         ("Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",                         "SO*3.9x4.9mm*P1.27mm*"), # NOQA
             "LFBGA100":     ("Package_BGA:LFBGA-100_10x10mm_Layout10x10_P0.8mm",            "*LFBGA*10x10mm*Layout10x10*P0.8mm*"), # NOQA
             "LFBGA144":     ("Package_BGA:LFBGA-144_10x10mm_Layout12x12_P0.8mm",            "*LFBGA*10x10mm*Layout12x12*P0.8mm*"), # NOQA
+            "LFBGA289":     ("Package_BGA:LFBGA-289_14x14mm_Layout17x17_P0.8mm",            "*LFBGA*14x14mm*Layout17x17*P0.8mm*"), # NOQA
             "LFBGA354":     ("Package_BGA:ST_LFBGA-354_16x16mm_Layout19x19_P0.8mm",         "*LFBGA*16x16mm*Layout19x19*P0.8mm*"), # NOQA
             "LFBGA448":     ("Package_BGA:ST_LFBGA-448_18x18mm_Layout22x22_P0.8mm",         "*LFBGA*18x18mm*Layout22x22*P0.8mm*"), # NOQA
             "LQFP32":       ("Package_QFP:LQFP-32_7x7mm_P0.8mm",                            "LQFP*7x7mm*P0.8mm*"), # NOQA
@@ -143,10 +145,13 @@ class Device:
             "LQFP208":      ("Package_QFP:LQFP-208_28x28mm_P0.5mm",                         "LQFP*28x28mm*P0.5mm*"), # NOQA
             "TFBGA64":      ("Package_BGA:TFBGA-64_5x5mm_Layout8x8_P0.5mm",                 "TFBGA*5x5mm*Layout8x8*P0.5mm*"), # NOQA
             "TFBGA100":     ("Package_BGA:TFBGA-100_8x8mm_Layout10x10_P0.8mm",              "TFBGA*8x8mm*Layout10x10*P0.8mm*"), # NOQA
+            "TFBGA169":     ("Package_BGA:ST_TFBGA-169_7x7mm_Layout13x13_P0.5mm",           "TFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
             "TFBGA216":     ("Package_BGA:TFBGA-216_13x13mm_Layout15x15_P0.8mm",            "TFBGA*13x13mm*Layout15x15*P0.8mm*"), # NOQA
             "TFBGA225":     ("Package_BGA:ST_TFBGA-225_13x13mm_Layout15x15_P0.8mm",         "*TFBGA*13x13mm*Layout15x15*P0.8mm*"), # NOQA
             "TFBGA240":     ("Package_BGA:TFBGA-265_14x14mm_Layout17x17_P0.8mm",            "TFBGA*14x14mm*Layout17x17*P0.8mm*"), # NOQA
             "TFBGA257":     ("Package_BGA:ST_TFBGA-257_10x10mm_Layout19x19_P0.5mmP0.65mm",  "*TFBGA*10x10mm*Layout19x19*P0.5mmP0.65mm*"), # NOQA
+            "TFBGA289":     ("Package_BGA:TFBGA-289_9x9mm_Layout17x17_P0.5mm",              "*TFBGA*9x9mm*Layout17x17*P0.5mmP0.65mm*"), # NOQA
+            "TFBGA320":     ("Package_BGA:ST_TFBGA-320_11x11mm_Layout21x21_P0.5mm",         "*TFBGA*11x11mm_Layout21x21*P0.5mm"), # NOQA
             "TFBGA361":     ("Package_BGA:ST_TFBGA-361_12x12mm_Layout23x23_P0.5mmP0.65mm",  "*TFBGA*12x12mm*Layout23x23*P0.5mmP0.65mm*"), # NOQA
             "TSSOP14":      ("Package_SO:TSSOP-14_4.4x5mm_P0.65mm",                         "TSSOP*4.4x5mm*P0.65mm*"), # NOQA
             "TSSOP20":      ("Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm",                       "TSSOP*4.4x6.5mm*P0.65mm*"), # NOQA
@@ -174,17 +179,24 @@ class Device:
             'ST_WLCSP-115_Die461': ('Package_CSP:ST_WLCSP-115_4.63x4.15mm_P0.4mm_Stagger', '*'), # NOQA
             'ST_WLCSP-132_Die480': ('Package_CSP:ST_WLCSP-132_4.57x4.37mm_Layout12x11_P0.35mm', '*'), # NOQA
             'ST_WLCSP-156_Die450': ('Package_CSP:ST_WLCSP-156_4.96x4.64mm_Layout13x12_P0.35mm', '*'), # NOQA
-            'ST_WLCSP-18_Die466': ('Package_CSP:ST_WLCSP-18_1.86x2.14mm_P0.4mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-25_Die460': ('Package_CSP:ST_WLCSP-25_2.30x2.48mm_Layout5x5_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-36_Die464': ('Package_CSP:ST_WLCSP-36_2.58x3.07mm_Layout6x6_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-49_Die468': ('Package_CSP:ST_WLCSP-49_3.15x3.13mm_Layout7x7_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-64_Die479': ('Package_CSP:ST_WLCSP-64_3.56x3.52mm_Layout8x8_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-81_Die469': ('Package_CSP:ST_WLCSP-81_4.02x4.27mm_Layout9x9_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-81_Die472': ('Package_CSP:ST_WLCSP-81_4.36x4.07mm_Layout9x9_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-20_Die456': ('Package_CSP:ST_WLCSP-20_1.94x2.40mm_Layout4x5_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-49_Die494': ('Package_CSP:ST_WLCSP-49_3.30x3.38mm_Layout7x7_P0.4mm_Offcenter', '*'), # NOQA
-            'ST_WLCSP-52_Die467': ('Package_CSP:ST_WLCSP-52_3.09x3.15mm_P0.4mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-90_Die482': ('Package_CSP:ST_WLCSP-90_4.20x3.95mm_P0.4mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-18_Die466':  ('Package_CSP:ST_WLCSP-18_1.86x2.14mm_P0.4mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-25_Die460':  ('Package_CSP:ST_WLCSP-25_2.30x2.48mm_Layout5x5_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-36_Die464':  ('Package_CSP:ST_WLCSP-36_2.58x3.07mm_Layout6x6_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-49_Die468':  ('Package_CSP:ST_WLCSP-49_3.15x3.13mm_Layout7x7_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-64_Die479':  ('Package_CSP:ST_WLCSP-64_3.56x3.52mm_Layout8x8_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-81_Die469':  ('Package_CSP:ST_WLCSP-81_4.02x4.27mm_Layout9x9_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-81_Die472':  ('Package_CSP:ST_WLCSP-81_4.36x4.07mm_Layout9x9_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-20_Die456':  ('Package_CSP:ST_WLCSP-20_1.94x2.40mm_Layout4x5_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-49_Die494':  ('Package_CSP:ST_WLCSP-49_3.30x3.38mm_Layout7x7_P0.4mm_Offcenter', '*'), # NOQA
+            'ST_WLCSP-52_Die467':  ('Package_CSP:ST_WLCSP-52_3.09x3.15mm_P0.4mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-90_Die482':  ('Package_CSP:ST_WLCSP-90_4.20x3.95mm_P0.4mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-12_Die443':  ('Package_CSP:ST_WLCSP-12_1.70x1.42mm_P0.35mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-25_Die474':  ('Package_CSP:ST_WLCSP-25_2.33x2.24mm_Layout5x5_P0.4mm', '*'), # NOQA
+            'ST_WLCSP-80_Die484':  ('Package_CSP:ST_WLCSP-80_3.50x3.27mm_P0.35mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-208_Die481': ('Package_CSP:ST_WLCSP-208_5.38x5.47mm_P0.35mm_Stagger', '*'), # NOQA
+            'ST_WLCSP-150_Die481': ('Package_CSP:ST_WLCSP-150_5.38x5.47mm_P0.4m_Stagger', '*'), # NOQA
+            'ST_WLCSP-56_Die455':  ('Package_CSP:ST_WLCSP-56_3.38x3.38mm_P0.4m_Stagger', '*'), # NOQA
+            'ST_WLCSP-72_Die455':  ('Package_CSP:ST_WLCSP-72_3.38x3.38mm_P0.35m_Stagger', '*'), # NOQA
     }
 
     def __init__(self, xml):
@@ -566,6 +578,9 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
                 res = None
                 cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), 0)', (datasheet, datasheet))
 
+            # For most parts, the computed part numbers above work just fine. For some parts however, the filename is
+            # not the complete RPN, but instead a shorter prefix of it. In case the request above was answered 404 not
+            # found, retry with a truncated part number. If that still doesn't work, we give up.
             for cutoff in [-5, -6]:
                 if res and res.status_code != 404:
                     break
@@ -620,11 +635,11 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
         dev = Device(xml)
 
         if skip_without_footprint and not dev.footprint:
-            tqdm.tqdm.write(f'No footprint for device for device {dev.name}, skipping.')
+            tqdm.tqdm.write(f'No footprint for device {dev.name} with ST package name {dev.package}, skipping.')
             continue
 
         if skip_without_datasheet and not datasheet:
-            tqdm.tqdm.write(f'No datasheet for device for device {dev.name}, skipping.')
+            tqdm.tqdm.write(f'No datasheet for device {dev.name}, skipping.')
             continue
 
         dev.create_symbol(lib, keywords=keywords, desc=desc, datasheet=datasheet)
