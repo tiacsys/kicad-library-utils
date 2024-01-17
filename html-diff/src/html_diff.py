@@ -478,7 +478,6 @@ if __name__ == '__main__':
     meta = {}
 
     if not (path.is_file() or path.is_dir()):
-        path, _, path_name = path.rpartition(':')
         print(f'Path "{path}" does not exist or is not a file.', file=sys.stderr)
         sys.exit(2)
 
