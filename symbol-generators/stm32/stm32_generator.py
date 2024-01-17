@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import pathlib
+import sqlite3
 import os
 import re
 import time
 import math
-import json
 import sys
 from collections import defaultdict
 import warnings
@@ -13,7 +13,7 @@ import fnmatch
 from itertools import groupby
 from dataclasses import dataclass, field
 
-import requests
+import httpx
 import click
 from bs4 import BeautifulSoup
 import tqdm
@@ -527,43 +527,73 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
 
     lib = kicad_sym.KicadLibrary(output_file)
 
-    url_cache_d = {}
+    if url_cache:
+        url_cache = sqlite3.connect(url_cache)
+    else:
+        url_cache = sqlite3.connect(':memory:')
 
-    if url_cache and url_cache.is_file():
-        try:
-            url_cache_d = json.loads(pathlib.Path(url_cache).read_text())
-        except:  # noqa: E722
-            print('URL cache invalid, resetting.', file=sys.stderr)
+    url_cache.execute('CREATE TABLE IF NOT EXISTS urls (computed_url, actual_url, timestamp, response)')
 
     def verify_datasheet(datasheet):
         if not verify_datasheets:
             return datasheet
 
-        if datasheet in url_cache_d:
-            return url_cache_d[datasheet]
+        with url_cache as cur:
+            res = cur.execute('''SELECT response, actual_url FROM urls
+                                 WHERE computed_url=? AND timestamp > datetime("now", "-90 day")
+                                 ORDER BY timestamp DESC LIMIT 1''', (datasheet,)).fetchone()
 
-        res = requests.head(datasheet, allow_redirects=True)
+            if res:
+                code, url = res
+                if code == 200:
+                    return url
+                else:
+                    return ''
 
-        if res.status_code == 200:
-            url_cache_d[datasheet] = datasheet
-            return datasheet
+            client = httpx.Client(http2=True)
+            ua_headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0',
+                'From': 'kicad-libraries@jaseg.de',
+                }
+            try:
+                res = client.head(datasheet, follow_redirects=True, headers=ua_headers)
+                cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), ?)', (datasheet, datasheet, res.status_code))
 
-        for cutoff in [-5, -6]:
-            if res.status_code != 404:
-                break
+                if res.status_code == 200:
+                    return datasheet
 
-            # try cutting off one letter from the part number
-            testurl = datasheet[:cutoff] + '.pdf'
-            res = requests.head(testurl, allow_redirects=True)
-            if res.status_code == 200:
-                tqdm.tqdm.write(f'Datasheet for {refname} unexpectedly found at {testurl} instead '
-                                f'of {datasheet}')
-                url_cache_d[datasheet] = testurl
-                return testurl
+            except httpx.ReadTimeout:
+                res = None
+                cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), 0)', (datasheet, datasheet))
 
-        tqdm.tqdm.write(f'Datasheet for {refname} not found at {datasheet} '
-                        f'(Status code {res.status_code})')
-        return ''
+            for cutoff in [-5, -6]:
+                if res and res.status_code != 404:
+                    break
+
+                # try cutting off one letter from the part number
+                testurl = datasheet[:cutoff] + '.pdf'
+
+                try:
+                    res = client.head(testurl, follow_redirects=True, headers=ua_headers)
+                    cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), ?)', (datasheet, testurl, res.status_code))
+
+                    if res.status_code == 200:
+                        tqdm.tqdm.write(f'Datasheet for {refname} unexpectedly found at {testurl} instead '
+                                        f'of {datasheet}')
+                        return testurl
+
+                except httpx.ReadTimeout:
+                    res = None
+                    cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), 0)', (datasheet, datasheet))
+
+            if res:
+                tqdm.tqdm.write(f'Datasheet for {refname} not found at {datasheet} '
+                                f'(Status code {res.status_code})')
+
+            else:
+                tqdm.tqdm.write(f'Datasheet for {refname} not found at {datasheet} '
+                                f'(HTTP/2 request timeout)')
+            return ''
 
     for filename, variants in tqdm.tqdm(files.items(), desc=pathlib.Path(output_file).stem):
         xml = cubemx_mcu_db_dir / f'{filename}.xml'
@@ -590,8 +620,11 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
         dev = Device(xml)
 
         if skip_without_footprint and not dev.footprint:
+            tqdm.tqdm.write(f'No footprint for device for device {dev.name}, skipping.')
             continue
+
         if skip_without_datasheet and not datasheet:
+            tqdm.tqdm.write(f'No datasheet for device for device {dev.name}, skipping.')
             continue
 
         dev.create_symbol(lib, keywords=keywords, desc=desc, datasheet=datasheet)
@@ -620,9 +653,6 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
 
                 lib.symbols.append(derived_symbol)
 
-    print('Writing library file...')
-    if url_cache:
-        url_cache.write_text(json.dumps(url_cache_d))
     now = time.time()
     lib.write()
     after = time.time()
