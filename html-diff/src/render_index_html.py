@@ -28,7 +28,7 @@ css = """
         flex-direction: column;
         align-items: center;
     }
-    button {
+    .library-button {
         background-color: blue;
         color: white;
         border: none;
@@ -41,7 +41,7 @@ css = """
         cursor: pointer;
         border-radius: 8px;
     }
-    button:disabled {
+    .library-button.disabled {
         background-color: grey;
     }
 """
@@ -103,10 +103,10 @@ def generate_index_html(directory, prefix):
             if html_files:
                 path = f'{prefix}{sub_dir}/{html_files[0].name}'
                 buttons_html += f'''
-                <button onclick="window.location.href=\'{path}\'">{sub_dir}</button><br>
+                <a class="library-button" href=\'{path}\'">{sub_dir}</a><br>
                 '''
             else:
-                buttons_html += f'<button disabled>{sub_dir} (No HTML files)</button><br>'
+                buttons_html += f'<a class="library-button disabled">{sub_dir} (No HTML files)</a><br>'
         return f'''
             <html>
                 <head>
