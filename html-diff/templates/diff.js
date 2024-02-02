@@ -434,13 +434,25 @@ if (svg_ref.length > 0) {
 
 function updateIndexLinkHashes() {
     const newHash = window.location.hash;
+
+    const updateHrefHash = (elem) => {
+        const url = new URL(elem.href);
+        url.hash = newHash;
+        elem.href = url.toString();
+    };
+
+    // Top left navigation buttons
     for (const elem_id of ['nav-bt-prev', 'nav-bt-next']) {
         const bt = document.getElementById(elem_id);
         if (bt) {
-            const url = new URL(bt.href);
-            url.hash = newHash;
-            bt.href = url.toString();
+            updateHrefHash(bt);
         }
+    }
+
+    // Index pane links
+    const indexList = document.getElementById('index');
+    for (const link of indexList.querySelectorAll('.changed a')) {
+        updateHrefHash(link);
     }
 }
 
