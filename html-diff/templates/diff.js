@@ -451,7 +451,7 @@ function updateIndexLinkHashes() {
 
     // Index pane links
     const indexList = document.getElementById('index');
-    for (const link of indexList.querySelectorAll('.changed a')) {
+    for (const link of indexList.querySelectorAll('a')) {
         updateHrefHash(link);
     }
 }
