@@ -409,7 +409,7 @@ setUnit(0);
 refreshLayerSetCheckboxes();
 
 if (enableLayers) {
-    const layersButton = document.getElementById("layers-button");
+    const layersButton = document.getElementById("btn-layer-view");
     layersButton.style = "display: initial";
     let layerDrawerOpen = true;
     layerDrawer.style = "display: initial";
@@ -418,7 +418,7 @@ if (enableLayers) {
         layerDrawer.style = layerDrawerOpen ? "display: initial" : "display: none";
     });
 } else {
-    document.getElementById('layer-view-button').style = 'display: none';
+    document.getElementById('btn-layer-view').style = 'display: none';
 }
 
 if (svg_ref.length > 0) {
@@ -429,7 +429,7 @@ if (svg_ref.length > 0) {
     if (!window.location.hash) {
         window.location.hash = '#layer-view';
     }
-    document.getElementById('render-tab-button').style = 'display: none';
+    document.getElementById('btn-render').style = 'display: none';
 }
 
 function updateIndexLinkHashes() {
@@ -468,23 +468,41 @@ document.getElementById('index-button').addEventListener('click', event => {
 
 // listen for all keydown events
 document.getElementById('body').addEventListener('keydown', event => {
-    var eId;
-    switch (event.key) {
-        case "ArrowLeft":
-            eId = "nav-bt-prev"
-            break;
-        case "ArrowRight":
-            eId = "nav-bt-next"
-            break;
-        case "ArrowUp":
-        case "ArrowDown":
-        default:
-            eId = "btn-" + event.key;
-            break;
+    let eId = null;
+
+    // These keys only apply for un-modified key presses
+    // (e.g. don't trigger when Ctrl+C is pressed to copy text)
+    if (!event.ctrlKey && !event.altKey && !event.metaKey) {
+        switch (event.key) {
+            case "ArrowLeft":
+                eId = "nav-bt-prev"
+                break;
+            case "ArrowRight":
+                eId = "nav-bt-next"
+                break;
+            case "c":
+                eId = "btn-code-diff";
+                break;
+            case "l":
+                eId = "btn-layer-view";
+                break;
+            case "m":
+                eId = "btn-metadata";
+                break;
+            case "r":
+                eId = "btn-render";
+                break;
+            case "v":
+                eId = "btn-visual-diff";
+                break;
+        }
     }
-    // click the link if we can find one for this key
-    const lnk= document.getElementById(eId);
-    if (lnk) {
-         lnk.click();
+
+    // Click the link if we can find one for this key
+    if (eId) {
+        const lnk = document.getElementById(eId);
+        if (lnk) {
+            lnk.click();
+        }
     }
 });
