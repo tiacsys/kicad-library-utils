@@ -25,16 +25,34 @@
                 {{old_file_button|safe}}
                 {{new_file_button|safe}}
                 {{merge_request_button|safe}}
-                <button id="index-button">Index</button>
+                <button id="index-button"
+                    title="Toggle index pane">
+                    Index
+                </button>
             </div>
         </div>
         <div class="sidebar">
-            <a id="btn-metadata" href="#metadata">Metadata</a>
-            <a id="btn-visual-diff" href="#visual-diff" >Visual diff</a>
-            <a id="btn-layer-view" href="#layer-view">Layer view</a>
-            <a id="btn-render" href="#render">Render</a>
+            <a id="btn-metadata" href="#metadata"
+                title="Show the metadata of the object (m)">
+                Metadata
+            </a>
+            <a id="btn-visual-diff" href="#visual-diff"
+                title="Show the difference between the old and new versions (v)">
+                Visual diff
+            </a>
+            <a id="btn-layer-view" href="#layer-view"
+                title="Show a per-layer view of the object (l)">
+                Layer view
+            </a>
+            <a id="btn-render" href="#render"
+                title="Show a complete render of the object (r)">
+                Render
+            </a>
             <!--a href="#datasheet-diff">Datasheet diff</a-->
-            <a id="btn-code-diff" href="#code-diff">Code diff</a>
+            <a id="btn-code-diff" href="#code-diff"
+                title="Show difference in the s-expression code (c)">
+                Code diff
+            </a>
             <div id="unit-sel">
                 <span>Unit</span>
             </div>
