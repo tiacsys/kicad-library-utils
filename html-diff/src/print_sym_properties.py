@@ -42,7 +42,11 @@ def format_properties(lib_data, symbol_name):
         out += f'  <tr><td><strong>{k}</strong></td><td>{v}</td></tr>\n'
 
     for prop in sym.properties:
-        out += f'  <tr><td><pre>{prop.name}</pre></td><td><pre>{prop.value}</pre></td></tr>\n'
+        if prop.name == 'Datasheet':  # Link to datasheet
+            out += f'  <tr><td><pre>{prop.name}</pre></td>'
+            out += f'<td><a target="_blank" href="{prop.value}">{prop.value}</td></tr>\n'
+        else:  # Anything but datasheet
+            out += f'  <tr><td><pre>{prop.name}</pre></td><td><pre>{prop.value}</pre></td></tr>\n'
 
     out += '</table>\n'
     out += '<h4>Primitive counts:</h4>\n'
