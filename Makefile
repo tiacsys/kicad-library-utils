@@ -7,9 +7,11 @@ SPELLING_SKIP_FILENAMES = .mypy_cache *.csv stm32_generator.py
 .PHONY: help
 help:
 	@echo "Supported targets:"
-	@echo "    lint            - verify code style"
-	@echo "    spelling        - check spelling of text"
-	@echo "    style           - apply automatic formatting"
+	@echo "    lint                - verify code style"
+	@echo "    spelling            - check spelling of text"
+	@echo "    style               - apply automatic formatting"
+	@echo "    test-klc-footprints - test footprint KLC rule checks"
+	@echo "    test-klc-symbols    - test symbol KLC rule checks"
 	@echo
 
 
@@ -31,3 +33,17 @@ spelling:
 style:
 	python3 -m isort .
 	black .
+
+
+.PHONY: test-klc-footprints
+test-klc-footprints:
+	python klc-check/check_footprint.py \
+		--unittest \
+		klc-check/test_footprint.pretty/*.kicad_mod
+
+
+.PHONY: test-klc-symbols
+test-klc-symbols:
+	python klc-check/check_symbol.py \
+	--unittest \
+	klc-check/test_symbol/*.kicad_sym

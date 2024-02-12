@@ -477,6 +477,12 @@ class KicadMod:
             a = self._getArray(pad, "layers")[0]
             pad_dict["layers"] = a[1:]
 
+            # Property (fabrication property, e.g. pad_prop_heatsink)
+            pad_dict["property"] = None
+            a = self._getArray(pad, "property")
+            if a:
+                pad_dict["property"] = a[0][1]
+
             # rect delta
             pad_dict["rect_delta"] = {}
             a = self._getArray(pad, "rect_delta")
