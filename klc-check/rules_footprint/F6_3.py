@@ -14,8 +14,8 @@ class Rule(KLCRule):
         super().__init__(component, args)
 
         self.stencil_pads_with_number: List[Dict[str, Any]] = []
-
         self.pads_that_should_be_rounded: List[Dict[str, Any]] = []
+        self.heatsink_pads_without_solid_zone_connect: List[Dict[str, Any]] = []
 
     @staticmethod
     def _pad_should_be_rounded(pad) -> bool:
@@ -25,7 +25,7 @@ class Rule(KLCRule):
         return (pad['type'] == 'smd'
                 and pad['property'] != "pad_prop_heatsink")
 
-    def check_pad_rounding(self, pad):
+    def _check_pad_rounding(self, pad):
         """
         Check for pad rounding errors per F6.3.4 and add to the relevant
         error list if found.
@@ -33,6 +33,13 @@ class Rule(KLCRule):
 
         if self._pad_should_be_rounded(pad) and pad['shape'] == 'rect':
             self.pads_that_should_be_rounded.append(pad)
+
+    def _check_heatsink_zone_connection(self, pad):
+
+        if (pad['type'] == 'smd'
+                and pad['property'] == "pad_prop_heatsink"):
+            if pad['zone_connect'] != 2:  # 2: SOLID
+                self.heatsink_pads_without_solid_zone_connect.append(pad)
 
     def checkPads(self, pads: List[Dict[str, Any]]) -> bool:
 
@@ -63,7 +70,9 @@ class Rule(KLCRule):
             if not pad["type"] == "smd":
                 continue
 
-            self.check_pad_rounding(pad)
+            self._check_pad_rounding(pad)
+
+            self._check_heatsink_zone_connection(pad)
 
             err = False
 
@@ -176,6 +185,11 @@ class Rule(KLCRule):
             self.warning("Pad(s) potentially missing layers")
             for w in missing_layer_errors:
                 self.warningExtra(w)
+
+        if self.heatsink_pads_without_solid_zone_connect:
+            pad_numbers = [pad["number"] for pad in self.heatsink_pads_without_solid_zone_connect]
+            self.warning("Heatsink pads are missing 'solid' zone connection: "
+                         f"{', '.join(pad_numbers)}")
 
         return err
 

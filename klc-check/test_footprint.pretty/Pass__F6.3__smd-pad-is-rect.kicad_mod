@@ -98,6 +98,7 @@
 		(size 0.635 1.397)
 		(property pad_prop_heatsink)
 		(layers "F.Cu" "F.Paste" "F.Mask")
+		(zone_connect 2)
 		(uuid "e0109ee2-ac9a-4ddd-a58c-68a08efdacc3")
 	)
 )
