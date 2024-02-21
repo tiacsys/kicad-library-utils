@@ -247,7 +247,10 @@ class TextEffect(KicadSymbolBase):
         (sizex, sizey) = _get_xy(font, "size")
         is_italic = "italic" in font
         is_bold = "bold" in font
-        is_hidden = "hide" in sexpr
+        is_hidden = False
+        hidearray = _get_array2(sexpr, "hide")
+        if len(hidearray) and "yes" in hidearray[0]:
+            is_hidden = True
         is_mirrored = "mirror" in sexpr
         justify = _get_array2(sexpr, "justify")
         h_justify = "center"
@@ -942,7 +945,7 @@ class KicadSymbol(KicadSymbolBase):
             {"i": 3, "n": "Datasheet", "v": "", "h": True},
             {"i": 4, "n": "ki_locked", "v": "", "h": True},
             {"i": 5, "n": "ki_keywords", "v": "", "h": True},
-            {"i": 6, "n": "ki_description", "v": "", "h": True},
+            {"i": 6, "n": "Description", "v": "", "h": True},
             {"i": 7, "n": "ki_fp_filters", "v": "", "h": False},
         ]
 
@@ -970,7 +973,7 @@ class KicadSymbol(KicadSymbolBase):
         sym.get_property("Footprint").value = footprint
         sym.get_property("Datasheet").value = datasheet
         sym.get_property("ki_keywords").value = keywords
-        sym.get_property("ki_description").value = description
+        sym.get_property("Description").value = description
         if isinstance(fp_filters, list):
             fp_filters = " ".join(fp_filters)
         sym.get_property("ki_fp_filters").value = fp_filters
@@ -1091,8 +1094,8 @@ class KicadLibrary(KicadSymbolBase):
         # to ensure that this parser is only used with v6 files. Any other version will most likely
         # not work as expected. So just don't load them at all.
         version = _get_value_of(sexpr_data, "version")
-        if str(version) != "20220914":
-            raise KicadFileFormatError(f'Version of symbol file is "{version}", not "20220914"')
+        if str(version) != "20231120":
+            raise KicadFileFormatError(f'Version of symbol file is "{version}", not "20231120"')
 
         # itertate over symbol
         for item in sym_list:
