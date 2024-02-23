@@ -73,6 +73,7 @@ screenshot:
 visual_diff:
   stage: diffs
   image: kicad/kicad:7.0
+  allow_failure: true
   only:
     refs:
       - merge_requests

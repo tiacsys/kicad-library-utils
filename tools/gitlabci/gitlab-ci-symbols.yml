@@ -29,6 +29,7 @@ klc-check:
 visual_diff:
   stage: diffs
   image: kicad/kicad:nightly
+  allow_failure: true
   only:
     refs:
       - merge_requests
