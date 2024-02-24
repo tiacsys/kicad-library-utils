@@ -28,7 +28,7 @@ klc-check:
 
 visual_diff:
   stage: diffs
-  image: kicad/kicad:nightly
+  image: kicad/kicad:8.0
   allow_failure: true
   only:
     refs:
@@ -36,7 +36,7 @@ visual_diff:
     changes:
       - "*.kicad_sym"
   script:
-    - mkdir -p $HOME/.config/kicad/7.0/colors
+    - mkdir -p $HOME/.config/kicad/8.0/colors
     - sudo apt update -qq
     - sudo apt install curl python3 python3-pip -qqy --no-install-recommends
     - python3 -V
