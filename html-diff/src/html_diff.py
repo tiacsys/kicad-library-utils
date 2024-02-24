@@ -108,7 +108,7 @@ def temporary_symbol_library(symbol_lines):
         warnings.warn(f'Trailing garbage in same line after symbol definition or broken symbol index')  # NOQA: E501, F541
 
     content = '\n'.join(symbol_lines)
-    return f'(kicad_symbol_lib (version 20220914) (generator kicad_html_diff)\n{content}\n)'
+    return f'(kicad_symbol_lib (version 20231120) (generator kicad_html_diff)\n{content}\n)'
 
 
 def build_symlib_index(libfile):
