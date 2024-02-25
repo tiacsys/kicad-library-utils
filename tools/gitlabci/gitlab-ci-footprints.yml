@@ -95,4 +95,4 @@ visual_diff:
     - screenshot
   environment:
     name: review/$CI_COMMIT_REF_NAME
-    url: https://kicad.gitlab.io/-/libraries/kicad-footprints/-/jobs/$CI_JOB_ID/artifacts/diffs/index.html.diff/index.html
+    url: ${CI_PAGES_URL}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/diffs/index.html.diff/index.html
