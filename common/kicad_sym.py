@@ -1121,6 +1121,11 @@ class KicadLibrary(KicadSymbolBase):
             if extends:
                 symbol.extends = extends[0][1]
 
+            # if this extends another symbol, check if the parent exists
+            # also, the parent needs to exist 'above' the extended symbol in the file
+            if symbol.extends is not None and symbol.extends not in symbol_names:
+                raise KicadFileFormatError(f"Parent symbol {symbol.extends} of {partname} not found")
+
             # extract properties
             for prop in _get_array(item, "property"):
                 try:
@@ -1210,12 +1215,6 @@ class KicadLibrary(KicadSymbolBase):
 
             # add it to the list of symbols
             library.symbols.append(symbol)
-
-        # now iterate over all symbols, if they extend another symbol check if the parent exists
-        for (name, symbol) in symbol_names.items():
-            if symbol.extends is not None:
-                if symbol.extends not in symbol_names:
-                    raise KicadFileFormatError(f"Parent symbol {symbol.extends} of {name} not found")
 
         return library
 
