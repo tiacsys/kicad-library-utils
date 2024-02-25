@@ -1097,16 +1097,24 @@ class KicadLibrary(KicadSymbolBase):
         if str(version) != "20231120":
             raise KicadFileFormatError(f'Version of symbol file is "{version}", not "20231120"')
 
+        # for tracking derived symbols we need another dict
+        symbol_names = {}
+
         # itertate over symbol
         for item in sym_list:
             item_type = item.pop(0)
             if item_type != "symbol":
                 raise KicadFileFormatError(f"Unexpected token found: {item_type}")
             # retrieving the `partname`, even if formatted as `libname:partname` (legacy format)
-            partname = item.pop(0).split(":")[-1]
+            partname = str(item.pop(0).split(":")[-1])
 
             # we found a new part, extract the symbol name
-            symbol = KicadSymbol(str(partname), libname=filename, filename=filename)
+            symbol = KicadSymbol(partname, libname=filename, filename=filename)
+
+            # build a dict of symbolname -> symbol
+            if partname in symbol_names:
+                raise KicadFileFormatError(f"Duplicate symbols: {partname}")
+            symbol_names[partname] = symbol
 
             # extract extends property
             extends = _get_array2(item, "extends")
@@ -1202,6 +1210,12 @@ class KicadLibrary(KicadSymbolBase):
 
             # add it to the list of symbols
             library.symbols.append(symbol)
+
+        # now iterate over all symbols, if they extend another symbol check if the parent exists
+        for (name, symbol) in symbol_names.items():
+            if symbol.extends is not None:
+                if symbol.extends not in symbol_names:
+                    raise KicadFileFormatError(f"Parent symbol {symbol.extends} of {name} not found")
 
         return library
 
