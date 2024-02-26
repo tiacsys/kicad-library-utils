@@ -48,9 +48,11 @@ visual_diff:
     expose_as: "Visual Diff"
     paths:
       - "diffs/"
+    reports:
+      dotenv: deploy.env
   environment:
     name: review/$CI_COMMIT_REF_NAME
-    url: ${CI_PAGES_URL}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/diffs/index.html.diff/index.html
+    url: $DYNAMIC_ENVIRONMENT_URL
 
 nightly-convert:
   stage: export
