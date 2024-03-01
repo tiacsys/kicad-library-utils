@@ -1069,6 +1069,25 @@ class KicadLibrary(KicadSymbolBase):
             sx.append(sym.get_sexpr())
         return sexpr.build_sexp(sx)
 
+    def check_extends_order(self):
+        """
+        Check if every parent symbol exists & appears before every
+        child symbol that extends it.
+
+        Raises:
+            KicadFileFormatError: If a parent symbol does not exist
+                or appears after a child symbol that extends it.
+        """
+        already_seen = set()
+        for symbol in self.symbols:
+            name = symbol.name
+            parent = symbol.extends
+            if parent and parent not in already_seen:
+                raise KicadFileFormatError(
+                    f"Parent symbol {parent} of {name} not found"
+                )
+            already_seen.add(symbol.name)
+
     @classmethod
     def from_file(cls, filename: str, data=None) -> "KicadLibrary":
         """
@@ -1120,11 +1139,6 @@ class KicadLibrary(KicadSymbolBase):
             extends = _get_array2(item, "extends")
             if extends:
                 symbol.extends = extends[0][1]
-
-            # if this extends another symbol, check if the parent exists
-            # also, the parent needs to exist 'above' the extended symbol in the file
-            if symbol.extends is not None and symbol.extends not in symbol_names:
-                raise KicadFileFormatError(f"Parent symbol {symbol.extends} of {partname} not found")
 
             # extract properties
             for prop in _get_array(item, "property"):

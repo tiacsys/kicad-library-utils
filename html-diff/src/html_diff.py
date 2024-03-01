@@ -13,6 +13,7 @@ import subprocess
 from pathlib import Path
 import fnmatch
 
+
 from pygments.lexer import RegexLexer
 from pygments import token
 import wsdiff
@@ -23,7 +24,7 @@ try:
 except ImportError:
     if (common := Path(__file__).parent.parent.with_name('common').absolute()) not in sys.path:
         sys.path.insert(0, str(common))
-
+import kicad_sym
 
 import print_fp_properties
 import print_sym_properties
@@ -278,6 +279,12 @@ class HTMLDiff:
                 else:
                     self.name_glob = new_part_name
                     self.name_map = {new_part_name: old_part_name}
+
+            # Check entire (updated) library for inconsistencies:
+            # Check if all parent symbols appear before the child symbols
+            new_library_data = new.read_text()
+            lib = kicad_sym.KicadLibrary.from_file(new, new_library_data)
+            lib.check_extends_order()
 
             self.symlib_diff(old, new)
 
