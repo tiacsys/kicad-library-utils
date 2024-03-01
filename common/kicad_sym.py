@@ -886,7 +886,7 @@ class KicadSymbol(KicadSymbolBase):
 
         return sx
 
-    def get_center_rectangle(self, units: List[int]) -> Optional[Polyline]:
+    def get_center_rectangle(self, units: Optional[List[int]]=None) -> Optional[Polyline]:
         # return a polyline for the requested unit that is a rectangle
         # and is closest to the center
         candidates = {}
@@ -894,7 +894,7 @@ class KicadSymbol(KicadSymbolBase):
         pl_rects = [i.as_polyline() for i in self.rectangles]
         pl_rects.extend(pl for pl in self.polylines if pl.is_rectangle())
         for pl in pl_rects:
-            if pl.unit in units:
+            if (units is None) or (pl.unit in units):
                 # extract the center, calculate the distance to origin
                 (x, y) = pl.get_center_of_boundingbox()
                 dist = math.sqrt(x * x + y * y)
