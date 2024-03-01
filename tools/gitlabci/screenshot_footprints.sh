@@ -14,7 +14,7 @@ for change in $CHANGES; do
         python3 "$CI_BUILDS_DIR/kicad-library-utils/scripts/create_board.py" "/$CI_PROJECT_DIR/$change" \
             "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
         echo "Exporting svg"
-        kicad-cli-nightly pcb export svg --page-size-mode 2 -l "$LAYERS" \
+        kicad-cli pcb export svg --page-size-mode 2 -l "$LAYERS" \
             -o "screenshots/$change.svg" "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
         echo
         echo "Converting to png"

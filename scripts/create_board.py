@@ -23,8 +23,9 @@ args, _ = parser.parse_known_args()
 fp_path = Path(os.path.abspath(args.footprint))
 
 board = pcbnew.BOARD()
-plugin: pcbnew.PLUGIN = pcbnew.PCB_IO_MGR.PluginFind(pcbnew.PCB_IO_MGR.KICAD_SEXP)
-fp: pcbnew.FOOTPRINT = plugin.FootprintLoad(str(fp_path.parent), fp_path.stem)
+io = pcbnew.PCB_IO_KICAD_SEXPR()
+fp: pcbnew.FOOTPRINT = io.ImportFootprint(str(fp_path.parent), fp_path.stem)
+
 board.Add(fp)
 # put the footprint at the center-ish, away from the page borders
 fp.SetPosition(pcbnew.VECTOR2I_MM(150, 100))
