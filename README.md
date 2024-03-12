@@ -90,14 +90,20 @@ How to use
 
 ## 3D Coverage Checker
 
-    # first get into klc-check directory
+    # This script will by default assume the following - use options to change this:
+    # - Your footprints are in a directory called kicad-footprints
+    # - Your models are in a directory called packages3D
+    # - Both of those directories are in the same place as kicad-library-utils
+    # These assumptions hold if you cloned all three repositories in the same directory
+
+    # To run the coverage checker, first get into klc-check directory
     cd kicad-library-utils/klc-check
 
     # run the script to check all footprints
     ./check_3d_coverage.py
 
-    # run the script to check only the specified .pretty folder
-    ./check_3d_coverage.py --pretty Package_SO
+    # run the script to check only the specified library
+    ./check_3d_coverage.py Package_SO
 
     # run the following 'h'elp command to see other options
     ./check_3d_coverage.py -h
