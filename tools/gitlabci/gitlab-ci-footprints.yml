@@ -3,6 +3,7 @@ image: python:latest
 stages:
   - test
   - screenshot
+  - model
   - diffs
   - convert
 
@@ -66,6 +67,31 @@ screenshot:
     - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/screenshot_footprints.sh
   artifacts:
     expose_as: 'Screenshots'
+    paths:
+      - screenshots/
+      
+model:
+  image: kicad/kicad:nightly
+  stage: model
+  allow_failure: true
+  when: manual
+  only:
+    refs:
+      - merge_requests
+    changes:
+      - "**/*.kicad_mod"
+  before_script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - sudo apt update -qq
+    - sudo apt install curl python3 git -qqy --no-install-recommends
+    - mkdir -p $HOME/.config/kicad/8.0/colors
+    - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-library-utils $CI_BUILDS_DIR/kicad-library-utils
+    - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-packages3D $CI_BUILDS_DIR/kicad-packages3D
+    - git config --global --add safe.directory $(realpath .)
+  script:
+    - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/screenshot_model.sh
+  artifacts:
+    expose_as: 'Model'
     paths:
       - screenshots/
 
