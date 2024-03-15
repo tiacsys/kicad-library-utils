@@ -11,7 +11,7 @@ cp "$CI_BUILDS_DIR/kicad-library-utils/scripts/3d_viewer.json" "$HOME/.config/ki
 
 for change in $CHANGES; do
     if [[ $change =~ .*\.kicad_mod ]]; then
-        modelname = $(echo "/$CI_BUILDS_DIR/kicad-packages3D/$change" |sed -e "s/.pretty/.3dshapes/;s/.kicad_mod//")
+        modelname=$(echo "/$CI_BUILDS_DIR/kicad-packages3D/$change" |sed -e "s/.pretty/.3dshapes/;s/.kicad_mod//")
         echo "Creating a board with footprint: $change"
         python3 "$CI_BUILDS_DIR/kicad-library-utils/scripts/create_model_board.py" -f "/$CI_PROJECT_DIR/$change" -w "$modelname.wrl" -s "$modelname.step" \
             "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
