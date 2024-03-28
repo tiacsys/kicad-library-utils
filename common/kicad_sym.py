@@ -12,6 +12,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import sexpr
 
+__version__ = '8.0'
+
 
 class KicadFileFormatError(ValueError):
     """any kind of problem discovered while parsing a KiCad file"""
@@ -83,13 +85,15 @@ def _get_color(sexpr) -> Optional["Color"]:
 
 def _get_stroke(sexpr) -> Tuple[Optional[int], Optional["Color"]]:
     width = None
+    line_style = "default"
     col = None
     for i in sexpr:
         if isinstance(i, list) and i[0] == "stroke":
             width = _get_value_of(i, "width")
+            line_style = _get_value_of(i, "type")
             col = _get_color(i)
             break
-    return (width, col)
+    return (width, line_style, col)
 
 
 def _get_fill(sexpr) -> Tuple[Optional[Any], Optional["Color"]]:
@@ -226,8 +230,6 @@ class TextEffect(KicadSymbolBase):
             sx.append("mirror")
         if self.color:
             sx.append(self.color.get_sexpr())
-        if self.is_hidden:
-            sx.append("hide")
 
         justify = ["justify"]
         if self.h_justify and self.h_justify != "center":
@@ -237,6 +239,10 @@ class TextEffect(KicadSymbolBase):
 
         if len(justify) > 1:
             sx.append(justify)
+
+        if self.is_hidden:
+            sx.append(["hide", "yes"])
+
         return sx
 
     @classmethod
@@ -431,6 +437,7 @@ class Circle(KicadSymbolBase):
     centery: float
     radius: float
     stroke_width: float = 0.254
+    stroke_line_style: str = "default"
     stroke_color: Optional[Color] = None
     fill_type: str = "none"
     fill_color: Optional[Color] = None
@@ -461,13 +468,14 @@ class Circle(KicadSymbolBase):
         # the 1st element
         (centerx, centery) = _get_xy(sexpr, "center")
         radius = _get_value_of(sexpr, "radius")
-        (stroke, scolor) = _get_stroke(sexpr)
+        (stroke, sline, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
         return Circle(
             centerx,
             centery,
             radius,
             stroke,
+            sline,
             scolor,
             fill,
             fcolor,
@@ -489,6 +497,7 @@ class Arc(KicadSymbolBase):
     midx: float
     midy: float
     stroke_width: float = 0.254
+    stroke_line_style: str = "default"
     stroke_color: Optional[Color] = None
     fill_type: str = "none"
     fill_color: Optional[Color] = None
@@ -496,7 +505,7 @@ class Arc(KicadSymbolBase):
     demorgan: int = 0
 
     def get_sexpr(self) -> List[Any]:
-        stroke_sx = ["stroke", ["width", self.stroke_width]]
+        stroke_sx = ["stroke", ["width", self.stroke_width], ["type", self.stroke_line_style]]
         if self.stroke_color:
             stroke_sx.append(self.stroke_color.get_sexpr())
         fill_sx = ["fill", ["type", self.fill_type]]
@@ -519,7 +528,7 @@ class Arc(KicadSymbolBase):
         (startx, starty) = _get_xy(sexpr, "start")
         (endx, endy) = _get_xy(sexpr, "end")
         (midx, midy) = _get_xy(sexpr, "mid")
-        (stroke, scolor) = _get_stroke(sexpr)
+        (stroke, sline, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
         return Arc(
             startx,
@@ -529,6 +538,7 @@ class Arc(KicadSymbolBase):
             midx,
             midy,
             stroke,
+            sline,
             scolor,
             fill,
             fcolor,
@@ -554,6 +564,7 @@ class Point(KicadSymbolBase):
 class Polyline(KicadSymbolBase):
     points: List[Point]
     stroke_width: float = 0.254
+    stroke_line_style: str = "default"
     stroke_color: Optional[Color] = None
     fill_type: str = "none"
     fill_color: Optional[Color] = None
@@ -563,7 +574,7 @@ class Polyline(KicadSymbolBase):
     def get_sexpr(self):
         pts_list: list[Any] = [x.get_sexpr() for x in self.points]
         pts_list.insert(0, "pts")
-        stroke_sx = ["stroke", ["width", self.stroke_width]]
+        stroke_sx = ["stroke", ["width", self.stroke_width], ["type", self.stroke_line_style]]
         if self.stroke_color:
             stroke_sx.append(self.stroke_color.get_sexpr())
         fill_sx = ["fill", ["type", self.fill_type]]
@@ -640,9 +651,9 @@ class Polyline(KicadSymbolBase):
             if "xy" in p:
                 pts.append(Point(p[1], p[2]))
 
-        (stroke, scolor) = _get_stroke(sexpr)
+        (stroke, sline, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
-        return Polyline(pts, stroke, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
+        return Polyline(pts, stroke, sline, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
 
 
 @dataclass
@@ -686,6 +697,7 @@ class Rectangle(KicadSymbolBase):
     endx: float
     endy: float
     stroke_width: float = 0.254
+    stroke_line_style: str = "default"
     stroke_color: Optional[Color] = None
     fill_type: str = "background"
     fill_color: Optional[Color] = None
@@ -706,7 +718,7 @@ class Rectangle(KicadSymbolBase):
         return r
 
     def get_sexpr(self) -> List[Any]:
-        stroke_sx = ["stroke", ["width", self.stroke_width]]
+        stroke_sx = ["stroke", ["width", self.stroke_width], ["type", self.stroke_line_style]]
         if self.stroke_color:
             stroke_sx.append(self.stroke_color.get_sexpr())
         fill_sx = ["fill", ["type", self.fill_type]]
@@ -732,6 +744,7 @@ class Rectangle(KicadSymbolBase):
         return Polyline(
             pts,
             self.stroke_width,
+            self.stroke_line_style,
             self.stroke_color,
             self.fill_type,
             self.fill_color,
@@ -751,7 +764,7 @@ class Rectangle(KicadSymbolBase):
         # the 1st element
         (startx, starty) = _get_xy(sexpr, "start")
         (endx, endy) = _get_xy(sexpr, "end")
-        (stroke, scolor) = _get_stroke(sexpr)
+        (stroke, sline, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
         return Rectangle(
             startx,
@@ -759,6 +772,7 @@ class Rectangle(KicadSymbolBase):
             endx,
             endy,
             stroke,
+            sline,
             scolor,
             fill,
             fcolor,
@@ -771,7 +785,6 @@ class Rectangle(KicadSymbolBase):
 class Property(KicadSymbolBase):
     name: str
     value: str
-    idd: int
     posx: float = 0.0
     posy: float = 0.0
     rotation: float = 0.0
@@ -808,10 +821,9 @@ class Property(KicadSymbolBase):
             return None
         name = sexpr.pop(0)
         value = sexpr.pop(0)
-        idd = _get_value_of(sexpr, "id")
         (posx, posy, rotation) = _parse_at(sexpr)
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
-        return Property(name, value, idd, posx, posy, rotation, effects)
+        return Property(name, value, posx, posy, rotation, effects)
 
 
 @dataclass
@@ -830,6 +842,7 @@ class KicadSymbol(KicadSymbolBase):
     hide_pin_names: bool = False
     hide_pin_numbers: bool = False
     is_power: bool = False
+    exclude_from_sim: bool = False
     in_bom: bool = True
     on_board: bool = True
     extends: Optional[str] = None
@@ -856,6 +869,7 @@ class KicadSymbol(KicadSymbolBase):
         if len(pn) > 1:
             sx.append(pn)
 
+        sx.append(["exclude_from_sim", "yes" if self.exclude_from_sim else "no"])
         sx.append(["in_bom", "yes" if self.in_bom else "no"])
         sx.append(["on_board", "yes" if self.on_board else "no"])
         if self.is_power:
@@ -878,7 +892,7 @@ class KicadSymbol(KicadSymbolBase):
                     + self.texts
                     + self.rectangles
                     + self.polylines
-                    + self.pins
+                    + sorted(self.pins, key=lambda pin: pin.number)
                 ):
                     if pin.is_unit(u, d):
                         sx_i.append(pin.get_sexpr())
@@ -958,19 +972,19 @@ class KicadSymbol(KicadSymbolBase):
 
     def add_default_properties(self) -> None:
         defaults = [
-            {"i": 0, "n": "Reference", "v": "U", "h": False},
-            {"i": 1, "n": "Value", "v": self.name, "h": False},
-            {"i": 2, "n": "Footprint", "v": "", "h": True},
-            {"i": 3, "n": "Datasheet", "v": "", "h": True},
-            {"i": 4, "n": "ki_locked", "v": "", "h": True},
-            {"i": 5, "n": "ki_keywords", "v": "", "h": True},
-            {"i": 6, "n": "Description", "v": "", "h": True},
-            {"i": 7, "n": "ki_fp_filters", "v": "", "h": False},
+            {"n": "Reference", "v": "U", "h": False},
+            {"n": "Value", "v": self.name, "h": False},
+            {"n": "Footprint", "v": "", "h": True},
+            {"n": "Datasheet", "v": "", "h": True},
+            {"n": "ki_locked", "v": "", "h": True},
+            {"n": "ki_keywords", "v": "", "h": True},
+            {"n": "Description", "v": "", "h": True},
+            {"n": "ki_fp_filters", "v": "", "h": True},
         ]
 
         for prop in defaults:
             if self.get_property(prop["n"]) is None:
-                p = Property(prop["n"], prop["v"], prop["i"])
+                p = Property(prop["n"], prop["v"])
                 p.effects.is_hidden = prop["h"]
                 self.properties.append(p)
 
@@ -1071,7 +1085,7 @@ class KicadLibrary(KicadSymbolBase):
     filename: str
     symbols: List[KicadSymbol] = field(default_factory=list)
     generator: str = "kicad-library-utils"
-    version: str = "20220914"
+    version: str = "20231120"
 
     def write(self) -> None:
         lib_file = open(self.filename, "w")
@@ -1082,7 +1096,8 @@ class KicadLibrary(KicadSymbolBase):
         sx = [
             "kicad_symbol_lib",
             ["version", self.version],
-            ["generator", self.generator],
+            ["generator", self.quoted_string(self.generator)],
+            ["generator_version", self.quoted_string(__version__)],
         ]
         for sym in self.symbols:
             sx.append(sym.get_sexpr())
@@ -1170,6 +1185,7 @@ class KicadLibrary(KicadSymbolBase):
                     ) from exc
 
             # get flags
+            symbol.exclude_from_sim = _get_value_of(item, "exclude_from_sim", "no") == "yes"
             symbol.in_bom = _get_value_of(item, "in_bom", "no") == "yes"
             symbol.on_board = _get_value_of(item, "on_board", "no") == "yes"
             if _has_value(item, "power"):
