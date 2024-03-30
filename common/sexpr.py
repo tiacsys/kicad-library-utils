@@ -186,6 +186,8 @@ def build_sexp(exp, indent='  ') -> str:
         else:
             return '"%s"' % exp.replace('"', r'\"')
     elif isinstance(exp, float):
+        if exp.is_integer():
+            return str(int(exp))
         return str(exp)
     elif isinstance(exp, int):
         return str(exp)
