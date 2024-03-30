@@ -976,9 +976,9 @@ class KicadSymbol(KicadSymbolBase):
             {"n": "Value", "v": self.name, "h": False},
             {"n": "Footprint", "v": "", "h": True},
             {"n": "Datasheet", "v": "", "h": True},
-            {"n": "ki_locked", "v": "", "h": True},
-            {"n": "ki_keywords", "v": "", "h": True},
             {"n": "Description", "v": "", "h": True},
+            {"n": "ki_locked", "v": "", "h": False},
+            {"n": "ki_keywords", "v": "", "h": True},
             {"n": "ki_fp_filters", "v": "", "h": True},
         ]
 
