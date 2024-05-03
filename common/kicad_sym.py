@@ -692,6 +692,10 @@ class Rectangle(KicadSymbolBase):
     unit: int = 0
     demorgan: int = 0
 
+    @property
+    def area(self) -> float:
+        return abs(self.startx - self.endx) * abs(self.starty - self.endy)
+
     @classmethod
     def new_mil(
         cls, sx: float, sy: float, ex: float, ey: float, fill: str = "background"
@@ -904,6 +908,23 @@ class KicadSymbol(KicadSymbolBase):
             # sort the list return the first (smallest) item
             return candidates[sorted(candidates.keys())[0]]
         return None
+
+    def get_largest_area_rectangle(self, units: Optional[List[int]]=None) -> Optional[Polyline]:
+        """
+        From all the rectangles in the requested units,
+        select the one rectangle with the largest area.
+
+        If [units] is None, all units are considered.
+        """
+        largest_area = 0.0
+        largest_rect = None
+        for pl in self.rectangles:
+            if (units is None) or (pl.unit in units):
+                if pl.area > largest_area:
+                    largest_area = pl.area
+                    largest_rect = pl
+
+        return largest_rect
 
     def get_pinstacks(self) -> Dict[str, List[Pin]]:
         stacks = {}
