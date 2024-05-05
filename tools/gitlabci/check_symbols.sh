@@ -1,8 +1,34 @@
 #!/bin/bash
+# How to test locally:
+# Inside the kicad-symbols folder, run
+#     export BASE_SHA=$(git rev-parse master)
+#     export TARGET_SHA=$(git rev-parse HEAD)
+#     export CI_PROJECT_DIR=$(pwd)
+#     export CI_BUILDS_DIR=..
+#     ../kicad-library-utils/tools/gitlabci/check_symbols.sh
+
 source $(dirname ${BASH_SOURCE[0]})/common.sh
 
 # print python version
 python3 -V
+
+# Assert that $BASE_SHA and $TARGET_SHA are set
+if [ -z "$CI_PROJECT_DIR" ]; then
+  echo "CI_PROJECT_DIR is not set"
+  exit 1
+fi
+if [ -z "$CI_BUILDS_DIR" ]; then
+  echo "CI_BUILDS_DIR is not set"
+  exit 1
+fi
+if [ -z "$BASE_SHA" ]; then
+  echo "BASE_SHA is not set"
+  exit 1
+fi
+if [ -z "$TARGET_SHA" ]; then
+  echo "TARGET_SHA is not set"
+  exit 1
+fi
 
 # clone required repos
 git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-footprints.git $CI_BUILDS_DIR/kicad-footprints
