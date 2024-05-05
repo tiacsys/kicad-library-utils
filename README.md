@@ -156,6 +156,11 @@ To test the footprint checker code, run:
 make test-klc-footprints
 ```
 
+If one of the tests fail, you can run klc-check manually, e.g.
+```
+./klc-check/check_symbol.py klc-check/test_symbol/CI_Test_S6.x.kicad_sym  -vv -c 'Fail__S6.2__ComaKeywords'
+```
+
 ## Check before committing
 
 Usually, you commit the footprint (or symbol) and let CI check your job.
