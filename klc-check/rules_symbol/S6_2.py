@@ -2,6 +2,16 @@ import re
 
 from rulebase import isValidName
 from rules_symbol.rule import KLCRule
+from collections import Counter
+
+DISALLOWED_FILLER_TOKENS = frozenset([
+    "and", "or", "the", "a", "an", "of", "in", "on", "at", "to",
+    "with", "by", "for", "from", "as", "into", "onto", "upon",
+    "over", "under", "through", "between", "among", "within",
+    "without", "about", "after", "before", "during", "since",
+    "until", "while", "till", "throughout", "along", "across",
+    "against", "behind", "beside", "beyond", "inside", "outside",
+])
 
 
 class Rule(KLCRule):
@@ -152,29 +162,175 @@ class Rule(KLCRule):
 
         return False
 
+    def _checkKeywordsSpecialCharacters(self, keywords: str) -> bool:
+        """
+        Check keywords for special characters such as "," or "." etc
+        """
+        # find special chars.
+        # A dot followed by a non-word char is also considered a violation.
+        # This allows 3.3V but prevents 'foobar. buzz'
+        forbidden_matches = re.findall(r"\.\W|\.$|[,:;?!<>]", keywords)
+        if forbidden_matches:
+            self.error(
+                "Symbol keywords contain forbidden characters: {}".format(
+                    forbidden_matches
+                )
+            )
+        return len(forbidden_matches) > 0
+
+    def _tokenize_keywords(self, keywords: str, split_sub_tokens=True) -> list[str]:
+        """
+        Tokenize the keywords string into a list of tokens,
+        splitting on whitespace and removing leading/trailing whitespace.
+
+        NOTE: This doesn't only split into tokens on whitespace, but also
+        into sub-tokens separated by dash.
+
+        Example:
+        "foo bar-baz" -> ["foo", "bar", "baz"]
+
+        The tokens are returned as lowercase strings.
+        """
+        split_regex = r'\s+|-' if split_sub_tokens else r'\s+'
+        return [token.strip().lower() for token in re.split(split_regex, keywords)]
+
+    def _tokenize_description(self, description: str, split_sub_tokens=True) -> list[str]:
+        """
+        Similar to _tokenize_keywords but takes into account that
+        the description *may* contain special characters, which would cause
+        tokens such as "opamp," to appear in the list.
+
+        Also, the description may contain words more than once.
+        """
+        # Remove everything non-alphanumeric except for dash and whitespace
+        description = re.sub(r"[^\w\s-]", "", description)
+        split_regex = r'\s+|-' if split_sub_tokens else r'\s+'
+        tokens = [token.strip().lower() for token in re.split(split_regex, description)]
+
+        # Remove duplicates from tokens and return, preserving the order
+        tokens = list(set(tokens))
+        return tokens
+
+    def _checkKeywordsDuplicateTokens(self, keywords: str, descriptions: str) -> bool:
+        """
+        Check for duplicate tokens in the keywords
+        """
+        # First check for pure duplicates e.g. "single opamp single"
+        tokens = self._tokenize_keywords(keywords, split_sub_tokens=False)
+
+        # Check if any token appears more than once
+        token_counts = Counter(tokens)
+        duplicate_tokens = {token for token, count in token_counts.items() if count > 1}
+        if duplicate_tokens:
+            self.error(
+                f"S6.2.7: Symbol keywords contain duplicate keywords: {duplicate_tokens}"
+            )
+
+        # Now check if any token appears as a sub-token,
+        # e.g. "single opamp highspeed-opamp"
+        # NOTE: We ignore tokens here which already appeared as full
+        # tokens in the previous step (for usability)
+        tokens_and_subtokens = self._tokenize_keywords(keywords, split_sub_tokens=True)
+        token_counts = Counter(tokens_and_subtokens)
+        duplicate_sub_tokens = {token for token, count in token_counts.items() if count > 1}
+        duplicate_sub_tokens -= duplicate_tokens  # see NOTE above
+        if duplicate_sub_tokens:
+            self.error(
+                "S6.2.7: Symbol keywords contain duplicate sub-tokens" +
+                f" (= dash-separated tokens): {duplicate_sub_tokens}"
+            )
+
+        # Now check if any tokens from the description appear in the keywords
+        # NOTE: We remove tokens here which are already duplicate in the keywords
+        description_tokens = self._tokenize_description(descriptions)
+        all_tokens = tokens_and_subtokens + description_tokens
+        duplicate_desc_keyword_tokens = {
+            token for token, count in Counter(all_tokens).items() if count > 1
+        }
+        duplicate_desc_keyword_tokens -= duplicate_tokens  # see NOTE above
+        duplicate_desc_keyword_tokens -= duplicate_sub_tokens  # see NOTE above
+        if duplicate_desc_keyword_tokens:
+            self.error(
+                "S6.2.7: Symbol keywords contain tokens which already appear " +
+                f"in description: {duplicate_desc_keyword_tokens}"
+            )
+
+        return len(duplicate_tokens) > 0
+
+    def _checkKeywordFillerWords(self, tokenized_keywords: list[str]) -> bool:
+        """
+        S6.2.7b
+        Check for filler words such as "and"
+        """
+        # Check if any of the tokens are in the disallowed set
+        forbidden_matches = set(tokenized_keywords) & DISALLOWED_FILLER_TOKENS
+        if forbidden_matches:
+            self.error(
+                f"S6.2.7b: Symbol keywords contain forbidden filler words: {forbidden_matches}"
+            )
+        return len(forbidden_matches) > 0
+
+    def _checkCommonKeywordAliases(self, keywords, description):
+        # Split
+        keywords_tokens = self._tokenize_keywords(keywords, split_sub_tokens=False)
+        keywords_subtokens = self._tokenize_keywords(keywords, split_sub_tokens=True)
+
+        description_tokens = self._tokenize_description(description, split_sub_tokens=False)
+        description_subtokens = self._tokenize_description(description, split_sub_tokens=True)
+
+        all_tokens = keywords_tokens + description_tokens
+        all_subtokens = keywords_subtokens + description_subtokens
+
+        _return = False
+        # Opamp <=> operational amplifier
+        if "operational" in all_subtokens and "amplifier" in description_tokens:
+            if "opamp" not in all_subtokens:
+                self.warning("Metadata contains 'operational amplifier', please add 'opamp' to the keywords")
+                _return = True
+        if "opamp" in all_subtokens and not ("operational" in all_subtokens and "amplifier" in all_subtokens):
+            self.warning("Metadata contains 'opamp', please add 'operational-amplifier' to the keywords")
+            _return = True
+
+        # LDO <=> low-dropout ... regulator
+        if "low-dropout" in all_tokens and "regulator" in all_subtokens:
+            if "ldo" not in all_tokens:
+                self.warning("Metadata contains 'low-dropout .. regulator', please add 'ldo' to the keywords")
+                _return = True
+        if "ldo" in all_tokens and not ("low-dropout" in all_tokens and "regulator" in all_subtokens):
+            self.warning("Metadata contains 'LDO', please add 'low-dropout-regulator' to the keywords")
+            _return = True
+
+        return _return
+
     def checkKeywords(self) -> bool:
-        dsc = self.component.get_property("ki_keywords")
-        if not dsc:
+        keywords_property = self.component.get_property("ki_keywords")
+        if not keywords_property:
             # can not do other checks, return
             if self.component.is_power_symbol():
                 return True
             else:
-                self.error("Missing Keywords field on 'Properties' tab")
+                self.error("Missing or empty Keywords field on 'Properties' tab. " +
+                           "If you have nothing to add here, add the manufacturer e.g. 'texas'")
                 return True
-        else:
-            # find special chars.
-            # A dot followed by a non-word char is also considered a violation.
-            # This allows 3.3V but prevents 'foobar. buzz'
-            forbidden_matches = re.findall(r"\.\W|\.$|[,:;?!<>]", dsc.value)
-            if forbidden_matches:
-                self.error(
-                    "Symbol keywords contain forbidden characters: {}".format(
-                        forbidden_matches
-                    )
-                )
-                return True
+        else:  # have non-empty keywords
+            keywords = keywords_property.value
+            # Tests on raw keywords
+            _result = self._checkKeywordsSpecialCharacters(keywords)
 
-        return False
+            # Tests on tokenized keywords
+            keyword_tokens = self._tokenize_keywords(keywords)
+            _result |= self._checkKeywordFillerWords(keyword_tokens)
+
+            # Tests on description and tokenized keywords
+            description_property = self.component.get_property("Description")
+            description = description_property.value if description_property else ""
+
+            _result |= self._checkKeywordsDuplicateTokens(keywords, description)
+
+            # Other checks
+            _result |= self._checkCommonKeywordAliases(keywords, description)
+
+            return _result
 
     def check(self) -> bool:
         # Check for extra fields. How? TODO
