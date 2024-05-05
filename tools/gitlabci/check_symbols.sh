@@ -47,14 +47,10 @@ LIB_UPGRADE_ERROR_COUNT=$?
 # Perform kicad-cli sym upgrade --force on each library
 for LIBNAME in $LIBS_NEW; do
   echo "Upgrading $LIBNAME"
-  # Perform sha256sum before
-  sha256sum "$CI_PROJECT_DIR/$LIBNAME"
-
-  $KICAD_CLI --upgrade --sym-lib "$CI_PROJECT_DIR/$LIBNAME" --force
 
   # Perform sha256sum after
   sha256sum_before=$(sha256sum "$CI_PROJECT_DIR/$LIBNAME" | awk '{print $1}')
-  $KICAD_CLI --upgrade --sym-lib "$CI_PROJECT_DIR/$LIBNAME" --force > /dev/null
+  kicad-cli sym upgrade "$CI_PROJECT_DIR/$LIBNAME" --force > /dev/null
   upgrade_status=$?
   sha256sum_after=$(sha256sum "$CI_PROJECT_DIR/$LIBNAME" | awk '{print $1}')
 
