@@ -1209,7 +1209,7 @@ class KicadLibrary(KicadSymbolBase):
                 m1 = re.match(r"^" + re.escape(partname) + r"_(\d+?)_(\d+?)$", name)
                 if not m1:
                     raise KicadFileFormatError(
-                        "Failed to parse subsymbol due to invalid name: {name}"
+                        f"Failed to parse subsymbol due to invalid name: {name}"
                     )
 
                 (unit_idx, demorgan_idx) = (m1.group(1), m1.group(2))
