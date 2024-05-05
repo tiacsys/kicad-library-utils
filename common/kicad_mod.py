@@ -439,7 +439,7 @@ class KicadMod:
                     p3x_2 = p3x * p3x
                     p3y_2 = p3y * p3y
 
-                    # Calculte coordinates of the Center (rx,ry) from the three points
+                    # Calculate coordinates of the Center (rx,ry) from the three points
                     # using formula found on http://ambrsoft.com/TrigoCalc/Circle3D.htm
                     A = 2 * (p1x * (p2y - p3y) - p1y * (p2x - p3x) + p2x * p3y - p3x * p2y)
                     rx = (

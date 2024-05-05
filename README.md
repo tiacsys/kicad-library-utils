@@ -126,7 +126,7 @@ How to use
 
 Please keep in mind, that this repository is mainly targeted at the [official KiCad libraries](gitlab.com/kicad/libraries/).
 Thus you should manage your custom rules outside of this repository.
-Re-usable infrastructure (e.g. for supporting custom rules) is welcome, of course.
+Reusable infrastructure (e.g. for supporting custom rules) is welcome, of course.
 
 ## Python code style
 

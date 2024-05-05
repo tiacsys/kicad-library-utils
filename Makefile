@@ -12,6 +12,7 @@ help:
 	@echo "    style               - apply automatic formatting"
 	@echo "    test-klc-footprints - test footprint KLC rule checks"
 	@echo "    test-klc-symbols    - test symbol KLC rule checks"
+	@echo "    check               - run all checks and tests"
 	@echo
 
 
@@ -39,7 +40,7 @@ style:
 test-klc-footprints:
 	python klc-check/check_footprint.py \
 		--unittest \
-		klc-check/test_footprint.pretty/*.kicad_mod
+		klc-check/test_footprint.pretty/*__*.kicad_mod
 
 
 .PHONY: test-klc-symbols
@@ -47,3 +48,11 @@ test-klc-symbols:
 	python klc-check/check_symbol.py \
 	--unittest \
 	klc-check/test_symbol/*.kicad_sym
+
+
+.PHONY: check
+check: lint spelling test-klc-footprints test-klc-symbols
+
+.PHONY: install-deps
+install-deps:
+	pip install -r requirements.txt
