@@ -1,4 +1,5 @@
 import os
+import re
 
 from rulebase import isValidName
 from rules_footprint.rule import KLCRule
@@ -8,10 +9,20 @@ class Rule(KLCRule):
     """Footprint meta-data is filled in as appropriate"""
 
     def checkDocs(self) -> bool:
-        error = False
-        if not self.module.description:
+        description = self.module.description
+        if not description:
             self.error("Description field is empty - add footprint description")
+            # Cannot proceed now
             return True
+
+        error = False
+        if not re.search(r"https?://", description):
+            self.error("Description field does not contain a URL - add the URL to the datasheet")
+            error = True
+
+        if re.match(r"https?://", description):
+            self.error("Description contains only a URL - add more description before the URL")
+            error = True
 
         return error
 
@@ -30,6 +41,18 @@ class Rule(KLCRule):
                 if char in mod.tags:
                     self.error("Tags contain illegal character: ('{c}')".format(c=char))
                     error = True
+
+        return error
+
+    def _checkIllegalProperties(self) -> bool:
+        error = False
+        illegal_prop_names = ['footprint', 'datasheet', 'description']
+
+        for prop_name in illegal_prop_names:
+            if prop_value := self.module.getPropertyValue(prop_name):
+                self.error(f"The '{prop_name}' field should not be set for a footprint: " +
+                           f"(have '{prop_value}')")
+                error = True
 
         return error
 
@@ -62,6 +85,9 @@ class Rule(KLCRule):
             err = True
 
         if self.checkTags():
+            err = True
+
+        if self._checkIllegalProperties():
             err = True
 
         self.has_illegal_chars = False

@@ -108,10 +108,10 @@ class KicadMod:
         self._getAttributes()
 
         # reference
-        self.reference = self._getText("reference")[0]
+        self.reference = self.getProperty("reference")
 
         # value
-        self.value = self._getText("value")[0]
+        self.value = self.getProperty("value")
 
         # user text
         self.userText: List[Dict[str, Any]] = self._getText("user")
@@ -259,6 +259,28 @@ class KicadMod:
                     result.append(text_dict)
 
         return result
+
+    def getProperty(self, key: str) -> Optional[dict]:
+        """
+        Get the footprint's property (aka field) with this key
+        """
+        # For now just call _getText, which is enough to provide this interface
+
+        if (key.lower() == 'user'):
+            raise ValueError("getProperty should not be used to get user text items")
+
+        prop = self._getText(key)
+        return prop[0] if prop else None
+
+    def getPropertyValue(self, key: str) -> Optional[str]:
+        """
+        Get the value of footprint's property (aka field) with this key
+
+        Only provides the text value, not the position etc
+        (you can call getProperty for that)
+        """
+        prop = self.getProperty(key)
+        return prop[key] if prop else None
 
     def addUserText(self, text: str, params: Dict[str, Any]) -> None:
         user = {"user": text}
