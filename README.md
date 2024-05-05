@@ -144,6 +144,17 @@ make lint
 
 Please refrain from using recently introduced features of the Python language, which are not yet supported by the most recent stable release of major distributions (e.g. Debian).
 
+## How to run unit tests
+
+To test the symbol checker code, run:
+```
+make test-klc-symbols
+```
+
+To test the footprint checker code, run:
+```
+make test-klc-footprints
+```
 
 ## Check before committing
 
