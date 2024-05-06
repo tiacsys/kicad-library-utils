@@ -178,8 +178,13 @@ def build_sexp(exp, indent='  ') -> str:
             joined += build_sexp(elem, indent=f'{indent}  ')
         return joined + ')'
 
-    if isinstance(exp, str) and (len(exp) == 0 or re.search(r"[\s\(\)]", exp)):
-        return '"%s"' % exp.replace('"', r'\"')
+    if isinstance(exp, str) and len(exp) == 0:
+        return '""'
+    if isinstance(exp, str) and re.search(r"[\s\(\)]", exp):
+        if exp.startswith('"') and exp.endswith('"'):
+            return exp
+        else:
+            return '"%s"' % exp.replace('"', r'\"')
     elif isinstance(exp, float):
         return str(exp)
     elif isinstance(exp, int):
@@ -234,6 +239,7 @@ def format_sexp(sexp: str, indentation_size: int = 2, max_nesting: int = 2) -> s
 
 if __name__ == "__main__":
     sexp = """ ( ( data "quoted data" 123 4.5)
+         ( data "property" 1 2 3)
          (data "with \\"escaped quotes\\" and 'dashes'" and empty "" text)
          (data (123 (4.5) "(more" "data)") after parantesis))"""
 
