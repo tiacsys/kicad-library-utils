@@ -1089,7 +1089,7 @@ class KicadLibrary(KicadSymbolBase):
 
     def write(self) -> None:
         lib_file = open(self.filename, "w")
-        lib_file.write(self.get_sexpr())
+        lib_file.write(self.get_sexpr() + '\n')
         lib_file.close()
 
     def get_sexpr(self) -> str:
