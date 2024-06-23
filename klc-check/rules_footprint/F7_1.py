@@ -26,8 +26,8 @@ class Rule(KLCRule):
 
         error = False
 
-        if self.pth_count > 0 and module.attribute != "through_hole":
-            if module.attribute == "virtual":
+        if self.pth_count > 0 and module.footprint_type != "through_hole":
+            if module.is_virtual:
                 self.warning(
                     "Footprint placement type set to 'virtual' - ensure this is"
                     " correct!"
@@ -51,4 +51,4 @@ class Rule(KLCRule):
         module = self.module
         if self.check():
             self.info("Setting placement type to 'Through hole'")
-            module.attribute = "through_hole"
+            module.footprint_type = "through_hole"

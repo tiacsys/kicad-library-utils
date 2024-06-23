@@ -224,7 +224,7 @@ class Rule(KLCRule):
 
         if not models:
             # Warning msg
-            if module.attribute == "virtual":
+            if module.is_virtual:
                 # virtual components don't need a 3D model
                 self.warning(
                     "Optional 3D model file path missing from the 3D model settings of"

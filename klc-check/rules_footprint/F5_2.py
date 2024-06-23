@@ -106,7 +106,7 @@ class Rule(KLCRule):
 
     def checkMissingLines(self) -> bool:
         if not self.f_fabrication_all and not self.b_fabrication_all:
-            if self.module.attribute != "virtual":
+            if not self.module.is_virtual:
                 self.error("No drawings found on fabrication layer")
                 return True
 
@@ -135,7 +135,7 @@ class Rule(KLCRule):
 
         # No second ref provided? That is ok for virtual footprints
         if not ref:
-            if self.module.attribute != "virtual":
+            if not self.module.is_virtual:
                 self.error("Second Reference Designator missing")
                 self.errorExtra("Add RefDes to F.Fab layer with '${REFERENCE}'")
                 return True

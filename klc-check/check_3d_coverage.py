@@ -220,10 +220,11 @@ class LibraryChecker:
                 "EXIT: problem reading footprint file {fn:s}".format(fn=filename)
             )
             sys.exit(1)
+
         try:
             long_reference = footprint.models[0]["file"]
         except IndexError:
-            if footprint.attribute == "virtual":
+            if footprint.is_virtual:
                 # count as model found
                 self.model_found += 1
             else:

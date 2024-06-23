@@ -57,6 +57,8 @@ class KicadMod:
 
     SEXPR_BOARD_FILE_VERSION = 20210108
 
+    footprint_type: str = "unspecified"
+
     def __init__(self, filename: str=None, data=None):
         self.filename: str = filename
 
@@ -705,17 +707,18 @@ class KicadMod:
     def _getAttributes(self):
         attribs = self._getArray(self.sexpr_data, "attr")
 
-        # Note : see pcb_parser.cpp in KiCad source
+        # Note: see pcb_io_kicad_sexpr_parser.cpp in KiCad source
 
-        self.attribute = "virtual"
+        self.footprint_type = "unspecified"
         self.exclude_from_pos_files = False
         self.exclude_from_bom = False
 
         if attribs:
             for tok in attribs[0][1:]:
                 if tok in ["smd", "through_hole"]:
-                    self.attribute = tok
+                    self.footprint_type = tok
                 elif tok == "virtual":
+                    # Legacy token prior to version 20200826
                     self.exclude_from_pos_files = True
                     self.exclude_from_bom = True
                 elif tok == "exclude_from_pos_files":
@@ -723,7 +726,20 @@ class KicadMod:
                 elif tok == "exclude_from_bom":
                     self.exclude_from_bom = True
         elif self.version < 20200826:
-            self.attribute = "through_hole"
+            # This was the default behavior before version 20200826
+            self.footprint_type = "through_hole"
+
+    @property
+    def is_virtual(self) -> bool:
+        """
+        Check if this is a "virtual" component, i.e. it appears not to be
+        physically present on the board.
+
+        Before version 20200826, the "virtual" attribute was used to indicate
+        this, since then the "exclude_from_pos_files" and "exclude_from_bom"
+        attributes together are used for this purpose.
+        """
+        return self.exclude_from_pos_files and self.exclude_from_bom
 
     # Add a 3D model
     def addModel(
@@ -1416,21 +1432,17 @@ class KicadMod:
         se.addOptItem("solder_paste_ratio", self.solder_paste_ratio)
         se.addOptItem("clearance", self.clearance)
 
-        # Set attribute
-        attr = self.attribute.lower()
-        if (
-            attr in ["smd", "through_hole"]
-            or self.exclude_from_bom
-            or self.exclude_from_pos_files
-        ):
-            params = []
-            if attr in ["smd", "through_hole"]:
-                params.append(attr)
-            if self.exclude_from_bom:
-                params.append("exclude_from_bom")
-            if self.exclude_from_pos_files:
-                params.append("exclude_from_pos_files")
-            se.addItems({"attr": params})
+        # Set attributes
+        attrs = []
+        if self.footprint_type in ["smd", "through_hole"]:
+            attrs.append(self.footprint_type)
+        if self.exclude_from_bom:
+            attrs.append("exclude_from_bom")
+        if self.exclude_from_pos_files:
+            attrs.append("exclude_from_pos_files")
+
+        if attrs:
+            se.addItems({"attr": attrs})
 
         # Add text items
         self._formatText("reference", self.reference, se)

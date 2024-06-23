@@ -25,8 +25,8 @@ class Rule(KLCRule):
 
         error = False
 
-        if self.smd_count > 0 and module.attribute != "smd":
-            if module.attribute == "virtual":
+        if self.smd_count > 0 and module.footprint_type != "smd":
+            if module.is_virtual:
                 self.warning(
                     "Footprint placement type set to 'virtual' - ensure this is"
                     " correct!"
@@ -53,4 +53,4 @@ class Rule(KLCRule):
         module = self.module
         if self.check():
             self.info("Set 'surface mount' attribute")
-            module.attribute = "smd"
+            module.footprint_type = "smd"

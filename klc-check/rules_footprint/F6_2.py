@@ -20,7 +20,7 @@ class Rule(KLCRule):
         For most other components (LEDs, molded packages, ...) this test will yield usable results.
         """
         module = self.module
-        if module.attribute != "smd":
+        if module.footprint_type != "smd":
             # Ignore non-smd parts
             return False
 

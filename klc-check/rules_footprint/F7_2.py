@@ -30,7 +30,7 @@ class Rule(KLCRule):
         num = ""
 
         # check if module is through-hole
-        if module.attribute == "through_hole":
+        if module.footprint_type == "through_hole":
 
             for name in names:
                 pads = module.getPadsByNumber(name)
