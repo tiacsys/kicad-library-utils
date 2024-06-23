@@ -1,4 +1,4 @@
-(footprint "Warn__F7.1__Virtual-with-THT-Pins"
+(footprint "Warn__F6.1__Hybrid-FP-should-be-SMD"
 	(version 20240108)
 	(generator "pcbnew")
 	(generator_version "8.0")
@@ -63,7 +63,7 @@
 			)
 		)
 	)
-	(attr exclude_from_pos_files exclude_from_bom)
+	(attr through_hole)
 	(fp_circle
 		(center 0 0)
 		(end 5.08 -2.54)
@@ -99,35 +99,18 @@
 		)
 	)
 	(pad "1" thru_hole circle
-		(at -2.54 -2.54)
+		(at 0 0 )
 		(size 1.524 1.524)
 		(drill 0.762)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
 		(uuid "a6ad94c5-57bc-4844-a3e0-342a40a7ee28")
 	)
-	(pad "2" thru_hole circle
-		(at 2.54 -2.54)
-		(size 1.524 1.524)
-		(drill 0.762)
-		(layers "*.Cu" "*.Mask")
-		(remove_unused_layers no)
-		(uuid "38accd87-405f-44e0-85ac-90f836fc9b87")
-	)
-	(pad "3" thru_hole circle
-		(at 2.54 2.54)
-		(size 1.524 1.524)
-		(drill 0.762)
-		(layers "*.Cu" "*.Mask")
-		(remove_unused_layers no)
-		(uuid "57eaca29-a85e-4762-9cd5-42ff27f1b939")
-	)
-	(pad "4" thru_hole circle
-		(at -2.54 2.54)
-		(size 1.524 1.524)
-		(drill 0.762)
-		(layers "*.Cu" "*.Mask")
-		(remove_unused_layers no)
-		(uuid "08601b70-dc5c-487a-84d9-b605b455185a")
+	(pad "2" smd roundrect
+		(at 0 0)
+		(size 0.635 1.397)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(roundrect_rratio 0.2)
+		(uuid "e0109ee2-ac9a-4ddd-a58c-68a08efdacc3")
 	)
 )

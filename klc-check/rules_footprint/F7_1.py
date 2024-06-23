@@ -26,20 +26,44 @@ class Rule(KLCRule):
 
         error = False
 
+        # If the part is a THT part, it should have THT pads
+        # and should not be excluded from the BOM or position files
+        if module.footprint_type == "through_hole":
+            if self.pth_count == 0:
+                self.error("Through hole footprint type is set, but no THT pads found")
+                error = True
+
+            if module.exclude_from_bom:
+                self.error("Through hole footprints should not be excluded from BOM")
+                self.errorExtra("If this part isn't physically fitted, perhaps this"
+                                " footprint should be of \"unspecified\" type.")
+                error = True
+
+            if module.exclude_from_pos_files:
+                self.error("Through hole footprints should not be excluded from"
+                           " position files")
+                self.errorExtra("If this part isn't physically fitted, perhaps this"
+                                " footprint should be of \"unspecified\" type.")
+                error = True
+
         if self.pth_count > 0 and module.footprint_type != "through_hole":
-            if module.is_virtual:
+            if module.exclude_from_bom or module.exclude_from_pos_files:
+                # This is a warning for THT (but an error for the SMD counterpart)
+                # because we don't have a paste layer to check for greater confidence.
                 self.warning(
-                    "Footprint placement type set to 'virtual' - ensure this is"
-                    " correct!"
+                    "Footprint is excluded from BOM or position files, "
+                    " but has plated THT pads"
                 )
-            # Only THT pads
+                self.warningExtra("Ensure this is correct.")
+
+            # Non-virtual and only THT pads
             elif self.smd_count == 0:
                 self.error("Through Hole attribute not set")
                 self.errorExtra(
                     "For THT footprints, 'Placement type' must be set to 'Through hole'"
                 )
                 error = True
-            # A mix of THT and SMD pads - probably a SMD footprint
+            # A mix of THT and SMD pads - probably a SMD footprint (e.g. hybrid)
 
         return error
 

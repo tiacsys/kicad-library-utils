@@ -1,4 +1,4 @@
-(footprint "Fail__F7.1__SMD-with-THT-Pins"
+(footprint "Fail__F7.1__SMD-with-only-THT-Pins"
 	(version 20240108)
 	(generator "pcbnew")
 	(generator_version "8.0")
@@ -15,7 +15,7 @@
 			)
 		)
 	)
-	(property "Value" "Fail__F7.1__SMD-with-THT-Pins"
+	(property "Value" "Fail__F7.1__SMD-with-only-THT-Pins"
 		(at 0 1 0)
 		(unlocked yes)
 		(layer "F.Fab")
