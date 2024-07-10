@@ -38,14 +38,14 @@ style:
 
 .PHONY: test-klc-footprints
 test-klc-footprints:
-	python klc-check/check_footprint.py \
+	python3 klc-check/check_footprint.py \
 		--unittest \
 		klc-check/test_footprint.pretty/*__*.kicad_mod
 
 
 .PHONY: test-klc-symbols
 test-klc-symbols:
-	python klc-check/check_symbol.py \
+	python3 klc-check/check_symbol.py \
 	--unittest \
 	klc-check/test_symbol/*.kicad_sym
 
@@ -55,4 +55,4 @@ check: lint spelling test-klc-footprints test-klc-symbols
 
 .PHONY: install-deps
 install-deps:
-	pip install -r requirements.txt
+	pip3 install -r requirements.txt
