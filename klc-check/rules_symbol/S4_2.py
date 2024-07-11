@@ -16,9 +16,7 @@ class Rule(KLCRule):
             for gnd in GND:
                 if re.search(gnd, name, flags=re.IGNORECASE) is not None:
                     # Pin orientation should be "up"
-                    if (not self.component.is_power_symbol()) and (
-                        not pin.get_direction() == "U"
-                    ):
+                    if pin.get_direction() != "U":
                         if first:
                             first = False
                             self.warning(
@@ -32,10 +30,6 @@ class Rule(KLCRule):
         Check that positive power pins are placed at the top of the symbol,
         or the left of the symbol if there are power_out pins.
         """
-
-        # We don't handle these here
-        if self.component.is_power_symbol():
-            return
 
         # Positive power pins only
         def is_positive_power(pin):
@@ -97,6 +91,10 @@ class Rule(KLCRule):
         # no need to check pins on a derived symbols
         if self.component.extends is not None:
             return False
+
+        # We don't handle these in this check
+        if self.component.is_power_symbol():
+            return
 
         # All the pins actually marked with the power types
         self.power_in_pins = [p for p in self.component.pins if p.etype == "power_in"]
