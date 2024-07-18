@@ -702,6 +702,12 @@ class KicadMod:
 
             models.append(model_dict)
 
+            model_dict["hide"] = False
+            hide = self._getArray(model, "hide")
+
+            if hide:
+                model_dict["hide"] = True if hide[0][1] == "yes" else False
+
         return models
 
     def _getAttributes(self):
@@ -1374,6 +1380,9 @@ class KicadMod:
             {"scale": {"xyz": [sc["x"], sc["y"], sc["z"]]}}, newline=True, indent=False
         )
         se.addItems({"rotate": {"xyz": [ro["x"], ro["y"], ro["z"]]}}, newline=True)
+
+        if model["hide"]:
+            se.addItems({"hide": "yes"}, newline=False)
 
         se.endGroup(newline=True)
 

@@ -44,6 +44,7 @@ class Rule(KLCRule):
         self.model3D_wrongOffset = False
         self.model3D_wrongRotation = False
         self.model3D_wrongScale = False
+        self.model3D_hidden = False
 
         if model["pos"]["x"] != 0 or model["pos"]["y"] != 0 or model["pos"]["z"] != 0:
             error = True
@@ -89,6 +90,11 @@ class Rule(KLCRule):
                 )
             )
 
+        if model["hide"]:
+            self.model3D_hidden = True
+            self.error("3D model is hidden")
+            error = True
+
         model = model["file"]
 
         self.model3D_missingSYSMOD = False
@@ -129,11 +135,7 @@ class Rule(KLCRule):
         extensions = {"wrl"}
 
         if model_ext.lower() not in extensions:
-            self.error(
-                "Model '{mod}' is incompatible format (must be WRL file)".format(
-                    mod=model
-                )
-            )
+            self.error("Model is incompatible format (must be WRL file)")
             self.model3D_wrongFiletype = True
             self.needsFixMore = True
             return True
@@ -192,6 +194,9 @@ class Rule(KLCRule):
                     p=model_file
                 )
             )
+
+        if error:
+            self.errorExtra(f"3D model path: {model}")
 
         return error
 
@@ -299,6 +304,11 @@ class Rule(KLCRule):
                     "Use --fixmore instead of --fix to correct the 3D model settings!"
                 )
                 return
+
+        if self.model3D_hidden:
+            module.models[0]["hide"] = False
+            self.info("Unhid 3D model.")
+            return
 
         self.info("Fix not supported")
         return
