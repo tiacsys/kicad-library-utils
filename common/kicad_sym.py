@@ -1123,7 +1123,7 @@ class KicadLibrary(KicadSymbolBase):
             if data:
                 sexpr_data = sexpr.parse_sexp(data)
             else:
-                with open(filename) as f:
+                with open(filename, encoding="utf8") as f:
                     # parse s-expr
                     sexpr_data = sexpr.parse_sexp(f.read())
         except ValueError as exc:
