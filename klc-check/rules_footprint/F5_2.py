@@ -176,7 +176,7 @@ class Rule(KLCRule):
         if ft < KLC_TEXT_THICKNESS_MIN or ft > KLC_TEXT_THICKNESS_MAX:
             warnings.append(
                 "RefDes text thickness ({x}mm) is outside allowed range [{y}mm - {z}mm]".format(
-                    x=ft, y=KLC_TEXT_SIZE_MIN, z=KLC_TEXT_SIZE_MAX
+                    x=ft, y=KLC_TEXT_THICKNESS_MIN, z=KLC_TEXT_THICKNESS_MAX
                 )
             )
 
