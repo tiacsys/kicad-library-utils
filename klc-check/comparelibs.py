@@ -147,7 +147,7 @@ design_breaking_changes = 0
 # add footprints dir if possible
 sym_check = check_symbol.SymbolCheck(
     None, args.exclude, Verbosity(2), args.footprint_directory,
-    False if args.nocolor else True, silent=True
+    False if args.nocolor else True, silent=False
 )
 
 # iterate over all new libraries
@@ -165,7 +165,7 @@ for lib_name in new_libs:
     # New library has been created!
     if lib_name not in old_libs:
         if args.verbose:
-            printer.light_green("Created library '{lib}'".format(lib=lib_name))
+            printer.light_green(f"Found new library '{lib_name}' with {len(new_lib.symbols)} items")
 
         # Check all the components!
         for sym in new_lib.symbols:
