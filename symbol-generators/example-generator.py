@@ -18,8 +18,8 @@ from kicad_sym import Circle, KicadLibrary, KicadSymbol, Pin, Rectangle
 # the libname of the file and the symbol needs to be the same
 libname = "demo"
 
-new_symbol = KicadSymbol("a_new_part", libname)
 lib = KicadLibrary(libname + ".kicad_sym")
+new_symbol = KicadSymbol.new("a_new_part", libname)
 lib.symbols.append(new_symbol)
 
 
