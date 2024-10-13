@@ -16,14 +16,21 @@ class Rule(KLCRule):
         self.violating_pins = []
         err = False
         for pin in self.component.pins:
+            grid = gridspacing
             posx = mm_to_mil(pin.posx)
             posy = mm_to_mil(pin.posy)
-            if (posx % gridspacing) != 0 or (posy % gridspacing) != 0:
+            if pin.etype == "no_connect":
+                # allow no_connect pins to be on a 50mil grid
+                # when pinlength is 50 or 150mil, and they are on the outline, they will not be
+                # on a 100mil grid.  we don't really care if they can easily be connected to, because
+                # they are not supposed to be connected
+                grid = 50
+            if (posx % grid) != 0 or (posy % grid) != 0:
                 self.violating_pins.append(pin)
                 if not err:
                     self.error(
                         "Pins not located on {0}mil (={1:.3}mm) grid:".format(
-                            gridspacing, gridspacing * 0.0254
+                            grid, grid * 0.0254
                         )
                     )
                 self.error(" - {0} ".format(pinString(pin, loc=True)))
