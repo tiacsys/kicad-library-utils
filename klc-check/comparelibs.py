@@ -68,6 +68,9 @@ parser.add_argument(
     "-v", "--verbose", help="Enable extra verbose output", action="store_true"
 )
 parser.add_argument(
+    "-d", "--diffs", help="Show diffs", action="store_true"
+)
+parser.add_argument(
     "--check", help="Perform KLC check on updated/added components", action="store_true"
 )
 parser.add_argument(
@@ -220,6 +223,7 @@ for lib_name in new_libs:
             if args.verbose:
                 printer.yellow(f"Changed '{lib_name}:{symname}'{derived_sym_info}")
 
+            if args.diffs:
                 printer.start_fold_section("symbol_diff", "Show s-expr diff")
 
                 new_sexpr = format_sexp(build_sexp(new_sym[symname].get_sexpr())).splitlines()
