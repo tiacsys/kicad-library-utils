@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import pathlib
-import sqlite3
+import atexit
+import json
 import os
 import re
-import time
 import math
 import sys
 from collections import defaultdict
@@ -12,8 +12,8 @@ import warnings
 import fnmatch
 from itertools import groupby
 from dataclasses import dataclass, field
+import subprocess
 
-import httpx
 import click
 from bs4 import BeautifulSoup
 import tqdm
@@ -35,9 +35,57 @@ from DrawingElements import Drawing, DrawingPin, DrawingRectangle, ElementFill
 from Point import Point
 
 
+# Device which appear in the CubeMX chip database, but do not seem to be orderable, or which we do not want to include
+# for other reasons.
+ignore_devices = [
+        # Device does not appear on ST's website, and does not have a datasheet.
+        'STM32G471*',
+        'STM32G071C6T*',
+        'STM32G071C6U*',
+        'STM32G071G6U*',
+        'STM32G071K6T*',
+        'STM32G071K6U*',
+        'STM32G071R6T*',
+        'STM32G411*',
+        'STM32G414*',
+        'STM32L485*',
+        'STM32WBA50KEU*',
+        'STM32WBA50KGU*',
+        # Ignore for now to finish Mar'24 update b/c they need new footprints, re-introduce later.
+        'STM32H523HEY*',
+        'STM32H533HEY*',
+        'STM32C071FBY*',
+        'STM32WB05TZF*',
+        'STM32WB06CCF*',
+        'STM32WB06CCV*',
+        'STM32WB07CCF*',
+        'STM32WB07CCV*',
+        'STM32WB09TEF*',
+        ]
+
+# Manual overrides for parts with non-standard datasheet locations
+datasheet_fixups = {
+        'STM32F768A*': 'https://www.st.com/resource/en/datasheet/stm32f767zi.pdf',
+        'STM32F769*': 'https://www.st.com/resource/en/datasheet/stm32f767zi.pdf',
+        'STM32WLE5*': 'https://www.st.com/resource/en/datasheet/stm32wle5j8.pdf',
+        'STM32U5F*': 'https://www.st.com/resource/en/datasheet/stm32u5f7vj.pdf',
+        'STM32WBA5*': 'https://www.st.com/resource/en/datasheet/stm32wba52ce.pdf',
+        'STM32F439*': 'https://www.st.com/resource/en/datasheet/stm32f437ai.pdf',
+        }
+
 # Match everything before the first separator, which may be one of [space], /, -.
 # However, do match dashes (-) when they are the last character in the name (VREF-)
 _PINNAME_MATCH = re.compile("[^ /-]*(-$)?")
+
+
+def pinkey(pin):
+    """ Split pin name into alphabetic and numeric parts and parse numeric parts, for
+    sorting. Example:
+
+    'DDR1_DQ15B' -> ('DDR', 1, '_DQ', 15, 'B')
+    """
+    return tuple([int(num) if num else char
+                  for num, char in re.findall('([0-9]+)|([^0-9]+)', pin.name)])
 
 
 @dataclass
@@ -84,7 +132,8 @@ class DataPin:
             "PF11BOOT0": "PF11",
         }
 
-        self.name = name_lookup.get(self.name, _PINNAME_MATCH.match(self.name).group())
+        if self.name in name_lookup:
+            self.name = name_lookup[self.name]
 
         for k, v in type_lookup.items():
             if re.match(k, f'{self.pintype}/{self.name}'):
@@ -128,11 +177,11 @@ class Device:
     _POWER_PAD_FIX_PACKAGES = {"UFQFPN32", "UFQFPN48", "VFQFPN36", "VFQFPN68"}
     _FOOTPRINT_MAPPING = {
             "SO8N":         ("Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",                         "SO*3.9x4.9mm*P1.27mm*"), # NOQA
-            "LFBGA100":     ("Package_BGA:LFBGA-100_10x10mm_Layout10x10_P0.8mm",            "*LFBGA*10x10mm*Layout10x10*P0.8mm*"), # NOQA
-            "LFBGA144":     ("Package_BGA:LFBGA-144_10x10mm_Layout12x12_P0.8mm",            "*LFBGA*10x10mm*Layout12x12*P0.8mm*"), # NOQA
-            "LFBGA289":     ("Package_BGA:LFBGA-289_14x14mm_Layout17x17_P0.8mm",            "*LFBGA*14x14mm*Layout17x17*P0.8mm*"), # NOQA
-            "LFBGA354":     ("Package_BGA:ST_LFBGA-354_16x16mm_Layout19x19_P0.8mm",         "*LFBGA*16x16mm*Layout19x19*P0.8mm*"), # NOQA
-            "LFBGA448":     ("Package_BGA:ST_LFBGA-448_18x18mm_Layout22x22_P0.8mm",         "*LFBGA*18x18mm*Layout22x22*P0.8mm*"), # NOQA
+            "LFBGA100":     ("Package_BGA:LFBGA-100_10x10mm_Layout10x10_P0.8mm",            "LFBGA*10x10mm*Layout10x10*P0.8mm*"), # NOQA
+            "LFBGA144":     ("Package_BGA:LFBGA-144_10x10mm_Layout12x12_P0.8mm",            "LFBGA*10x10mm*Layout12x12*P0.8mm*"), # NOQA
+            "LFBGA289":     ("Package_BGA:LFBGA-289_14x14mm_Layout17x17_P0.8mm",            "LFBGA*14x14mm*Layout17x17*P0.8mm*"), # NOQA
+            "LFBGA354":     ("Package_BGA:ST_LFBGA-354_16x16mm_Layout19x19_P0.8mm",         "ST*LFBGA*16x16mm*Layout19x19*P0.8mm*"), # NOQA
+            "LFBGA448":     ("Package_BGA:ST_LFBGA-448_18x18mm_Layout22x22_P0.8mm",         "ST*LFBGA*18x18mm*Layout22x22*P0.8mm*"), # NOQA
             "LQFP32":       ("Package_QFP:LQFP-32_7x7mm_P0.8mm",                            "LQFP*7x7mm*P0.8mm*"), # NOQA
             "LQFP48":       ("Package_QFP:LQFP-48_7x7mm_P0.5mm",                            "LQFP*7x7mm*P0.5mm*"), # NOQA
             "LQFP64":       ("Package_QFP:LQFP-64_10x10mm_P0.5mm",                          "LQFP*10x10mm*P0.5mm*"), # NOQA
@@ -145,78 +194,94 @@ class Device:
             "LQFP208":      ("Package_QFP:LQFP-208_28x28mm_P0.5mm",                         "LQFP*28x28mm*P0.5mm*"), # NOQA
             "TFBGA64":      ("Package_BGA:TFBGA-64_5x5mm_Layout8x8_P0.5mm",                 "TFBGA*5x5mm*Layout8x8*P0.5mm*"), # NOQA
             "TFBGA100":     ("Package_BGA:TFBGA-100_8x8mm_Layout10x10_P0.8mm",              "TFBGA*8x8mm*Layout10x10*P0.8mm*"), # NOQA
-            "TFBGA169":     ("Package_BGA:ST_TFBGA-169_7x7mm_Layout13x13_P0.5mm",           "TFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
+            "TFBGA169":     ("Package_BGA:ST_TFBGA-169_7x7mm_Layout13x13_P0.5mm",           "ST*TFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
             "TFBGA216":     ("Package_BGA:TFBGA-216_13x13mm_Layout15x15_P0.8mm",            "TFBGA*13x13mm*Layout15x15*P0.8mm*"), # NOQA
-            "TFBGA225":     ("Package_BGA:ST_TFBGA-225_13x13mm_Layout15x15_P0.8mm",         "*TFBGA*13x13mm*Layout15x15*P0.8mm*"), # NOQA
+            "TFBGA225":     ("Package_BGA:ST_TFBGA-225_13x13mm_Layout15x15_P0.8mm",         "ST*TFBGA*13x13mm*Layout15x15*P0.8mm*"), # NOQA
             "TFBGA240":     ("Package_BGA:TFBGA-265_14x14mm_Layout17x17_P0.8mm",            "TFBGA*14x14mm*Layout17x17*P0.8mm*"), # NOQA
-            "TFBGA257":     ("Package_BGA:ST_TFBGA-257_10x10mm_Layout19x19_P0.5mmP0.65mm",  "*TFBGA*10x10mm*Layout19x19*P0.5mmP0.65mm*"), # NOQA
-            "TFBGA289":     ("Package_BGA:TFBGA-289_9x9mm_Layout17x17_P0.5mm",              "*TFBGA*9x9mm*Layout17x17*P0.5mmP0.65mm*"), # NOQA
-            "TFBGA320":     ("Package_BGA:ST_TFBGA-320_11x11mm_Layout21x21_P0.5mm",         "*TFBGA*11x11mm_Layout21x21*P0.5mm"), # NOQA
-            "TFBGA361":     ("Package_BGA:ST_TFBGA-361_12x12mm_Layout23x23_P0.5mmP0.65mm",  "*TFBGA*12x12mm*Layout23x23*P0.5mmP0.65mm*"), # NOQA
+            "TFBGA257":     ("Package_BGA:ST_TFBGA-257_10x10mm_Layout19x19_P0.5mmP0.65mm",  "ST*TFBGA*10x10mm*Layout19x19*P0.5mmP0.65mm*"), # NOQA
+            "TFBGA289":     ("Package_BGA:TFBGA-289_9x9mm_Layout17x17_P0.5mm",              "TFBGA*9x9mm*Layout17x17*P0.5mm*"), # NOQA
+            "TFBGA320":     ("Package_BGA:ST_TFBGA-320_11x11mm_Layout21x21_P0.5mm", "ST*TFBGA*11x11mm*Layout21x21*P0.5mm*"), # NOQA
+            "TFBGA361":     ("Package_BGA:ST_TFBGA-361_12x12mm_Layout23x23_P0.5mmP0.65mm",  "ST*TFBGA*12x12mm*Layout23x23*P0.5mmP0.65mm*"), # NOQA
             "TSSOP14":      ("Package_SO:TSSOP-14_4.4x5mm_P0.65mm",                         "TSSOP*4.4x5mm*P0.65mm*"), # NOQA
             "TSSOP20":      ("Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm",                       "TSSOP*4.4x6.5mm*P0.65mm*"), # NOQA
-            "UFBGA64":      ("Package_BGA:UFBGA-64_5x5mm_Layout8x8_P0.5mm",                 "*UFBGA*5x5mm*Layout8x8*P0.5mm*"), # NOQA
-            "UFBGA73":      ("Package_BGA:ST_UFBGA-73_5x5mm_Layout9x9_P0.5mm",              "*UFBGA*5x5mm*Layout9x9*P0.5mm*"), # NOQA
-            "UFBGA100":     ("Package_BGA:UFBGA-100_7x7mm_Layout12x12_P0.5mm",              "*UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
-            "UFBGA121":     ("Package_BGA:ST_UFBGA-121_6x6mm_Layout11x11_P0.5mm",           "*UFBGA*6x6mm*Layout11x11*P0.5mm*"), # NOQA
-            "UFBGA129":     ("Package_BGA:ST_UFBGA-129_7x7mm_Layout13x13_P0.5mm",           "*UFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
-            "UFBGA132":     ("Package_BGA:UFBGA-132_7x7mm_Layout12x12_P0.5mm",              "*UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
-            "UFBGA144-7X7": ("Package_BGA:UFBGA-144_7x7mm_Layout12x12_P0.5mm",              "*UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
-            "UFBGA144-10X10":("Package_BGA:UFBGA-144_10x10mm_Layout12x12_P0.8mm",           "*UFBGA*10x10mm*Layout12x12*P0.8mm*"), # NOQA
-            "UFBGA169":     ("Package_BGA:UFBGA-169_7x7mm_Layout13x13_P0.5mm",              "*UFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
-            "UFBGA176":     ("Package_BGA:UFBGA-201_10x10mm_Layout15x15_P0.65mm",           "*UFBGA*10x10mm*Layout15x15*P0.65mm*"), # NOQA
+            "UFBGA59":      ("Package_BGA:ST_UFBGA-59_5x5mm_Layout8x8_P0.5mm",              "ST*UFBGA*5x5mm*Layout8x8*P0.5mm*"), # NOQA
+            "UFBGA64":      ("Package_BGA:UFBGA-64_5x5mm_Layout8x8_P0.5mm",                 "UFBGA*5x5mm*Layout8x8*P0.5mm*"), # NOQA
+            "UFBGA73":      ("Package_BGA:ST_UFBGA-73_5x5mm_Layout9x9_P0.5mm",              "ST*UFBGA*5x5mm*Layout9x9*P0.5mm*"), # NOQA
+            "UFBGA81":      ("Package_BGA:ST_UFBGA-81_5x5mm_Layout9x9_P0.5mm",              "ST*UFBGA*5x5mm*Layout9x9*P0.5mm*"), # NOQA
+            "UFBGA100":     ("Package_BGA:UFBGA-100_7x7mm_Layout12x12_P0.5mm",              "UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
+            "UFBGA121":     ("Package_BGA:ST_UFBGA-121_6x6mm_Layout11x11_P0.5mm",           "ST*UFBGA*6x6mm*Layout11x11*P0.5mm*"), # NOQA
+            "UFBGA129":     ("Package_BGA:ST_UFBGA-129_7x7mm_Layout13x13_P0.5mm",           "ST*UFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
+            "UFBGA132":     ("Package_BGA:UFBGA-132_7x7mm_Layout12x12_P0.5mm",              "UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
+            "UFBGA144-7X7": ("Package_BGA:UFBGA-144_7x7mm_Layout12x12_P0.5mm",              "UFBGA*7x7mm*Layout12x12*P0.5mm*"), # NOQA
+            "UFBGA144-10X10":("Package_BGA:UFBGA-144_10x10mm_Layout12x12_P0.8mm",           "UFBGA*10x10mm*Layout12x12*P0.8mm*"), # NOQA
+            "UFBGA169":     ("Package_BGA:UFBGA-169_7x7mm_Layout13x13_P0.5mm",              "UFBGA*7x7mm*Layout13x13*P0.5mm*"), # NOQA
+            "UFBGA176":     ("Package_BGA:UFBGA-201_10x10mm_Layout15x15_P0.65mm",           "UFBGA*10x10mm*Layout15x15*P0.65mm*"), # NOQA
             "UFQFPN20":     ("Package_DFN_QFN:ST_UFQFPN-20_3x3mm_P0.5mm",                   "ST*UFQFPN*3x3mm*P0.5mm*"), # NOQA
             "UFQFPN28":     ("Package_DFN_QFN:QFN-28_4x4mm_P0.5mm",                         "QFN*4x4mm*P0.5mm*"), # NOQA
             "UFQFPN32":     ("Package_DFN_QFN:QFN-32-1EP_5x5mm_P0.5mm_EP3.45x3.45mm",       "QFN*1EP*5x5mm*P0.5mm*"), # NOQA
+            "VFQFPN32":     ("Package_DFN_QFN:QFN-32-1EP_5x5mm_P0.5mm_EP3.7x3.7mm",         "QFN*1EP*5x5mm*P0.5mm*"), # NOQA
             "VFQFPN36":     ("Package_DFN_QFN:QFN-36-1EP_6x6mm_P0.5mm_EP4.1x4.1mm",         "QFN*1EP*6x6mm*P0.5mm*"), # NOQA
             "UFQFPN48":     ("Package_DFN_QFN:QFN-48-1EP_7x7mm_P0.5mm_EP5.6x5.6mm",         "QFN*1EP*7x7mm*P0.5mm*"), # NOQA
             "VFQFPN68":     ("Package_DFN_QFN:QFN-68-1EP_8x8mm_P0.4mm_EP6.4x6.4mm",         "QFN*1EP*8x8mm*P0.4mm*"), # NOQA
     }
     _WLCSP_MAP = {
-            'ST_WLCSP-100_Die495': ('Package_CSP:ST_WLCSP-100_4.40x4.38mm_Layout10x10_P0.4mm_Offcenter', '*'), # NOQA
-            'ST_WLCSP-100_Die471': ('Package_CSP:ST_WLCSP-100_4.437x4.456mm_Layout10x10_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-115_Die483': ('Package_CSP:ST_WLCSP-115_3.73x4.15mm_P0.35mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-115_Die461': ('Package_CSP:ST_WLCSP-115_4.63x4.15mm_P0.4mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-132_Die480': ('Package_CSP:ST_WLCSP-132_4.57x4.37mm_Layout12x11_P0.35mm', '*'), # NOQA
-            'ST_WLCSP-156_Die450': ('Package_CSP:ST_WLCSP-156_4.96x4.64mm_Layout13x12_P0.35mm', '*'), # NOQA
-            'ST_WLCSP-18_Die466':  ('Package_CSP:ST_WLCSP-18_1.86x2.14mm_P0.4mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-25_Die460':  ('Package_CSP:ST_WLCSP-25_2.30x2.48mm_Layout5x5_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-36_Die464':  ('Package_CSP:ST_WLCSP-36_2.58x3.07mm_Layout6x6_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-49_Die468':  ('Package_CSP:ST_WLCSP-49_3.15x3.13mm_Layout7x7_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-64_Die479':  ('Package_CSP:ST_WLCSP-64_3.56x3.52mm_Layout8x8_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-81_Die469':  ('Package_CSP:ST_WLCSP-81_4.02x4.27mm_Layout9x9_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-81_Die472':  ('Package_CSP:ST_WLCSP-81_4.36x4.07mm_Layout9x9_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-20_Die456':  ('Package_CSP:ST_WLCSP-20_1.94x2.40mm_Layout4x5_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-49_Die494':  ('Package_CSP:ST_WLCSP-49_3.30x3.38mm_Layout7x7_P0.4mm_Offcenter', '*'), # NOQA
-            'ST_WLCSP-52_Die467':  ('Package_CSP:ST_WLCSP-52_3.09x3.15mm_P0.4mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-90_Die482':  ('Package_CSP:ST_WLCSP-90_4.20x3.95mm_P0.4mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-12_Die443':  ('Package_CSP:ST_WLCSP-12_1.70x1.42mm_P0.35mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-25_Die474':  ('Package_CSP:ST_WLCSP-25_2.33x2.24mm_Layout5x5_P0.4mm', '*'), # NOQA
-            'ST_WLCSP-80_Die484':  ('Package_CSP:ST_WLCSP-80_3.50x3.27mm_P0.35mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-208_Die481': ('Package_CSP:ST_WLCSP-208_5.38x5.47mm_P0.35mm_Stagger', '*'), # NOQA
-            'ST_WLCSP-150_Die481': ('Package_CSP:ST_WLCSP-150_5.38x5.47mm_P0.4m_Stagger', '*'), # NOQA
-            'ST_WLCSP-56_Die455':  ('Package_CSP:ST_WLCSP-56_3.38x3.38mm_P0.4m_Stagger', '*'), # NOQA
-            'ST_WLCSP-72_Die455':  ('Package_CSP:ST_WLCSP-72_3.38x3.38mm_P0.35m_Stagger', '*'), # NOQA
+            'ST_WLCSP-100_Die495': ('Package_CSP:ST_WLCSP-100_4.40x4.38mm_Layout10x10_P0.4mm_Offcenter', 'ST*WLCSP*4.40x4.38mm*Layout10x10*P0.4mm*Offcenter*'), # NOQA
+            'ST_WLCSP-100_Die471': ('Package_CSP:ST_WLCSP-100_4.437x4.456mm_Layout10x10_P0.4mm', 'ST*WLCSP*4.437x4.456mm*Layout10x10*P0.4mm*'), # NOQA
+            'ST_WLCSP-99_Die415':  ('Package_CSP:ST_WLCSP-99_4.42x3.77mm_Layout9x11_P0.35mm', 'ST*WLCSP*4.42x3.77mm*Layout9x11*P0.35mm*'), # NOQA
+            'ST_WLCSP-115_Die483': ('Package_CSP:ST_WLCSP-115_3.73x4.15mm_P0.35mm_Stagger', 'ST*WLCSP*3.73x4.15mm*P0.35mm*Stagger*'), # NOQA
+            'ST_WLCSP-115_Die461': ('Package_CSP:ST_WLCSP-115_4.63x4.15mm_P0.4mm_Stagger', 'ST*WLCSP*4.63x4.15mm*P0.4mm*Stagger*'), # NOQA
+            'ST_WLCSP-132_Die480': ('Package_CSP:ST_WLCSP-132_4.57x4.37mm_Layout12x11_P0.35mm', 'ST*WLCSP*4.57x4.37mm*Layout12x11*P0.35mm*'), # NOQA
+            'ST_WLCSP-156_Die450': ('Package_CSP:ST_WLCSP-156_4.96x4.64mm_Layout13x12_P0.35mm', 'ST*WLCSP*4.96x4.64mm*Layout13x12*P0.35mm*'), # NOQA
+            'ST_WLCSP-18_Die466':  ('Package_CSP:ST_WLCSP-18_1.86x2.14mm_P0.4mm_Stagger', 'ST*WLCSP*1.86x2.14mm*P0.4mm*Stagger*'), # NOQA
+            'ST_WLCSP-25_Die460':  ('Package_CSP:ST_WLCSP-25_2.30x2.48mm_Layout5x5_P0.4mm', 'ST*WLCSP*2.30x2.48mm*Layout5x5*P0.4mm*'), # NOQA
+            'ST_WLCSP-36_Die464':  ('Package_CSP:ST_WLCSP-36_2.58x3.07mm_Layout6x6_P0.4mm', 'ST*WLCSP*2.58x3.07mm*Layout6x6*P0.4mm*'), # NOQA
+            'ST_WLCSP-49_Die468':  ('Package_CSP:ST_WLCSP-49_3.15x3.13mm_Layout7x7_P0.4mm', 'ST*WLCSP*3.15x3.13mm*Layout7x7*P0.4mm*'), # NOQA
+            'ST_WLCSP-64_Die479':  ('Package_CSP:ST_WLCSP-64_3.56x3.52mm_Layout8x8_P0.4mm', 'ST*WLCSP*3.56x3.52mm*Layout8x8*P0.4mm*'), # NOQA
+            'ST_WLCSP-81_Die469':  ('Package_CSP:ST_WLCSP-81_4.02x4.27mm_Layout9x9_P0.4mm', 'ST*WLCSP*4.02x4.27mm*Layout9x9*P0.4mm*'), # NOQA
+            'ST_WLCSP-81_Die472':  ('Package_CSP:ST_WLCSP-81_4.36x4.07mm_Layout9x9_P0.4mm', 'ST*WLCSP*4.36x4.07mm*Layout9x9*P0.4mm*'), # NOQA
+            'ST_WLCSP-20_Die456':  ('Package_CSP:ST_WLCSP-20_1.94x2.40mm_Layout4x5_P0.4mm', 'ST*WLCSP*1.94x2.40mm*Layout4x5*P0.4mm*'), # NOQA
+            'ST_WLCSP-49_Die494':  ('Package_CSP:ST_WLCSP-49_3.30x3.38mm_Layout7x7_P0.4mm_Offcenter', 'ST*WLCSP*3.30x3.38mm*Layout7x7*P0.4mm*Offcenter*'), # NOQA
+            'ST_WLCSP-52_Die467':  ('Package_CSP:ST_WLCSP-52_3.09x3.15mm_P0.4mm_Stagger', 'ST*WLCSP*3.09x3.15mm*P0.4mm*Stagger*'), # NOQA
+            'ST_WLCSP-90_Die482':  ('Package_CSP:ST_WLCSP-90_4.20x3.95mm_P0.4mm_Stagger', 'ST*WLCSP*4.20x3.95mm*P0.4mm*Stagger*'), # NOQA
+            'ST_WLCSP-12_Die443':  ('Package_CSP:ST_WLCSP-12_1.70x1.42mm_P0.35mm_Stagger', 'ST*WLCSP*1.70x1.42mm*P0.35mm*Stagger*'), # NOQA
+            'ST_WLCSP-25_Die474':  ('Package_CSP:ST_WLCSP-25_2.33x2.24mm_Layout5x5_P0.4mm', 'ST*WLCSP*2.33x2.24mm*Layout5x5*P0.4mm*'), # NOQA
+            'ST_WLCSP-80_Die484':  ('Package_CSP:ST_WLCSP-80_3.50x3.27mm_P0.35mm_Stagger', 'ST*WLCSP*3.50x3.27mm*P0.35mm*Stagger*'), # NOQA
+            'ST_WLCSP-208_Die481': ('Package_CSP:ST_WLCSP-208_5.38x5.47mm_P0.35mm_Stagger', 'ST*WLCSP*5.38x5.47mm*P0.35mm*Stagger*'), # NOQA
+            'ST_WLCSP-150_Die481': ('Package_CSP:ST_WLCSP-150_5.38x5.47mm_P0.4m_Stagger', 'ST*WLCSP*5.38x5.47mm*P0.4m*Stagger*'), # NOQA
+            'ST_WLCSP-56_Die455':  ('Package_CSP:ST_WLCSP-56_3.38x3.38mm_P0.4m_Stagger', 'ST*WLCSP*3.38x3.38mm*P0.4m*Stagger*'), # NOQA
+            'ST_WLCSP-72_Die455':  ('Package_CSP:ST_WLCSP-72_3.38x3.38mm_P0.35m_Stagger', 'ST*WLCSP*3.38x3.38mm*P0.35m*Stagger*'), # NOQA
+            'ST_WLCSP-42_Die489':  ('Package_CSP:ST_WLCSP-42_2.93mmx2.82_P0.40mm_Stagger', 'ST*WLCSP*2.93mmx2.82*P0.40mm*Stagger*'), # NOQA
+            'ST_WLCSP-101_Die485': ('Package_CSP:ST_WLCSP-101_3.86x3.79mm_P0.35mm_Stagger', 'ST*WLCSP*3.86x3.79mm*P0.35mm*Stagger*'), # NOQA
+            'ST_WLCSP-27_Die459':  ('Package_CSP:ST_WLCSP-27_2.34x2.55mm_P0.40mm_Stagger', 'ST*WLCSP*2.34x2.55mm*P0.40mm*Stagger*'), # NOQA
+            'ST_WLCSP-208_Die476': ('Package_CSP:ST_WLCSP-208_5.8x5.6mm_P0.35_Stagger', 'ST*WLCSP*5.8x5.6mm*P0.35*Stagger*'), # NOQA
     }
 
     def __init__(self, xml):
-        self.pins = []
-
         soup = BeautifulSoup(xml.read_text(), features='xml').find('Mcu')
         self.name = soup['RefName'].replace('(', '_').replace(')', '_')
 
         # Get the package code
         package = soup['Package']
 
+        package, _, pinout_variant = package.partition(' ')
+
+        # Some C0 series parts such as the STM32C071x8/xB have two variants in some packages, where one variant
+        # sacrifices a GPIO for an additional VDDIO pin. For some reason, ST decided to put that info here as a suffix
+        # ("_GP" - normal, "general purpose" I guess?, "_N" alternate with additional VDDIO), so we have to cut it off
+        # as the actual physical packages are completely identical, at least from the outside.
+        package, _, pinout_variant = package.partition('_')
+
         if package == "UFBGA144":
             # ST uses the name "UFBGA144" for two sizes of BGA, and there's no way to tell to pick
             # them apart besides the part number's package ID letter
             try:
+                # Some newer parts have an extra "Q" at the end of their RPN indicating an alternate pinout.
+                package_letter = self.name.rstrip('Q')[-2]
                 package += {
                         'H': '-7X7',
                         'I': '-7X7',
                         'J': '-10X10',
-                        }[self.name[-2]]
+                        }[package_letter]
             except KeyError:
                 tqdm.tqdm.write('Unable to determine UFBGA144 variant (7x7mm or 10x10mm) '
                                 f'for device {self.name}')
@@ -234,23 +299,12 @@ class Device:
 
         self.package = package
 
-        if re.fullmatch('LGA[0-9]*', package):
-            # These are RF SoMs that for some reason has an STM32 PN and ended
-            # up in features.xml. Ignore them.
-            self.footprint_filters = '*'
-            self.footprint = ''
-
-        elif (m := re.fullmatch(r'E?WLCSP([0-9]*)', package)):
+        if (m := re.fullmatch(r'E?WLCSP([0-9]*)', package)):
             # Differentiate the WLCSP packages by die code
             die = soup.find('Die').text.title()
 
             if m.group(1) == '59' and die == 'Die497':
                 # This chip has no datasheet, is not on ST's website and cannot be bought.
-                self.footprint_filters = '*'
-                self.footprint = ''
-
-            elif m.group(1) == '99' and die == 'Die415':
-                # This particular package is not documented in the chip's datasheet.
                 self.footprint_filters = '*'
                 self.footprint = ''
 
@@ -279,6 +333,7 @@ class Device:
             nc_override = {}
 
         # Read the information for each pin
+        pins_by_number = defaultdict(lambda: [])
         for child in soup.find_all('Pin'):
             pos, name, pintype = child['Position'], child['Name'], child['Type']
 
@@ -295,7 +350,8 @@ class Device:
                 if altfunction != 'GPIO':
                     altfuncs.append(kicad_sym.AltFunction(altfunction, 'bidirectional', 'line'))
 
-            self.pins.append(DataPin(pos, name, pintype, altfuncs))
+            name = _PINNAME_MATCH.match(name).group()
+            pins_by_number[pos].append(DataPin(pos, name, pintype, altfuncs))
 
         # If this part has a power pad, we have to add it manually
         if (soup['HasPowerPad'] == 'true' or self.package in Device._POWER_PAD_FIX_PACKAGES):
@@ -303,22 +359,24 @@ class Device:
             packPinCountR = Device._pincount_search.search(self.package)
             powerpinnumber = str(int(packPinCountR.group(1)) + 1)
             # Create power pad pin
-            powerpadpin = DataPin(powerpinnumber, "VSS", "Power")
-            self.pins.append(powerpadpin)
+            if powerpinnumber not in pins_by_number:
+                pins_by_number[powerpinnumber].append(DataPin(powerpinnumber, "VSS", "Power"))
 
-        # Merge any duplicated pins
-        pinNumMap = {}
-        removePins = []
-        for pin in self.pins:
-            if pin.num in pinNumMap:
-                mergedPin = pinNumMap[pin.num]
-                mergedPin.name += f"/{pin.name}"
-                removePins.append(pin)
+        # Merge pins where multiple pins of the die are bonded out to a single pin on the package.
+        self.pins = []
+        for pos, pin_list in pins_by_number.items():
+            if len(pin_list) == 1:
+                self.pins += pin_list
             else:
-                pinNumMap[pin.num] = pin
-
-        for pin in removePins:
-            self.pins.remove(pin)
+                pin_list = sorted(pin_list, key=pinkey)
+                altfuncs = []
+                for pin in pin_list:
+                    # Add a new entry for the IO remap
+                    altfuncs.append(kicad_sym.AltFunction(pin.name, 'bidirectional', 'line'))
+                    for func in pin.altfuncs:
+                        altfuncs.append(kicad_sym.AltFunction(f'{func.name} ({pin.name})', func.etype, func.shape))
+                merged = DataPin(pos, '/'.join(pin.name for pin in pin_list), pin_list[0].pintype, altfuncs)
+                self.pins.append(merged)
 
     def create_symbol(self, lib, keywords, desc, datasheet):
         # Make the symbol
@@ -337,15 +395,6 @@ class Device:
         # Classify pins
         for pin in self.pins:
             pins[pin.graphical_type].append(pin)
-
-        def pinkey(pin):
-            """ Split pin name into alphabetic and numeric parts and parse numeric parts, for
-            sorting. Example:
-
-            'DDR1_DQ15B' -> ('DDR', 1, '_DQ', 15, 'B')
-            """
-            return tuple([int(num) if num else char
-                          for num, char in re.findall('([0-9]+)|([^0-9]+)', pin.name)])
 
         pins = defaultdict(lambda: [], {
                 k: sorted(v, key=pinkey) for k, v in pins.items()
@@ -412,13 +461,14 @@ class Device:
             left.insert(-1, right.pop())  # insert before VCAP pin group
 
         # Calculate height of the symbol
-        box_height = max(spaced_len(left), spaced_len(right))*100 + 200
+        box_height = max(spaced_len(left), spaced_len(right))*100 + 300
 
         # Calculate the width of the symbol
+        # Newstroke at font size 50 mil has characters around 50 mil width.
         name_width = lambda pins: max(len(p.name)*47 for p in pins if p) if pins else 0 # NOQA
 
         spaced_left, spaced_right = spaced(left), spaced(right)
-        names_left, names_right = name_width(spaced_left), name_width(spaced_right)
+        name_width_sides = name_width(spaced_left + spaced_right)
 
         stacked_vss = {key: list(group)
                        for key, group in groupby(pins['vss'], lambda pin: pin.name)}
@@ -427,20 +477,21 @@ class Device:
 
         spaced_top, spaced_bottom = pins['vdd'], pins['vss']
         top_width, bottom_width = len(spaced_top)*100, len(spaced_bottom)*100
+        pin_width_top_bottom = max(top_width, bottom_width)
 
         box_width = math.ceil(
-                (names_left + max(top_width, bottom_width) + names_right + 100) / 100) * 100
+                (name_width_sides + pin_width_top_bottom + name_width_sides + 100) / 200) * 200
 
         drawing = Drawing()
         drawing.append(DrawingRectangle(
                 Point(0, 0), Point(box_width, box_height), unit_idx=0,
                 fill=ElementFill.FILL_BACKGROUND))
 
-        for i, pin in enumerate(spaced_left, start=1):
+        for i, pin in enumerate(spaced_left, start=2):
             if pin:
                 drawing.append(pin.draw(pin_length, 'right', x=-pin_length, y=box_height - i*100))
 
-        for i, pin in enumerate(spaced_right, start=1):
+        for i, pin in enumerate(spaced_right, start=2):
             if pin:
                 drawing.append(pin.draw(pin_length, 'left',
                                         x=box_width+pin_length, y=box_height - i*100))
@@ -494,6 +545,10 @@ class Device:
               help='Filter part numbers by glob')
 @click.option('--verify-datasheets/--no-verify-datasheets',
               help='Verify datasheet URLs exists')
+@click.option('--retry-datasheets/--no-retry-datasheets', default=False,
+              help='Retry fetching datasheet URLs that could not be found in the past')
+@click.option('--http-timeout', type=float, default=3,
+              help='Timeout for --verify-datasheet HTTP requests')
 @click.option('--skip-without-footprint/--keep-without-footprint', default=False,
               help='Skip generating symbols for which no footprint could be found')
 @click.option('--skip-without-datasheet/--keep-without-datasheet', default=False,
@@ -505,7 +560,7 @@ class Device:
                                                      path_type=pathlib.Path))
 @click.argument('output_file', type=click.Path(file_okay=True, dir_okay=False))
 def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, url_cache,
-        skip_without_footprint, skip_without_datasheet):
+        skip_without_footprint, skip_without_datasheet, http_timeout, retry_datasheets):
     soup = BeautifulSoup((cubemx_mcu_db_dir / 'families.xml').read_text(), features='xml')
     files = defaultdict(lambda: [])
     for tag in soup.find_all('Mcu', recursive=True):
@@ -519,7 +574,10 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
         flash = int(tag.find('Flash').text)
         io = int(tag.find('IONb').text)
         voltage = tag.find('Voltage')
-        voltage = f'{voltage["Min"]}-{voltage["Max"]}V, ' if voltage else ''
+        if voltage:
+            voltage = f'{voltage.get("Min", voltage.get("Max", "?"))}-{voltage.get("Max", voltage.get("Min", "?"))}V, '
+        else:
+            voltage = ''
         refname = tag['RefName']
         package = tag['PackageName']
         core = tag.find('Core').text
@@ -540,81 +598,79 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
     lib = kicad_sym.KicadLibrary(output_file)
 
     if url_cache:
-        url_cache = sqlite3.connect(url_cache)
+        url_cache_dict = json.loads(url_cache.read_text())
+
+        @atexit.register
+        def save_url_cache():
+            url_cache.write_text(json.dumps(url_cache_dict))
     else:
-        url_cache = sqlite3.connect(':memory:')
+        url_cache = {}
 
-    url_cache.execute('CREATE TABLE IF NOT EXISTS urls (computed_url, actual_url, timestamp, response)')
+    def try_fetch_url(url):
+        status_code = url_cache_dict.get(url)
 
-    def verify_datasheet(datasheet):
+        if status_code in (200, 302):
+            return url
+
+        elif status_code is None or (status_code in ('curl timeout', 'curl error', 404) and retry_datasheets):
+            tqdm.tqdm.write(f'Re-trying {status_code} for {url}')
+            try:
+                res = subprocess.run(['curl',
+                                      '--compressed',
+                                      '-H', 'User-Agent: Mozilla/5.0 () Gecko/20100101 Firefox/999.0',
+                                      '-H', 'From: kicad-libraries@jaseg.de',
+                                      '--http2',
+                                      '-I',
+                                      '--max-time', str(http_timeout),
+                                      url], check=True, capture_output=True, text=True)
+                response_line, *_headers = res.stdout.splitlines()
+                http_version, _, status_code = response_line.partition(' ')
+                status_code = int(status_code)
+                url_cache_dict[url] = status_code
+
+                tqdm.tqdm.write(f'    -> {status_code}')
+                if status_code in (200, 302):
+                    return url
+
+            except subprocess.CalledProcessError as e:
+                if e.returncode == 28:
+                    tqdm.tqdm.write('    -> curl timeout')
+                    url_cache_dict[url] = 'curl timeout'
+                else:
+                    tqdm.tqdm.write('    -> curl error')
+                    url_cache_dict[url] = 'curl error'
+
+        return None
+
+    def verify_datasheet(refname, datasheet):
         if not verify_datasheets:
             return datasheet
 
-        with url_cache as cur:
-            res = cur.execute('''SELECT response, actual_url FROM urls
-                                 WHERE computed_url=? AND timestamp > datetime("now", "-90 day")
-                                 ORDER BY timestamp DESC LIMIT 1''', (datasheet,)).fetchone()
+        if (url := try_fetch_url(datasheet)):
+            return url
 
-            if res:
-                code, url = res
-                if code == 200:
-                    return url
-                else:
-                    return ''
+        # For most parts, the computed part numbers above work just fine. For some parts however, the filename is
+        # not the complete RPN, but instead a shorter prefix of it. In case the request above was not answered
+        # successfully, retry with a truncated part number. If that still doesn't work, we give up.
+        for cutoff in [-5, -6]:
+            # try cutting off one letter from the part number
+            testurl = datasheet[:cutoff] + '.pdf'
 
-            client = httpx.Client(http2=True)
-            ua_headers = {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0',
-                'From': 'kicad-libraries@jaseg.de',
-                }
-            try:
-                res = client.head(datasheet, follow_redirects=True, headers=ua_headers)
-                cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), ?)', (datasheet, datasheet, res.status_code))
+            if (url := try_fetch_url(testurl)):
+                tqdm.tqdm.write(f'Datasheet for {refname} unexpectedly found at {testurl} instead '
+                                f'of {datasheet}')
+                return testurl
 
-                if res.status_code == 200:
-                    return datasheet
+        for pattern, url in datasheet_fixups.items():
+            if fnmatch.fnmatch(refname, pattern):
+                return url
 
-            except httpx.ReadTimeout:
-                res = None
-                cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), 0)', (datasheet, datasheet))
-
-            # For most parts, the computed part numbers above work just fine. For some parts however, the filename is
-            # not the complete RPN, but instead a shorter prefix of it. In case the request above was answered 404 not
-            # found, retry with a truncated part number. If that still doesn't work, we give up.
-            for cutoff in [-5, -6]:
-                if res and res.status_code != 404:
-                    break
-
-                # try cutting off one letter from the part number
-                testurl = datasheet[:cutoff] + '.pdf'
-
-                try:
-                    res = client.head(testurl, follow_redirects=True, headers=ua_headers)
-                    cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), ?)', (datasheet, testurl, res.status_code))
-
-                    if res.status_code == 200:
-                        tqdm.tqdm.write(f'Datasheet for {refname} unexpectedly found at {testurl} instead '
-                                        f'of {datasheet}')
-                        return testurl
-
-                except httpx.ReadTimeout:
-                    res = None
-                    cur.execute('INSERT INTO urls VALUES (?, ?, datetime(), 0)', (datasheet, datasheet))
-
-            if res:
-                tqdm.tqdm.write(f'Datasheet for {refname} not found at {datasheet} '
-                                f'(Status code {res.status_code})')
-
-            else:
-                tqdm.tqdm.write(f'Datasheet for {refname} not found at {datasheet} '
-                                f'(HTTP/2 request timeout)')
-            return ''
+        return ''
 
     for filename, variants in tqdm.tqdm(files.items(), desc=pathlib.Path(output_file).stem):
         xml = cubemx_mcu_db_dir / f'{filename}.xml'
 
-        desc, keywords, datasheet, flash, ram, _refname, package = variants[0]
-        datasheet = verify_datasheet(datasheet)
+        desc, keywords, datasheet_base, flash, ram, refname, package = variants[0]
 
         if len(variants) == 1:
             desc = desc.format(flash=flash, ram=ram, package=package)
@@ -632,15 +688,29 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
                                flash=f'{minf}-{maxf}' if minf != maxf else str(minf),
                                ram=f'{minr}-{maxr}' if minr != maxr else str(minr))
 
+        if package.startswith('LGA'):
+            # These are RF SoMs that for some reason has an STM32 PN and ended
+            # up in features.xml. Ignore them.
+            tqdm.tqdm.write(f'Skipping RF SoM {refname}.')
+            continue
+
+        if any(fnmatch.fnmatch(refname, pattern) for pattern in ignore_devices):
+            tqdm.tqdm.write(f'Skipping device from ignore list {refname}.')
+            continue
+
         dev = Device(xml)
 
         if skip_without_footprint and not dev.footprint:
-            tqdm.tqdm.write(f'No footprint for device {dev.name} with ST package name {dev.package}, skipping.')
+            tqdm.tqdm.write(f'\033[91mNo footprint for device {dev.name} with ST package name {dev.package}, skipping (--skip-without-footprint).\033[0m') # NOQA
             continue
 
-        if skip_without_datasheet and not datasheet:
-            tqdm.tqdm.write(f'No datasheet for device {dev.name}, skipping.')
-            continue
+        datasheet = verify_datasheet(refname, datasheet_base)
+        if not datasheet:
+            if skip_without_datasheet:
+                tqdm.tqdm.write(f'\033[91mNo datasheet for device {dev.name}, skipping (--skip-without-datasheet).\033[0m') # NOQA
+                continue
+            else:
+                tqdm.tqdm.write(f'\033[91mDatasheet for {refname} ({dev.name}) not found at {datasheet_base}\033[0m')
 
         dev.create_symbol(lib, keywords=keywords, desc=desc, datasheet=datasheet)
 
@@ -668,10 +738,7 @@ def cli(cubemx_mcu_db_dir, part_number_pattern, output_file, verify_datasheets, 
 
                 lib.symbols.append(derived_symbol)
 
-    now = time.time()
     lib.write()
-    after = time.time()
-    print(f'Wrote library file in {after-now:.6f} s')
 
 
 if __name__ == "__main__":
