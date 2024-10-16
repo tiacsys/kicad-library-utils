@@ -348,7 +348,10 @@ class HTMLDiff:
         meta['lib_name'] = new.stem
         diff_name = lambda new_file: self.output / new_file.with_suffix('.html').name  # NOQA: E731
 
-        for new_file in new.glob('*.kicad_mod'):
+        mod_files = list(new.glob('*.kicad_mod'))
+        mod_files.sort(key=lambda x: x.stem)
+
+        for new_file in mod_files:
             if not fnmatch.fnmatch(new_file.stem, self.name_glob):
                 continue
 
@@ -401,7 +404,7 @@ class HTMLDiff:
         meta['lib_name'] = new.stem
 
         self.diff_index, files = [], []
-        for name, (start, end) in index_new.items():
+        for name, (start, end) in sorted(index_new.items()):
             if not fnmatch.fnmatch(name, self.name_glob):
                 continue
 
