@@ -1016,6 +1016,7 @@ class KicadSymbol(KicadSymbolBase):
     demorgan_count: int = 0
     embedded_fonts = False
     files: List[KicadEmbeddedFile] = field(default_factory=list)
+    unit_names: dict = field(default_factory=dict)
 
     # List of parent symbols, the first element is the direct parent,
     # the last element is the root symbol
@@ -1063,8 +1064,7 @@ class KicadSymbol(KicadSymbolBase):
         # add units
         for d in range(0, self.demorgan_count + 1):
             for u in range(0, self.unit_count + 1):
-                hdr = self.quoted_string("{}_{}_{}".format(self.name, u, d))
-                sx_i: list[Any] = ["symbol", hdr]
+                unit_elements = []
                 for pin in (
                     self.arcs
                     + self.circles
@@ -1075,10 +1075,16 @@ class KicadSymbol(KicadSymbolBase):
                     + sorted(self.pins, key=lambda pin: pin.number)
                 ):
                     if pin.is_unit(u, d):
-                        sx_i.append(pin.get_sexpr())
+                        unit_elements.append(pin.get_sexpr())
 
-                if len(sx_i) > 2:
-                    sx.append(sx_i)
+                if unit_elements:
+                    subsym_name = self.quoted_string("{}_{}_{}".format(self.name, u, d))
+                    unit = ["symbol", subsym_name, *unit_elements]
+
+                    if n := self.unit_names.get(u):
+                        unit.append(["unit_name", n])
+
+                    sx.append(unit)
 
         sx.append(["embedded_fonts", "yes" if self.embedded_fonts else "no"])
         return sx
@@ -1193,8 +1199,10 @@ class KicadSymbol(KicadSymbolBase):
         keywords: str = "",
         description: str = "",
         fp_filters: str = "",
+        unit_names: dict = None,
     ):
-        sym = cls(name, libname, libname + ".kicad_sym")
+        unit_names = unit_names or {}
+        sym = cls(name, libname, libname + ".kicad_sym", unit_names=unit_names)
         sym.add_default_properties()
         sym.get_property("Reference").value = reference
         sym.get_property("Footprint").value = footprint
