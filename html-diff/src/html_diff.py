@@ -12,6 +12,7 @@ import argparse
 import subprocess
 from pathlib import Path
 import fnmatch
+from typing import Optional
 
 
 from pygments.lexer import RegexLexer
@@ -175,6 +176,17 @@ def render_footprint_kicad_cli(libdir, fpname, outfile):
 class HTMLDiff:
     @html_stacktrace
     def mod_diff(self, old_text, new_text, ref_svg):
+
+        old_svg_text = render_fp.render_mod(old_text)
+        new_svg_text = render_fp.render_mod(new_text)
+
+        # Write the SVGs to disk for debugging or use in other tools
+        if self.diff_svg_output_dir is not None:
+            old_svg_path = self.diff_svg_output_dir / f'{self.meta["part_name"]}.old.svg'
+            new_svg_path = self.diff_svg_output_dir / f'{self.meta["part_name"]}.new.svg'
+            old_svg_path.write_text(old_svg_text)
+            new_svg_path.write_text(new_svg_text)
+
         return self._format_html_diff(
             enable_layers=True,
             canvas_background='#001023',
@@ -182,8 +194,8 @@ class HTMLDiff:
             properties_table=print_fp_properties.format_properties(new_text),
             code_diff=wsdiff.html_diff_block(old_text, new_text,
                                              filename='', lexer=SexprLexer()),
-            old_svg=js_str_list([render_fp.render_mod(old_text)]),
-            new_svg=js_str_list([render_fp.render_mod(new_text)]),
+            old_svg=js_str_list([old_svg_text]),
+            new_svg=js_str_list([new_svg_text]),
             reference_svg=js_str_list([ref_svg]))
 
     def _format_html_diff(self, enable_layers, hide_text_in_diff, **kwargs):
@@ -208,7 +220,23 @@ class HTMLDiff:
 
             **kwargs)
 
-    def __init__(self, output, meta, name_glob='*', changes_only=True, screenshot_dir=None):
+    output: Path
+    meta: dict
+    name_glob: str
+    changes_only: bool
+    screenshot_dir: Path
+    # If present, the directory where the diff old/new files are written to
+    diff_svg_output_dir: Optional[Path]
+
+    def __init__(
+        self,
+        output,
+        meta,
+        name_glob="*",
+        changes_only=True,
+        screenshot_dir=None,
+        diff_svg_output_dir=None,
+    ):
         self.output = output
         self.meta = meta
         self.name_glob = name_glob
@@ -221,6 +249,11 @@ class HTMLDiff:
             self.screenshot_dir = Path(tmp.name)
         else:
             self.screenshot_dir = screenshot_dir
+
+        self.diff_svg_output_dir = diff_svg_output_dir
+
+        if self.diff_svg_output_dir is not None:
+            self.diff_svg_output_dir.mkdir(parents=True, exist_ok=True)
 
         if 'CI_MERGE_REQUEST_ID' in os.environ:
             old_sha, _old_shortid = meta["old_git"]
@@ -315,7 +348,8 @@ class HTMLDiff:
                 except Exception as e:
                     warnings.warn(f'Error exporting reference render using kicad-cli: {e}')
 
-            (self.output / new.with_suffix('.html').name).write_text(
+            html_file_path = self.output / new.with_suffix('.html').name
+            html_file_path.write_text(
                 self.mod_diff(old_text, new_text, ref_svg))
 
         elif new.suffix == '.pretty':
@@ -479,6 +513,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--only-names', default='*', help='Only output symbols or footprints whose name matches the given glob')  # NOQA: E501
     parser.add_argument('-u', '--unchanged', action='store_true', help='Also output unchanged symbols or footprints')  # NOQA: E501
     parser.add_argument('-s', '--screenshot-dir', type=Path, help='Read (footprints) or write (symbols) screenshots generated with kicad-cli to given directory instead of re-generating them on the fly.')  # NOQA: E501
+    parser.add_argument('-S', '--diff-svg-output-dir', type=Path,
+                        help='Write the diff A/B files to the given directory instead of a temporary directory.')  # NOQA: E501
     parser.add_argument('-o', '--output', type=Path, help='Where to output the diff. Must be a directory for symbol/footprint library comparisons, and must be a file for individual symbol or footprint comparisons.')  # NOQA: E501
     args = parser.parse_args()
 
@@ -503,7 +539,8 @@ if __name__ == '__main__':
 
             html_diff = HTMLDiff(args.output, meta, args.only_names,
                                  changes_only=(not args.unchanged),
-                                 screenshot_dir=args.screenshot_dir)
+                                 screenshot_dir=args.screenshot_dir,
+                                 diff_svg_output_dir=args.diff_svg_output_dir)
             html_diff.diff(base, path)
 
         else:
@@ -565,7 +602,8 @@ if __name__ == '__main__':
 
                 html_diff = HTMLDiff(args.output, meta, args.only_names,
                                      changes_only=(not args.unchanged),
-                                     screenshot_dir=args.screenshot_dir)
+                                     screenshot_dir=args.screenshot_dir,
+                                     diff_svg_output_dir=args.diff_svg_output_dir)
                 html_diff.diff(base, path)
 
     except ValueError as e:
