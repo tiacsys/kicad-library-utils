@@ -174,51 +174,6 @@ def render_footprint_kicad_cli(libdir, fpname, outfile):
 
 
 class HTMLDiff:
-    @html_stacktrace
-    def mod_diff(self, old_text, new_text, ref_svg):
-
-        old_svg_text = render_fp.render_mod(old_text)
-        new_svg_text = render_fp.render_mod(new_text)
-
-        # Write the SVGs to disk for debugging or use in other tools
-        if self.diff_svg_output_dir is not None:
-            old_svg_path = self.diff_svg_output_dir / f'{self.meta["part_name"]}.old.svg'
-            new_svg_path = self.diff_svg_output_dir / f'{self.meta["part_name"]}.new.svg'
-            old_svg_path.write_text(old_svg_text)
-            new_svg_path.write_text(new_svg_text)
-
-        return self._format_html_diff(
-            enable_layers=True,
-            canvas_background='#001023',
-            hide_text_in_diff=True,
-            properties_table=print_fp_properties.format_properties(new_text),
-            code_diff=wsdiff.html_diff_block(old_text, new_text,
-                                             filename='', lexer=SexprLexer()),
-            old_svg=js_str_list([old_svg_text]),
-            new_svg=js_str_list([new_svg_text]),
-            reference_svg=js_str_list([ref_svg]))
-
-    def _format_html_diff(self, enable_layers, hide_text_in_diff, **kwargs):
-        return j2env.get_template('diff.html').render(
-            page_title = f'diff: {self.meta["part_name"]} in {self.meta["lib_name"]}',
-            part_name = self.meta["part_name"],
-            source_revisions = self.source_revisions,
-            enable_layers = 'true' if enable_layers else 'false',
-            hide_text_in_diff = 'true' if hide_text_in_diff else 'false',
-
-            code_diff_css=wsdiff.MAIN_CSS,
-            diff_syntax_css=wsdiff.PYGMENTS_CSS,
-
-            prev_button = button('<', meta.get('prev_diff'), _id='nav-bt-prev'),
-            next_button = button('>', meta.get('next_diff'), _id='nav-bt-next'),
-            diff_index = '\n'.join(self.format_index()),
-
-            pipeline_button = button_if('Pipeline', os.environ.get('CI_PIPELINE_URL')),
-            old_file_button = button_if('Old File', self.old_url),
-            new_file_button = button_if('New File', self.new_url),
-            merge_request_button = button_if('Merge Request', self.mr_url),
-
-            **kwargs)
 
     output: Path
     meta: dict
@@ -375,6 +330,51 @@ class HTMLDiff:
                 css_class = 'unchanged'
             self_class = ' index-self' if filename.stem == self.meta['part_name'] else ''
             yield f'<div class="{css_class}{self_class}"><a href="{filename.name}">{filename.stem}</a></div>'  # NOQA: E501
+
+    def _format_html_diff(self, enable_layers, hide_text_in_diff, **kwargs):
+        return j2env.get_template('diff.html').render(
+            page_title = f'diff: {self.meta["part_name"]} in {self.meta["lib_name"]}',
+            part_name = self.meta["part_name"],
+            source_revisions = self.source_revisions,
+            enable_layers = 'true' if enable_layers else 'false',
+            hide_text_in_diff = 'true' if hide_text_in_diff else 'false',
+
+            code_diff_css=wsdiff.MAIN_CSS,
+            diff_syntax_css=wsdiff.PYGMENTS_CSS,
+
+            prev_button = button('<', meta.get('prev_diff'), _id='nav-bt-prev'),
+            next_button = button('>', meta.get('next_diff'), _id='nav-bt-next'),
+            diff_index = '\n'.join(self.format_index()),
+
+            pipeline_button = button_if('Pipeline', os.environ.get('CI_PIPELINE_URL')),
+            old_file_button = button_if('Old File', self.old_url),
+            new_file_button = button_if('New File', self.new_url),
+            merge_request_button = button_if('Merge Request', self.mr_url),
+            **kwargs)
+
+    @html_stacktrace
+    def mod_diff(self, old_text, new_text, ref_svg):
+
+        old_svg_text = render_fp.render_mod(old_text)
+        new_svg_text = render_fp.render_mod(new_text)
+
+        # Write the SVGs to disk for debugging or use in other tools
+        if self.diff_svg_output_dir is not None:
+            old_svg_path = self.diff_svg_output_dir / f'{self.meta["part_name"]}.old.svg'
+            new_svg_path = self.diff_svg_output_dir / f'{self.meta["part_name"]}.new.svg'
+            old_svg_path.write_text(old_svg_text)
+            new_svg_path.write_text(new_svg_text)
+
+        return self._format_html_diff(
+            enable_layers=True,
+            canvas_background='#001023',
+            hide_text_in_diff=True,
+            properties_table=print_fp_properties.format_properties(new_text),
+            code_diff=wsdiff.html_diff_block(old_text, new_text,
+                                             filename='', lexer=SexprLexer()),
+            old_svg=js_str_list([old_svg_text]),
+            new_svg=js_str_list([new_svg_text]),
+            reference_svg=js_str_list([ref_svg]))
 
     def pretty_diff(self, old, new):
         self.diff_index = []
