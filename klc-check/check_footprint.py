@@ -192,6 +192,13 @@ parser.add_argument(
     action="count",
 )
 parser.add_argument(
+    "--exclude",
+    help=(
+        "Exclude a particular rule (or rules) to check against. Use comma separated"
+        ' values to select multiple rules. e.g. "-e F3.1,F4.2"'
+    ),
+)
+parser.add_argument(
     "-s",
     "--silent",
     help="skip output for footprints passing all checks",
@@ -232,10 +239,18 @@ if args.rule:
 else:
     selected_rules = None
 
+if args.exclude:
+    excluded_rules = args.exclude.split(",")
+else:
+    excluded_rules = None
+
 rules = []
 for rule_name, rule in get_all_footprint_rules().items():
     if selected_rules is None or rule_name in selected_rules:
-        rules.append(rule.Rule)
+        if excluded_rules is not None and rule_name in excluded_rules:
+            pass
+        else:
+            rules.append(rule.Rule)
 
 # figure out which files should be checked
 files = []
