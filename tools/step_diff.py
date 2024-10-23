@@ -15,36 +15,65 @@ from file_resolver import get_resolver
 
 class StepDiffer:
 
+    epsilon: float
+    added_colour: cq.Color
+    removed_colour: cq.Color
+
     def __init__(self, epsilon: float):
         self.epsilon = epsilon
         self.added_colour = cq.Color(0.0, 0.5, 0.0)
         self.removed_colour = cq.Color(0.5, 0.0, 0.0)
 
     def perform_diff(self, file1, file2):
-        object1 = cq.importers.importStep(str(file1))
-        object2 = cq.importers.importStep(str(file2))
 
-        object1_volume = object1.val().Volume()
-        object2_volume = object2.val().Volume()
+        def load_object(file):
+            if not os.path.exists(file):
+                return None, 0
+            else:
+                object = cq.importers.importStep(str(file))
+                return object, object.val().Volume()
 
-        added_shape = object2.cut(object1)
-        removed_shape = object1.cut(object2)
+        object1, object1_volume = load_object(file1)
+        object2, object2_volume = load_object(file2)
 
-        added_volume = added_shape.val().Volume()
-        removed_volume = removed_shape.val().Volume()
+        if object1 is None:
+            # Addition (or None/None)
+            added_shape = object2
+            removed_shape = None
+        elif object2 is None:
+            # Deletion
+            added_shape = None
+            removed_shape = object1
+        else:
+            # Difference
+            added_shape = object2.cut(object1)
+            removed_shape = object1.cut(object2)
+
+        if added_shape is not None:
+            added_volume = added_shape.val().Volume()
+        else:
+            added_volume = 0
+
+        if removed_shape is not None:
+            removed_volume = removed_shape.val().Volume()
+        else:
+            removed_volume = 0
 
         difference_volume = added_volume + removed_volume
-
-        diff_volume_proportion = difference_volume / object1_volume
 
         logging.info(f"Object 1 volume: {object1_volume:.2f}")
         logging.info(f"Object 2 volume: {object2_volume:.2f}")
         logging.info(f"Added volume: {added_volume:.2f}")
         logging.info(f"Removed volume: {removed_volume:.2f}")
         logging.info(f"Difference volume: {difference_volume:.2f}")
-        logging.info(f"Proportional difference: {100 * diff_volume_proportion:.2f}%")
 
-        significant_diff = diff_volume_proportion > self.epsilon
+        if object1_volume > 1e-6:
+            diff_volume_proportion = difference_volume / object1_volume
+            logging.info(f"Proportional difference: {100 * diff_volume_proportion:.2f}%")
+            significant_diff = diff_volume_proportion > self.epsilon
+        else:
+            logging.info("Proportional difference: Inf (added)")
+            significant_diff = difference_volume > 1e-6
 
         assembly = None
 
@@ -72,6 +101,8 @@ if __name__ == "__main__":
                         help="Expect zero difference (return code non-zero if not)")
     parser.add_argument("-e", "--epsilon", type=float, default=0.001,
                         help="Volume epsilon for zero check (default 0.1%%)")
+    parser.add_argument("-D", "--ignore-deletions", action="store_true",
+                        help="Ignore files that appear to be deleted")
 
     parser.add_argument("path1", help="First file or directory")
     parser.add_argument("path2",
@@ -91,11 +122,10 @@ if __name__ == "__main__":
 
     differ = StepDiffer(args.epsilon)
 
-    # How to create the output directory
-    def create_output_dir():
-        os.makedirs(args.output, exist_ok=True)
-
     for resolved_pair in file_resolver.files:
+
+        if args.ignore_deletions and not resolved_pair.file2.is_file():
+            continue
 
         logging.info(f"Comparing {resolved_pair.file1} and {resolved_pair.file2}")
 
@@ -103,10 +133,15 @@ if __name__ == "__main__":
             resolved_pair.file1, resolved_pair.file2
         )
 
-        if args.output is not None:
-            create_output_dir()
+        print(diff_model, args.output)
+
+        if args.output is not None and diff_model is not None:
             out_filename = os.path.join(args.output, resolved_pair.name)
-            logging.debug(f"Writing output to {resolved_pair.name.name}")
+            logging.info(f"Writing output to {out_filename}")
+
+            out_dir = os.path.dirname(out_filename)
+            os.makedirs(out_dir, exist_ok=True)
+
             diff_model.save(out_filename, "STEP")
 
         if args.expect_zero and significant_diff:
