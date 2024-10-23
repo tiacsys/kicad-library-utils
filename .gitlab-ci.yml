@@ -12,7 +12,7 @@ symbol_rulechecker:
       - "klc-check/*"
       - "klc-check/*symbol/*"
   script:
-    - python3 klc-check/check_symbol.py -u klc-check/test_symbol/*.kicad_sym
+    - make test-klc-symbols
     - python3 klc-check/comparelibs.py -v --old klc-check/test_symbol/comparelibs_old/* --new klc-check/test_symbol/comparelibs_new/* --check --check-derived -m
   artifacts:
     reports:
@@ -26,8 +26,7 @@ footprint_rulechecker:
       - "klc-check/*"
       - "klc-check/*footprint.pretty/*"
   script:
-    - python3 klc-check/check_footprint.py -u klc-check/test_footprint.pretty/????__*
-    - python3 klc-check/check_footprint.py -vv klc-check/test_footprint.pretty/SO-8_3.9x4.9mm_P1.27mm.kicad_mod
+    - make test-klc-footprints
   artifacts:
     reports:
       metrics: metrics.txt

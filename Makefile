@@ -42,6 +42,8 @@ test-klc-footprints:
 		--unittest \
 		klc-check/test_footprint.pretty/*__*.kicad_mod
 
+	python klc-check/check_footprint.py -vv \
+		klc-check/test_footprint.pretty/SO-8_3.9x4.9mm_P1.27mm.kicad_mod
 
 .PHONY: test-klc-symbols
 test-klc-symbols:
