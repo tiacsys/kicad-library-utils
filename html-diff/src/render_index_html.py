@@ -84,8 +84,8 @@ def generate_index_html(directory, prefix):
         # If there is only one sub-directory
         sub_dir_path = Path(directory) / sub_dirs[0]
         html_files = sorted(sub_dir_path.glob("*.html"))
-        url = f'{prefix}{sub_dir_path.name}/{html_files[0].name}'
-        if html_files:
+        if html_files and len(html_files) > 0:
+            url = f'{prefix}{sub_dir_path.name}/{html_files[0].name}'
             return f'''
                 <html>
                     <head>
