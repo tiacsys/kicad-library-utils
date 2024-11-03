@@ -37,6 +37,10 @@ class Rule(KLCRule):
 
         ref = self.module.reference
 
+        if not ref:
+            self.error("Reference property not found. This file is broken")
+            return
+
         font = ref["font"]
 
         errors = []

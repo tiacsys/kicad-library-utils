@@ -111,9 +111,13 @@ class KicadMod:
 
         # reference
         self.reference = self.getProperty("reference")
+        if self.reference is None:
+            raise ValueError('file is missing the "reference" property. This file is broken and can\'t be parsed!')
 
         # value
         self.value = self.getProperty("value")
+        if self.value is None:
+            raise ValueError('file is missing the "value" property. This file is broken and can\'t be parsed!')
 
         # user text
         self.userText: List[Dict[str, Any]] = self._getText("user")
