@@ -11,6 +11,7 @@ from functools import lru_cache
 from glob import glob  # enable windows wildcards
 from multiprocessing import JoinableQueue, Lock, Process, Queue
 from typing import List, Optional, Tuple
+from dataclasses import dataclass
 
 common = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
@@ -207,6 +208,15 @@ class SymbolCheck:
         return (error_count, warning_count)
 
 
+@dataclass
+class CheckResults:
+
+    identifier: int
+    error_count: int
+    warning_count: int
+    metrics: List[str]
+
+
 def worker(
     inp,
     outp,
@@ -246,9 +256,7 @@ def worker(
             break
 
     # output all the metrics at once
-    for line in c.metrics:
-        outp.put("{},{}".format(i, line))
-    return
+    outp.put(CheckResults(i, c.error_count, c.warning_count, c.metrics))
 
 
 if __name__ == "__main__":
@@ -401,13 +409,20 @@ if __name__ == "__main__":
         p.start()
         job_output[str(i)] = []
 
+    error_count = 0
+    warning_count = 0
+
     # wait for all workers to finish
     while jobs:
         for p in jobs:
             while True:
                 try:
-                    identifier, line = out_queue.get(block=False).split(",")
-                    job_output[identifier].append(line)
+                    results = out_queue.get(block=False)
+
+                    job_output[str(results.identifier)] += results.metrics
+
+                    error_count += results.error_count
+                    warning_count += results.warning_count
                 except queue.Empty:
                     break
             if not p.is_alive():
@@ -418,16 +433,21 @@ if __name__ == "__main__":
     time.sleep(1)
 
     # done checking all files
-    error_count = 0
     if args.metrics or args.unittest:
-        metrics_file = open("metrics.txt", "a+")
+        with open("metrics.txt", "a+") as metrics_file:
+            for identifier in job_output:
+                for line in job_output[identifier]:
+                    metrics_file.write(line + "\n")
 
-        for key in job_output:
-            for line in job_output[key]:
-                metrics_file.write(line + "\n")
-                if ".total_errors" in line:
-                    error_count += int(line.split()[-1])
-
-        metrics_file.close()
     out_queue.close()
-    sys.exit(0 if error_count == 0 else -1)
+
+    ret_code = 0  # pass
+
+    if error_count:
+        # This will fail the pipeline
+        ret_code = -1
+    elif warning_count:
+        # This will be an "allowed failure"
+        ret_code = -2
+
+    sys.exit(ret_code)

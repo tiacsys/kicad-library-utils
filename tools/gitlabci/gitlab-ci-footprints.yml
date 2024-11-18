@@ -13,7 +13,8 @@ before_script:
 
 klc-check:
   stage: test
-  allow_failure: true
+  allow_failure:
+    - -2  # KLC checks have warnings
   only:
     refs:
       - merge_requests
@@ -69,7 +70,7 @@ screenshot:
     expose_as: 'Screenshots'
     paths:
       - screenshots/
-      
+
 model:
   image: kicad/kicad:nightly
   stage: model

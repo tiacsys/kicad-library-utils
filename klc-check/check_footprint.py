@@ -282,4 +282,13 @@ if args.fix:
         "Some files were updated - ensure that they still load correctly in KiCad"
     )
 
-sys.exit(0 if error_count == 0 else -1)
+ret_code = 0  # pass
+
+if error_count:
+    # This will fail the pipeline
+    ret_code = -1
+elif warning_count:
+    # This will be an "allowed failure"
+    ret_code = -2
+
+sys.exit(ret_code)
