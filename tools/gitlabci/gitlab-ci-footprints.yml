@@ -14,7 +14,8 @@ before_script:
 klc-check:
   stage: test
   allow_failure:
-    - -2  # KLC checks have warnings
+    exit_codes:
+      - -2  # KLC checks have warnings
   only:
     refs:
       - merge_requests
