@@ -2,9 +2,9 @@ image: python:latest
 
 stages:
   - test
+  - diffs
   - screenshot
   - model
-  - diffs
   - convert
 
 before_script:
@@ -13,9 +13,10 @@ before_script:
 
 klc-check:
   stage: test
-  allow_failure:
-    exit_codes:
-      - -2  # KLC checks have warnings
+  when: always
+  allow_failure: true
+    #exit_codes:
+    #  - -2  # KLC checks have warnings
   only:
     refs:
       - merge_requests
@@ -53,6 +54,7 @@ screenshot:
   image: kicad/kicad:8.0
   stage: screenshot
   allow_failure: true
+  when: manual
   only:
     refs:
       - merge_requests
@@ -101,6 +103,7 @@ visual_diff:
   stage: diffs
   image: kicad/kicad:8.0
   allow_failure: true
+  when: always
   only:
     refs:
       - merge_requests
@@ -124,8 +127,8 @@ visual_diff:
       - "diffs/"
     reports:
       dotenv: deploy.env
-  dependencies:
-    - screenshot
+  #dependencies:
+  #  - screenshot
   environment:
     name: review/$CI_COMMIT_REF_NAME
     url: $DYNAMIC_ENVIRONMENT_URL
