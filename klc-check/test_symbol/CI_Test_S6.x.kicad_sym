@@ -1975,8 +1975,8 @@
 			)
 		)
 	)
-	(symbol "Fail__S6.2__DuplicateKeywords"
-		(extends "Fail__S6.2__DuplicateKeywords")
+	(symbol "Warn__S6.2__DuplicateKeywords"
+		(extends "Warn__S6.2__DuplicateKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -1985,7 +1985,7 @@
 				)
 			)
 		)
-		(property "Value" "Fail__S6.2__DuplicateKeywords"
+		(property "Value" "Warn__S6.2__DuplicateKeywords"
 			(at 7.62 10.16 0)
 			(effects
 				(font
@@ -2011,7 +2011,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "fail, DIP-7"
+		(property "Description" "warn, DIP-7"
 			(at 0 0 0)
 			(effects
 				(font
@@ -2039,8 +2039,8 @@
 			)
 		)
 	)
-	(symbol "Fail__S6.2__DuplicateKeywordsSubTokens"
-		(extends "Fail__S6.2__DuplicateKeywordsSubTokens")
+	(symbol "Warn__S6.2__DuplicateKeywordsSubTokens"
+		(extends "Warn__S6.2__DuplicateKeywordsSubTokens")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2049,7 +2049,7 @@
 				)
 			)
 		)
-		(property "Value" "Fail__S6.2__DuplicateKeywordsSubTokens"
+		(property "Value" "Warn__S6.2__DuplicateKeywordsSubTokens"
 			(at 7.62 10.16 0)
 			(effects
 				(font
@@ -2075,7 +2075,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "fail, DIP-7"
+		(property "Description" "warn, DIP-7"
 			(at 0 0 0)
 			(effects
 				(font
@@ -2103,8 +2103,8 @@
 			)
 		)
 	)
-	(symbol "Fail__S6.2__DuplicateKeywordsDescription"
-		(extends "Fail__S6.2__DuplicateKeywordsDescription")
+	(symbol "Warn__S6.2__DuplicateKeywordsDescription"
+		(extends "Warn__S6.2__DuplicateKeywordsDescription")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2113,7 +2113,7 @@
 				)
 			)
 		)
-		(property "Value" "Fail__S6.2__DuplicateKeywordsDescription"
+		(property "Value" "Warn__S6.2__DuplicateKeywordsDescription"
 			(at 7.62 10.16 0)
 			(effects
 				(font
@@ -2167,8 +2167,8 @@
 			)
 		)
 	)
-	(symbol "Fail__S6.2__DuplicateKeywordsDescriptionNextToComma"
-		(extends "Fail__S6.2__DuplicateKeywordsDescriptionNextToComma")
+	(symbol "Warn__S6.2__DuplicateKeywordsDescriptionNextToComma"
+		(extends "Warn__S6.2__DuplicateKeywordsDescriptionNextToComma")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2177,7 +2177,7 @@
 				)
 			)
 		)
-		(property "Value" "Fail__S6.2__DuplicateKeywordsDescriptionNextToComma"
+		(property "Value" "Warn__S6.2__DuplicateKeywordsDescriptionNextToComma"
 			(at 7.62 10.16 0)
 			(effects
 				(font
@@ -2231,8 +2231,8 @@
 			)
 		)
 	)
-	(symbol "Fail__S6.2__DuplicateKeywordsDescriptionInSubTokens"
-		(extends "Fail__S6.2__DuplicateKeywordsDescriptionInSubTokens")
+	(symbol "Warn__S6.2__DuplicateKeywordsDescriptionInSubTokens"
+		(extends "Warn__S6.2__DuplicateKeywordsDescriptionInSubTokens")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2241,7 +2241,7 @@
 				)
 			)
 		)
-		(property "Value" "Fail__S6.2__DuplicateKeywordsDescriptionInSubTokens"
+		(property "Value" "Warn__S6.2__DuplicateKeywordsDescriptionInSubTokens"
 			(at 7.62 10.16 0)
 			(effects
 				(font

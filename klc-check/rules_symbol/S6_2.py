@@ -222,7 +222,7 @@ class Rule(KLCRule):
         token_counts = Counter(tokens)
         duplicate_tokens = {token for token, count in token_counts.items() if count > 1}
         if duplicate_tokens:
-            self.error(
+            self.warning(
                 f"S6.2.7: Symbol keywords contain duplicate keywords: {duplicate_tokens}"
             )
 
@@ -235,7 +235,7 @@ class Rule(KLCRule):
         duplicate_sub_tokens = {token for token, count in token_counts.items() if count > 1}
         duplicate_sub_tokens -= duplicate_tokens  # see NOTE above
         if duplicate_sub_tokens:
-            self.error(
+            self.warning(
                 "S6.2.7: Symbol keywords contain duplicate sub-tokens" +
                 f" (= dash-separated tokens): {duplicate_sub_tokens}"
             )
@@ -250,7 +250,7 @@ class Rule(KLCRule):
         duplicate_desc_keyword_tokens -= duplicate_tokens  # see NOTE above
         duplicate_desc_keyword_tokens -= duplicate_sub_tokens  # see NOTE above
         if duplicate_desc_keyword_tokens:
-            self.error(
+            self.warning(
                 "S6.2.7: Symbol keywords contain tokens which already appear " +
                 f"in description: {duplicate_desc_keyword_tokens}"
             )
@@ -309,8 +309,8 @@ class Rule(KLCRule):
             if self.component.is_power_symbol():
                 return True
             else:
-                self.error("Missing or empty Keywords field on 'Properties' tab. " +
-                           "If you have nothing to add here, add the manufacturer e.g. 'texas'")
+                self.warning("Missing or empty Keywords field on 'Properties' tab. " +
+                             "If you have nothing to add here, add the manufacturer e.g. 'texas'")
                 return True
         else:  # have non-empty keywords
             keywords = keywords_property.value
