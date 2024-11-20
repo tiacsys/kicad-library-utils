@@ -16,6 +16,7 @@ class PrintColor:
         max_width: int = 0,
         indentation: int = 0,
         buffered: bool = False,
+        eol=False,
     ):
         self._color: Dict[str, str] = {
             "regular": "\033[0m",
@@ -43,6 +44,7 @@ class PrintColor:
         self._indentation: int = indentation
         self.buffer: List[str] = []
         self.buffered: bool = buffered
+        self.eol = eol
 
         # TODO: why is the usage of "colorama" limited to Windows?
         if platform.system() == "Windows":
@@ -75,6 +77,7 @@ class PrintColor:
         text: str,
         max_width: Optional[int] = None,
         indentation: Optional[int] = None,
+        eol=False,
     ) -> None:
         # uses the global definition if there is no local definitions for max_width and indentation
         if not max_width:
@@ -126,10 +129,17 @@ class PrintColor:
             if self.buffered:
                 self.buffer.append(line)
             else:
-                try:
-                    print(line)
-                except (IOError, ValueError):
-                    print("ERROR printing output")
+
+                if eol is True:
+                    try:
+                        print(line, end=" ")
+                    except (IOError, ValueError):
+                        print("ERROR printing output")
+                else:
+                    try:
+                        print(line)
+                    except (IOError, ValueError):
+                        print("ERROR printing output")
 
     def regular(
         self,
@@ -152,24 +162,33 @@ class PrintColor:
         text: str,
         max_width: Optional[int] = None,
         indentation: Optional[int] = None,
+        eol=False,
     ):
-        self._do_print(sys._getframe().f_code.co_name, text, max_width, indentation)
+        self._do_print(
+            sys._getframe().f_code.co_name, text, max_width, indentation, eol
+        )
 
     def green(
         self,
         text: str,
         max_width: Optional[int] = None,
         indentation: Optional[int] = None,
+        eol=False,
     ):
-        self._do_print(sys._getframe().f_code.co_name, text, max_width, indentation)
+        self._do_print(
+            sys._getframe().f_code.co_name, text, max_width, indentation, eol
+        )
 
     def brown(
         self,
         text: str,
         max_width: Optional[int] = None,
         indentation: Optional[int] = None,
+        eol=False,
     ):
-        self._do_print(sys._getframe().f_code.co_name, text, max_width, indentation)
+        self._do_print(
+            sys._getframe().f_code.co_name, text, max_width, indentation, eol
+        )
 
     def blue(
         self,
@@ -192,8 +211,11 @@ class PrintColor:
         text: str,
         max_width: Optional[int] = None,
         indentation: Optional[int] = None,
+        eol=False,
     ):
-        self._do_print(sys._getframe().f_code.co_name, text, max_width, indentation)
+        self._do_print(
+            sys._getframe().f_code.co_name, text, max_width, indentation, eol
+        )
 
     def gray(
         self,
@@ -232,8 +254,11 @@ class PrintColor:
         text: str,
         max_width: Optional[int] = None,
         indentation: Optional[int] = None,
+        eol=False,
     ):
-        self._do_print(sys._getframe().f_code.co_name, text, max_width, indentation)
+        self._do_print(
+            sys._getframe().f_code.co_name, text, max_width, indentation, eol
+        )
 
     def light_blue(
         self,
@@ -297,6 +322,7 @@ if __name__ == "__main__":
         " sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."
         " Quisque tortor tortor, semper at justo ac, elementum posuere nulla."
     )
+
     printer = PrintColor(max_width=100, indentation=4)
     printer.red(msg)
     printer.blue(msg, 50, 2)
