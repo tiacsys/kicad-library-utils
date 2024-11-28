@@ -227,7 +227,7 @@ class HTMLDiff:
         else:
             self.old_url = self.new_url = self.mr_url = None
 
-        if 'old_git' in self.meta:
+        if self.meta.get("old_git") is not None:
             revname, commit_id = meta["old_git"]
             if meta['old_path'] == meta['new_path']:
                 self.source_revisions = f'Comparing {meta["new_path"]} against rev {commit_id}'
