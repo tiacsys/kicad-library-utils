@@ -75,7 +75,7 @@ screenshot:
       - screenshots/
 
 model:
-  image: kicad/kicad:nightly
+  image: kicad/kicad:8.0
   stage: model
   allow_failure: true
   when: manual
