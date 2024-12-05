@@ -65,6 +65,10 @@ class Rule(KLCRule):
                     self.error(
                         "For a power converter symbol, positive power pins should be placed at left of symbol"
                     )
+                    self.errorExtra(
+                        "This symbol has power input and output pins, so it is assumed to be a power converter. "
+                        "If this symbol not a power converter, you can ignore this error."
+                    )
                     pin_error = True
 
             if pin_error:
