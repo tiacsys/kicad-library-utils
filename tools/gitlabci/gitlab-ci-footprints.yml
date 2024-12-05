@@ -13,6 +13,7 @@ before_script:
 
 klc-check:
   stage: test
+  needs: []
   when: always
   allow_failure: true
     #exit_codes:
@@ -101,6 +102,7 @@ model:
 
 visual_diff:
   stage: diffs
+  needs: []
   image: kicad/kicad:8.0
   allow_failure: true
   when: always

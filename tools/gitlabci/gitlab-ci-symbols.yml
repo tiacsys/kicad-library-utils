@@ -11,6 +11,7 @@ before_script:
 
 klc-check:
   stage: tests
+  needs: []
   allow_failure: true
     #exit_codes:
     #  - -2  # KLC checks have warnings
@@ -31,6 +32,7 @@ klc-check:
 
 visual_diff:
   stage: diffs
+  needs: []
   image: kicad/kicad:8.0
   allow_failure: true
   when: always
