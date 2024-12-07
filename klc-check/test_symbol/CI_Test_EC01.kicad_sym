@@ -2,6 +2,91 @@
 	(version 20231120)
 	(generator "kicad_symbol_editor")
 	(generator_version "8.0")
+	(symbol "Pass__EC01__permitted_duplicate_segment"
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(property "Reference" "#SYM"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "Pass__EC01__permitted_duplicate_segment"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "http://example.com/ds.pdf"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "dummy"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "ki_keywords" "dummy"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "Pass__EC01__permitted_duplicate_segment_0_1"
+			(polyline
+				(pts
+					(xy 0 0) (xy 0 42)
+				)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 0 0) (xy 0 42) (xy 42 42) (xy 42 0) (xy 0 0)
+				)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+		)
+	)
 	(symbol "Warn__EC01__Duplicate_arc"
 		(exclude_from_sim no)
 		(in_bom no)
@@ -623,8 +708,7 @@
 		)
 		(symbol "Warn__EC01__empty_polyline_0_1"
 			(polyline
-				(pts
-				)
+				(pts)
 				(stroke
 					(width 0)
 					(type default)

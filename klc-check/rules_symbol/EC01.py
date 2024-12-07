@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import math
 
+from kicad_sym import Polyline
 from rules_symbol.rule import KLCRule
 
 import geometry
@@ -119,17 +120,38 @@ class Rule(KLCRule):
                 and s1.end.distance_to(s2.end) < self.smallLength
             )
 
+        def _polylines_comparable_for_overlap(p1: Polyline, p2: Polyline) -> bool:
+            """
+            Check if two polylines are "comparable" - that is, a segment in one
+            overlapping with a segment in the other is a problem.
+            """
+
+            # first, if one is filled and one is not, they're not comparable
+            # (one could be the border and another the fill)
+            if p1.fill_type != p2.fill_type:
+                return False
+
+            # If either is in all units, it could be compparable
+            either_is_all_units = p1.unit == 0 or p2.unit == 0
+
+            # They're only comparable if they're in the same unit
+            if not either_is_all_units and p1.unit != p2.unit:
+                return False
+
+            return True
+
         all_segs = []
         for polyline in self.component.polylines:
             for seg in polyline.get_segs():
                 # order all segs the same way (A->B is the same as B->A for this purpose)
-                all_segs.append((seg.lexicographically_ordered(), polyline.unit))
+                all_segs.append((seg.lexicographically_ordered(), polyline))
 
         for i in range(len(all_segs)):
             for j in range(i + 1, len(all_segs)):
-                if all_segs[i][1] != all_segs[j][1]:
-                    # different units is OK
+
+                if not _polylines_comparable_for_overlap(all_segs[i][1], all_segs[j][1]):
                     continue
+
                 s1 = all_segs[i][0]
                 s2 = all_segs[j][0]
                 if _segs_almost_equal(s1, s2):
