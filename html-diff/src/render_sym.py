@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import math
 import re
 import sys
 from pathlib import Path
@@ -12,7 +11,7 @@ except ImportError:
         sys.path.insert(0, str(common))
 
 import kicad_sym  # NOQA: F811
-from svg_util import Tag, setup_svg, bbox, add_bboxes, define_circle
+from svg_util import Tag, setup_svg, bbox, add_bboxes, define_arc
 
 
 def elem_style(elem):
@@ -49,29 +48,27 @@ def render_polyline(sym, elem, **style):
 
 def render_arc(sym, arc, **style):
     x1, y1 = arc.startx, -arc.starty
-    x2, y2 = arc.endx, -arc.endy
+    x2, y2 = arc.midx, -arc.midy
+    x3, y3 = arc.endx, -arc.endy
 
-    try:
-        (cx, cy), r = define_circle((x1, y1), (arc.midx, -arc.midy), (x2, y2))
-    except ValueError:
+    c, r, collinear, large_arc = define_arc((x1, y1), (x2, y2), (x3, y3), True)
+
+    if collinear:
         # The points are collinear, so we just draw a line
-        yield bbox((x1, y1), (x2, y2)), Tag(
+        elem_bbox = bbox((x1, y1), (x2, y2))
+        yield elem_bbox, Tag(
             "path", **style, d=f"M {x1:.6f} {y1:.6f} L {x2:.6f} {y2:.6f}"
         )
+        return
 
-    x1r = x1 - cx
-    y1r = y1 - cy
-    x2r = x2 - cx
-    y2r = y2 - cy
-    a1 = math.atan2(x1r, y1r)
-    a2 = math.atan2(x2r, y2r)
-    da = (a2 - a1 + math.pi) % (2*math.pi) - math.pi
+    large_arc = int(large_arc)
+    sweep = 0
 
-    large_arc = int(da > math.pi)
-    d = f'M {x1:.6f} {y1:.6f} A {r:.6f} {r:.6f} 0 {large_arc} 0 {x2:.6f} {y2:.6f}'
+    d = f'M {x1:.6f} {y1:.6f} A {r:.6f} {r:.6f} 0 {large_arc} {sweep} {x3:.6f} {y3:.6f}'
     # We just approximate the bbox here with that of a circle. Calculating precise arc bboxes is
     # hairy, and unnecessary for our purposes.
-    yield (cx-r, cy-r, cx+r, cy+r), Tag('path', **style, d=d)
+    elem_bbox = bbox((c[0] - r, c[1] - r), (c[0] + r, c[1] + r))
+    yield elem_bbox, Tag("path", **style, d=d)
 
 
 def render_text(sym, elem, **style):
