@@ -100,18 +100,36 @@ def render_drill(pad, **style):
     if not drill:
         return
 
-    x = pad['pos']['x'] + drill['offset'].get('x', 0)
-    y = pad['pos']['y'] + drill['offset'].get('y', 0)
+    px = pad['pos']['x']
+    py = pad['pos']['y']
+
+    x = px - drill['offset'].get('x', 0)
+    y = py - drill['offset'].get('y', 0)
     w, h = drill['size']['x'], drill['size']['y']
+
+    # For now KiCad doesn't support drills with different orientations
+    # to the pads, so we can just use the pad orientation.
+    angle = pad['pos']['orientation']
+    transform = f'rotate({-angle} {px} {py})'
 
     if drill['shape'] == 'circular':
         assert w == h
         yield (x-w/2, y-w/2, x+w/2, y+w/2), Tag('circle', **style, cx=x, cy=y, r=w/2)
     else:
         assert drill['shape'] == 'oval'
-        yield (x-w/2, y-h/2, x+w/2, y+h/2), Tag('rect', **style,
-                                                x=x-w/2, y=y-h/2,
-                                                width=w, height=h, rx=min(w, h)/2)
+
+        elem_bbox = bbox((x-w/2, y-h/2), (x+w/2, y+h/2))
+
+        yield elem_bbox, Tag(
+            "rect",
+            **style,
+            x=x - w / 2,
+            y=y - h / 2,
+            transform=transform,
+            width=w,
+            height=h,
+            rx=min(w, h) / 2,
+        )
 
 
 def render_polygon(polygon, **style):
@@ -133,7 +151,8 @@ def render_arc(arc, **style):
         (cx, cy), r = define_circle((x1, y1), (mx, my), (x2, y2))
     except ValueError:
         # The points are collinear, so we just draw a line
-        yield ((x1, y1), (x2, y2)), Tag(
+        elem_bbox = bbox((x1, y1), (x2, y2))
+        yield bbox, Tag(
             "path", **style, d=f"M {x1:.6f} {y1:.6f} L {x2:.6f} {y2:.6f}"
         )
 
@@ -149,7 +168,8 @@ def render_arc(arc, **style):
     d = f'M {x1:.6f} {y1:.6f} A {r:.6f} {r:.6f} 0 {large_arc} 1 {x2:.6f} {y2:.6f}'
     # We just approximate the bbox here with that of a circle. Calculating precise arc bboxes is
     # hairy, and unnecessary for our purposes.
-    yield (cx-r, cy-r, cx+r, cy+r), Tag('path', **style, d=d)
+    elem_bbox = bbox((cx - r, cy - r), (cx + r, cy + r))
+    yield elem_bbox, Tag("path", **style, d=d)
 
 
 def render_pad_circle(pad, layer, **style):
@@ -161,35 +181,63 @@ def render_pad_circle(pad, layer, **style):
 def render_pad_rect(pad, layer, **style):
     x, y = pad['pos']['x'], pad['pos']['y']
     w, h = pad['size']['x'], pad['size']['y']
-    if pad['pos']['orientation'] in [90, 270]:
-        w, h = h, w
-    else:
-        assert pad['pos']['orientation'] in [None, 0, 180, 360]
-    yield (x-w/2, y-h/2, x+w/2, y+h/2), Tag('rect', **style, x=x-w/2, y=y-h/2, width=w, height=h)
+
+    angle = pad['pos']['orientation']
+    transform = f'rotate({-angle} {x} {y})'
+
+    elem_bbox = bbox((x - w / 2, y - h / 2), (x + w / 2, y + h / 2))
+
+    yield elem_bbox, Tag(
+        "rect",
+        **style,
+        transform=transform,
+        x=x - w / 2,
+        y=y - h / 2,
+        width=w,
+        height=h,
+    )
 
 
 def render_pad_roundrect(pad, layer, **style):
     x, y = pad['pos']['x'], pad['pos']['y']
     w, h = pad['size']['x'], pad['size']['y']
     rx = min(w, h) * pad['roundrect_rratio']
-    if pad['pos']['orientation'] in [90, 270]:
-        w, h = h, w
-    else:
-        assert pad['pos']['orientation'] in [None, 0, 180, 360]
-    yield (x-w/2, y-h/2, x+w/2, y+h/2), Tag('rect', **style,
-                                            x=x-w/2, y=y-h/2, width=w, height=h, rx=rx)
+
+    angle = pad['pos']['orientation']
+    transform = f'rotate({-angle} {x} {y})'
+
+    elem_bbox = bbox((x - w / 2, y - h / 2), (x + w / 2, y + h / 2))
+
+    yield elem_bbox, Tag(
+        "rect",
+        **style,
+        transform=transform,
+        x=x - w / 2,
+        y=y - h / 2,
+        width=w,
+        height=h,
+        rx=rx,
+    )
 
 
 def render_pad_oval(pad, layer, **style):
     x, y = pad['pos']['x'], pad['pos']['y']
     w, h = pad['size']['x'], pad['size']['y']
-    if pad['pos']['orientation'] in [90, 270]:
-        w, h = h, w
 
-    yield (x-w/2, y-h/2, x+w/2, y+h/2), Tag('rect', **style,
-                                            x=x-w/2, y=y-h/2,
-                                            width=w, height=h,
-                                            rx=min(w, h)/2)
+    angle = pad['pos']['orientation']
+    transform = f'rotate({-angle} {x} {y})'
+    elem_bbox = bbox((x - w / 2, y - h / 2), (x + w / 2, y + h / 2))
+
+    yield elem_bbox, Tag(
+        "rect",
+        **style,
+        transform=transform,
+        x=x - w / 2,
+        y=y - h / 2,
+        width=w,
+        height=h,
+        rx=min(w, h) / 2,
+    )
 
 
 def render_pad_trapezoid(pad, layer, **style):
@@ -206,7 +254,10 @@ def render_pad_custom(pad, layer, **style):
         if 'width' in prim:
             prim_style.update(elem_style(prim))
             prim_style['class'] += ' '+style['class']
-        prim_style['transform'] = f'translate({x},{y})'
+
+        angle = pad['pos']['orientation']
+        transform = f"rotate({-angle} {x} {y}) translate({x} {y})"
+        prim_style['transform'] = transform
 
         if prim['type'] == 'gr_line':
             yield from render_line(prim, **prim_style)
@@ -216,6 +267,18 @@ def render_pad_custom(pad, layer, **style):
             yield from render_arc(prim, **prim_style)
         elif prim['type'] == 'gr_circle':
             yield from render_circle(prim, **prim_style)
+        elif prim['type'] == 'gr_rect':
+            yield from render_rect(prim, **prim_style)
+
+    anchor = pad["options"]["anchor"]
+
+    # the anchor is always filled
+    style['class'] += ' ' + layerclass(layer, 'fill')
+
+    if anchor == "rect":
+        yield from render_pad_rect(pad, layer, **style)
+    elif anchor == "circle":
+        yield from render_pad_circle(pad, layer, **style)
 
 
 def _render_mod_internal(mod):
@@ -245,7 +308,14 @@ def _render_mod_internal(mod):
 
         for layer in LAYERS:
             if any(fnmatch(layer, l.replace('.', '_')) for l in pad['layers']):  # NOQA: E741
-                style = {'class': layerclass(layer, 'fill')}
+
+                # Custom pads are rendered by their primitives, which can have fills or not
+                if pad['shape'] == 'custom':
+                    style = {'class': ""}
+                else:
+                    # Normal pads are always filled
+                    style = {'class': layerclass(layer, 'fill')}
+
                 for bbox, tag in fun(pad, layer, **style):
                     yield layer, bbox, tag
 

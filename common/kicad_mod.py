@@ -682,6 +682,12 @@ class KicadMod:
                             if e:
                                 p["end"] = {"x": e[0][1], "y": e[0][2]}
 
+                        try:
+                            a = self._getArray(primitive, "fill")[0]
+                            p["fill"] = a[1] in ["solid", "yes"]
+                        except IndexError:
+                            p["fill"] = False
+
                         pad_dict["primitives"].append(p)
 
             pads.append(pad_dict)
