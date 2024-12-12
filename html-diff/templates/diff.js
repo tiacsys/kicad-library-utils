@@ -20,7 +20,7 @@ class Colorscheme {
         let defs = ['* { fill: none; stroke: none; } tspan { fill: inherit; }'];
         for (const layer of layers) {
             if (layer in this) {
-                defs.push(`.l-${layer}-f { fill: ${this[layer]}; }`);
+                defs.push(`.l-${layer}-f { fill: ${this[layer]}; fill-opacity: 0.25; }`);
                 defs.push(`.l-${layer}-s { stroke: ${this[layer]}; }`);
             } else {
                 defs.push(`.l-${layer}-f, .l-${layer}-s { fill: none; stroke: none; }`);

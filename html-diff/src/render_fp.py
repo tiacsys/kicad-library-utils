@@ -15,7 +15,7 @@ except ImportError:
         sys.path.insert(0, str(common))
 
 from kicad_mod import KicadMod
-from svg_util import Tag, setup_svg, point_line_distance, bbox, add_bboxes
+from svg_util import Tag, setup_svg, bbox, add_bboxes, define_circle
 
 
 LAYERS = ["Names", "Hole_Plated", "Hole_Nonplated", "F_Adhes", "B_Adhes", "F_Paste", "B_Paste",
@@ -34,12 +34,22 @@ def layerclass(layer, fill_or_stroke):
 
 def elem_style(elem):
     if elem.get('width'):
-        return {'class': layerclass(elem['layer'], 'stroke'),
-                'stroke-linecap': 'round',
-                'stroke-linejoin': 'round',
-                'stroke-width': elem['width']}
+
+        if elem.get('fill'):
+            elem_cls = layerclass(elem['layer'], 'fill') + ' ' + layerclass(elem['layer'], 'stroke')
+        else:
+            elem_cls = layerclass(elem['layer'], 'stroke')
+
+        return {
+            "class": elem_cls,
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            "stroke-width": elem["width"],
+        }
     else:
-        return {'class': layerclass(elem['layer'], 'fill')}
+        return {
+            "class": layerclass(elem["layer"], "fill"),
+        }
 
 
 def render_line(line, **style):
@@ -104,26 +114,38 @@ def render_drill(pad, **style):
                                                 width=w, height=h, rx=min(w, h)/2)
 
 
-def render_polyline(polyline, **style):
-    points = polyline.get('points', polyline.get('pts'))  # bad API
+def render_polygon(polygon, **style):
+    points = polygon.get('points', polygon.get('pts'))  # bad API
     points = [(pt["x"], pt["y"]) for pt in points]
     path_data = 'M ' + ' L '.join(f'{x:.6f} {y:.6f}' for x, y in points)
-    if '-f' in style['class']:
-        path_data += ' Z'
+    # Polygons are closed by definition
+    path_data += ' Z'
     yield bbox(*points), Tag('path', **style, d=path_data)
 
 
 def render_arc(arc, **style):
-    cx, cy = arc['mid']['x'], arc['mid']['y']
+    # KiCad arcs are defined by three points: start, mid, end.
     x1, y1 = arc['start']['x'], arc['start']['y']
+    mx, my = arc['mid']['x'], arc['mid']['y']
     x2, y2 = arc['end']['x'], arc['end']['y']
-    d = point_line_distance((x1, y1),
-                            (x2, y2),
-                            (cx, cy))
-    large_arc = int(d < 0)
 
-    # Note: KiCad only supports clockwise arcs.
-    r = math.hypot(cx-x1, cy-y1)
+    try:
+        (cx, cy), r = define_circle((x1, y1), (mx, my), (x2, y2))
+    except ValueError:
+        # The points are collinear, so we just draw a line
+        yield ((x1, y1), (x2, y2)), Tag(
+            "path", **style, d=f"M {x1:.6f} {y1:.6f} L {x2:.6f} {y2:.6f}"
+        )
+
+    x1r = x1 - cx
+    y1r = y1 - cy
+    x2r = x2 - cx
+    y2r = y2 - cy
+    a1 = math.atan2(x1r, y1r)
+    a2 = math.atan2(x2r, y2r)
+    da = (a2 - a1 + math.pi) % (2*math.pi) - math.pi
+
+    large_arc = int(da > math.pi)
     d = f'M {x1:.6f} {y1:.6f} A {r:.6f} {r:.6f} 0 {large_arc} 1 {x2:.6f} {y2:.6f}'
     # We just approximate the bbox here with that of a circle. Calculating precise arc bboxes is
     # hairy, and unnecessary for our purposes.
@@ -189,7 +211,7 @@ def render_pad_custom(pad, layer, **style):
         if prim['type'] == 'gr_line':
             yield from render_line(prim, **prim_style)
         elif prim['type'] == 'gr_poly':
-            yield from render_polyline(prim, **prim_style)
+            yield from render_polygon(prim, **prim_style)
         elif prim['type'] == 'gr_arc':
             yield from render_arc(prim, **prim_style)
         elif prim['type'] == 'gr_circle':
@@ -201,7 +223,7 @@ def _render_mod_internal(mod):
             (render_line, mod.lines),
             (render_rect, mod.rects),
             (render_circle, mod.circles),
-            (render_polyline, mod.polys),
+            (render_polygon, mod.polys),
             (render_arc, mod.arcs),
             (render_text, mod.userText),
             (render_text, [mod.reference, mod.value])]:

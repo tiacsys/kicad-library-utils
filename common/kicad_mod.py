@@ -405,6 +405,12 @@ class KicadMod:
                 except IndexError:
                     poly_dict["width"] = ""
 
+                try:
+                    a = self._getArray(poly, "fill")[0]
+                    poly_dict["fill"] = a[1] in ["solid", "yes"]
+                except IndexError:
+                    poly_dict["fill"] = False
+
                 polys.append(poly_dict)
 
         return polys

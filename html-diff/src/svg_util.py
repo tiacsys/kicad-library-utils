@@ -23,16 +23,39 @@ class Tag:
             return f'{prefix}<{opening}/>'
 
 
-def point_line_distance(l1, l2, p):
-    """ Calculate distance between infinite line through l1 and l2, and point p. """
-    # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-    x1, y1 = l1
-    x2, y2 = l2
-    x0, y0 = p
-    length = math.dist(l1, l2)
-    if math.isclose(length, 0):
-        return math.dist(l1, p)
-    return ((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / length
+def distance_between(p1, p2):
+    dx = p2[0] - p1[0]
+    dy = p2[1] - p1[1]
+    return math.sqrt(dx * dx + dy * dy)
+
+
+# https://stackoverflow.com/questions/28910718/give-3-points-and-a-plot-circle
+def define_circle(p1, p2, p3):
+    """
+    Returns the center and radius of the circle passing the given 3 points.
+    In case the 3 points form a line, raises a ValueError.
+    """
+
+    temp = p2[0] * p2[0] + p2[1] * p2[1]
+    bc = (p1[0] * p1[0] + p1[1] * p1[1] - temp) / 2
+    cd = (temp - p3[0] * p3[0] - p3[1] * p3[1]) / 2
+    det = (p1[0] - p2[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p2[1])
+
+    if abs(det) < 1.0e-6:
+        # could be three points very, very close or co-incident
+        if distance_between(p2, p1) < 1.0e-6 and distance_between(p3, p2) < 1.0e-6:
+            # zero sized, centre on midpoint (though any point would do as they're so close)
+            return ((p2[0], p2[0]), 0)
+
+        # otherwise they're far apart but in a line
+        raise ValueError(f'Attempted to define a circle by 3 collinear points: {p1}, {p2}, {p3}')
+
+    # Center of circle
+    cx = (bc*(p2[1] - p3[1]) - cd*(p1[1] - p2[1])) / det
+    cy = ((p1[0] - p2[0]) * cd - (p2[0] - p3[0]) * bc) / det
+
+    radius = math.sqrt((cx - p1[0])**2 + (cy - p1[1])**2)
+    return ((cx, cy), radius)
 
 
 def bbox(*args):

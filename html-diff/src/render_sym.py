@@ -12,7 +12,7 @@ except ImportError:
         sys.path.insert(0, str(common))
 
 import kicad_sym  # NOQA: F811
-from svg_util import Tag, setup_svg, bbox, add_bboxes
+from svg_util import Tag, setup_svg, bbox, add_bboxes, define_circle
 
 
 def elem_style(elem):
@@ -47,45 +47,17 @@ def render_polyline(sym, elem, **style):
     yield bbox(*points), Tag('path', **style, d=path_data)
 
 
-def distance_between(p1, p2):
-    dx = p2[0] - p1[0]
-    dy = p2[1] - p1[1]
-    return math.sqrt(dx * dx + dy * dy)
-
-
-# https://stackoverflow.com/questions/28910718/give-3-points-and-a-plot-circle
-def define_circle(p1, p2, p3):
-    """
-    Returns the center and radius of the circle passing the given 3 points.
-    In case the 3 points form a line, raises a ValueError.
-    """
-
-    temp = p2[0] * p2[0] + p2[1] * p2[1]
-    bc = (p1[0] * p1[0] + p1[1] * p1[1] - temp) / 2
-    cd = (temp - p3[0] * p3[0] - p3[1] * p3[1]) / 2
-    det = (p1[0] - p2[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p2[1])
-
-    if abs(det) < 1.0e-6:
-        # could be three points very, very close or co-incident
-        if distance_between(p2, p1) < 1.0e-6 and distance_between(p3, p2) < 1.0e-6:
-            # zero sized, centre on midpoint (though any point would do as they're so close)
-            return ((p2[0], p2[0]), 0)
-
-        # otherwise they're far apart but in a line
-        raise ValueError(f'Attempted to define a circle by 3 collinear points: {p1}, {p2}, {p3}')
-
-    # Center of circle
-    cx = (bc*(p2[1] - p3[1]) - cd*(p1[1] - p2[1])) / det
-    cy = ((p1[0] - p2[0]) * cd - (p2[0] - p3[0]) * bc) / det
-
-    radius = math.sqrt((cx - p1[0])**2 + (cy - p1[1])**2)
-    return ((cx, cy), radius)
-
-
 def render_arc(sym, arc, **style):
     x1, y1 = arc.startx, -arc.starty
     x2, y2 = arc.endx, -arc.endy
-    (cx, cy), r = define_circle((x1, y1), (arc.midx, -arc.midy), (x2, y2))
+
+    try:
+        (cx, cy), r = define_circle((x1, y1), (arc.midx, -arc.midy), (x2, y2))
+    except ValueError:
+        # The points are collinear, so we just draw a line
+        yield bbox((x1, y1), (x2, y2)), Tag(
+            "path", **style, d=f"M {x1:.6f} {y1:.6f} L {x2:.6f} {y2:.6f}"
+        )
 
     x1r = x1 - cx
     y1r = y1 - cy
