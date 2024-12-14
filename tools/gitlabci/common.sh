@@ -12,7 +12,7 @@ fi
 # there are two cases, the CI can run in the project context, or in the contributors context
 # we use the schema for a 'dynamic' URL from the manual
 # https://docs.gitlab.com/ee/ci/environments/#set-a-dynamic-environment-url
-if [ $CI_PROJECT_ROOT_NAMESPACE == "kicad" ]; then
+if [ "$CI_PROJECT_ROOT_NAMESPACE" == "kicad" ]; then
   DYNAMIC_ENVIRONMENT_URL="https://$CI_PROJECT_ROOT_NAMESPACE.$CI_PAGES_DOMAIN/-/libraries/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/diffs/index.html.diff/index.html"
 else
   DYNAMIC_ENVIRONMENT_URL="https://$CI_PROJECT_ROOT_NAMESPACE.$CI_PAGES_DOMAIN/-/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/diffs/index.html.diff/index.html"
