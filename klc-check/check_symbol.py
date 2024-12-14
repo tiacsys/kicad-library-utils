@@ -24,6 +24,7 @@ from print_color import PrintColor
 from rulebase import Verbosity, logError
 from rules_symbol import get_all_symbol_rules
 from rules_symbol.rule import KLCRule
+from junit import JunitReport
 
 
 class SymbolCheck:
@@ -37,6 +38,7 @@ class SymbolCheck:
         no_warnings: bool = False,
         silent: bool = False,
         log: bool = False,
+        junit_report: JunitReport = None,
     ):
         self.footprints = footprints
         self.printer = PrintColor(use_color=use_color)
@@ -47,6 +49,7 @@ class SymbolCheck:
         self.silent: bool = silent
         self.error_count: int = 0
         self.warning_count: int = 0
+        self.junit_report = junit_report
 
         # build a list of rules to work with
         self.rules: List[KLCRule] = []
@@ -119,7 +122,16 @@ class SymbolCheck:
                 self.printer.yellow(
                     "Violating " + rule.name + " - " + rule.url, indentation=2
                 )
-                rule.processOutput(self.printer, self.verbosity, self.silent)
+
+                def add_problem_fn(severity, msg):
+                    self.junit_report.add_problem(f'{symbol.libname}:{symbol.name}', severity, msg)
+
+                if self.junit_report:
+                    problem_fn = add_problem_fn
+                else:
+                    problem_fn = None
+
+                rule.processOutput(self.printer, self.verbosity, self.silent, problem_fn)
 
             if rule.hasErrors():
                 if self.log:

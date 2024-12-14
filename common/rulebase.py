@@ -2,7 +2,7 @@ import inspect
 import json
 import os
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 from print_color import PrintColor
 
@@ -214,6 +214,7 @@ class KLCRuleBase:
         printer: PrintColor,
         verbosity: Verbosity = Verbosity.NONE,
         silent: bool = False,
+        problem_callback_fn: Callable[Severity, str] = None,
     ) -> bool:
 
         # No violations
@@ -232,8 +233,14 @@ class KLCRuleBase:
                 if s == Severity.INFO:
                     printer.gray(msg, indentation=4)
                 elif s == Severity.WARNING:
+                    if problem_callback_fn:
+                        problem_callback_fn(s, msg)
+
                     printer.brown(msg, indentation=4)
                 elif s == Severity.ERROR:
+                    if problem_callback_fn:
+                        problem_callback_fn(s, msg)
+
                     printer.red(msg, indentation=4)
                 elif s == Severity.SUCCESS:
                     printer.green(msg, indentation=4)

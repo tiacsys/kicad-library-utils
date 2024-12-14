@@ -1,5 +1,4 @@
 image: python:latest
-
 stages:
   - tests
   - diffs
@@ -29,6 +28,7 @@ klc-check:
   artifacts:
     reports:
       metrics: metrics.txt
+      junit: junit.xml
 
 visual_diff:
   stage: diffs

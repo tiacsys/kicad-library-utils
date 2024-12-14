@@ -31,6 +31,7 @@ from kicad_sym import KicadLibrary
 from print_color import PrintColor
 from rulebase import Verbosity
 from sexpr import build_sexp, format_sexp
+import junit
 
 
 def ExitError(msg):
@@ -75,6 +76,11 @@ parser.add_argument(
 )
 parser.add_argument(
     "--nocolor", help="Does not use colors to show the output", action="store_true"
+)
+parser.add_argument(
+    "--junit",
+    help="Path to save results in JUnit XML format. Specify with e.g. './xxx --junit file.xml'",
+    metavar="file",
 )
 parser.add_argument(
     "--design-breaking-changes",
@@ -146,11 +152,13 @@ old_libs = build_library_dict(args.old)
 errors = 0
 design_breaking_changes = 0
 
+junit_reporter = junit.JunitReport()
+
 # create a SymbolCheck instance
 # add footprints dir if possible
 sym_check = check_symbol.SymbolCheck(
     None, args.exclude, Verbosity(2), args.footprint_directory,
-    False if args.nocolor else True, silent=False
+    False if args.nocolor else True, silent=False, junit_report=junit_reporter
 )
 
 # iterate over all new libraries
@@ -296,6 +304,12 @@ for lib_name in old_libs:
             printer.red("Removed library '{lib}'".format(lib=lib_name))
         if args.design_breaking_changes:
             design_breaking_changes += 1
+
+if args.junit:
+    # create the junit xml report
+    if args.verbose:
+        printer.light_green("Creating JUnit report")
+    junit_reporter.create_report(args.junit)
 
 # Return the number of errors found ( zero if --check is not set )
 sys.exit(errors + design_breaking_changes)
