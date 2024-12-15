@@ -9,7 +9,7 @@ echo "Comparing range $BASE_SHA to $TARGET_SHA"
 for change in $(git diff-tree --diff-filter=AMR --no-commit-id --name-only -r "$BASE_SHA" "$TARGET_SHA"); do
     if [[ $change =~ .*\.kicad_mod ]]; then
         echo "Checking: $change"
-        python3 "$SCRIPT" "/$CI_PROJECT_DIR/$change" -vv
+        python3 "$SCRIPT" "/$CI_PROJECT_DIR/$change" -vv --junit junit.xml
         FP_ERROR_CNT="$(($FP_ERROR_CNT + $?))"
     fi
 done

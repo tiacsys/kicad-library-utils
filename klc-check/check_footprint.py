@@ -19,9 +19,10 @@ from print_color import PrintColor
 from rulebase import Verbosity, logError
 from rules_footprint import get_all_footprint_rules
 from rules_footprint.rule import KLCRule
+import junit
 
 
-def check_library(filename: str, rules, metrics: List[str], args) -> Tuple[int, int]:
+def check_library(filename: str, rules, metrics: List[str], junit_reporter: junit.JunitReport, args) -> Tuple[int, int]:
     """
     Returns (error count, warning count)
     """
@@ -54,7 +55,7 @@ def check_library(filename: str, rules, metrics: List[str], args) -> Tuple[int, 
     if args.unittest:
         (ec, wc) = do_unittest(module, rules, metrics)
     else:
-        (ec, wc) = do_rulecheck(module, rules, metrics)
+        (ec, wc) = do_rulecheck(module, rules, metrics, junit_reporter)
 
     # done checking the footpint
     metrics.append("{lib}.errors {n}".format(lib=module.name, n=ec))
@@ -96,7 +97,7 @@ def do_unittest(footprint, rules, metrics) -> Tuple[int, int]:
     return (error_count, warning_count)
 
 
-def do_rulecheck(module, rules, metrics) -> Tuple[int, int]:
+def do_rulecheck(module, rules, metrics, junit_reporter: junit.JunitReport) -> Tuple[int, int]:
     ec = 0
     wc = 0
     first = True
@@ -122,7 +123,11 @@ def do_rulecheck(module, rules, metrics) -> Tuple[int, int]:
                 first = False
 
             printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
-            rule.processOutput(printer, verbosity, args.silent)
+
+            def add_problem_fn(severity, msg):
+                junit_reporter.add_problem(module.name, severity, msg)
+
+            rule.processOutput(printer, verbosity, args.silent, add_problem_fn)
 
         if rule.hasErrors():
             if args.log:
@@ -220,6 +225,11 @@ parser.add_argument(
 parser.add_argument(
     "-m", "--metrics", help="generate a metrics.txt file", action="store_true"
 )
+parser.add_argument(
+    "--junit",
+    help="Path to save results in JUnit XML format. Specify with e.g. './xxx --junit file.xml'",
+    metavar="file",
+)
 
 args = parser.parse_args()
 if args.fixmore:
@@ -263,10 +273,11 @@ if not files:
 
 # now iterate over all files and check them
 metrics = []
+junit_reporter = junit.JunitReport()
 error_count = 0
 warning_count = 0
 for filename in files:
-    (ec, wc) = check_library(filename, rules, metrics, args)
+    (ec, wc) = check_library(filename, rules, metrics, junit_reporter, args)
     error_count += ec
     warning_count += wc
 
@@ -290,5 +301,11 @@ if error_count:
 elif warning_count:
     # This will be an "allowed failure"
     ret_code = -2
+
+if args.junit:
+    # create the junit xml report
+    if args.verbose:
+        printer.light_green("Creating JUnit report")
+    junit_reporter.create_report(args.junit)
 
 sys.exit(ret_code)

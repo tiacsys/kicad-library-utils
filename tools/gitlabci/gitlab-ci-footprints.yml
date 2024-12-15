@@ -29,6 +29,7 @@ klc-check:
   artifacts:
     reports:
       metrics: metrics.txt
+      junit: junit.xml
 
 nightly-convert:
   image: kicad/kicad:nightly

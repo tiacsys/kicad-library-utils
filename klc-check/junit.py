@@ -60,8 +60,16 @@ class JunitReport:
                     "name": f"{component_name} - {SeverityToStr[severity]}",
                 })
 
+                # we remove duplicates, while preserving the order of the list,
+                # because on footprints, there can be many:
+                # Some THT pads have incorrect layer settings
+                # - Pad '41' missing layer '*.Mask'
+                # - Pad '41' missing layer '*.Mask'
+                # - Pad '41' missing layer '*.Mask'
+                unique_problems = list(dict.fromkeys(problems))
+
                 # Each error/warning is a failure
-                for problem in problems:
+                for problem in unique_problems:
                     ET.SubElement(testcase, "failure", {
                         "message": str(problem),
                     }).text = str(problem)
