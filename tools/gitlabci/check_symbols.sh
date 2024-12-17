@@ -73,8 +73,8 @@ fi
 if [ $KLC_ERRORS -eq 2 ]; then
     # Warnings
     exit 2
-elif [ $KLC_ERRORS -eq 1 ]; then
-    # Errors
+elif [ $KLC_ERRORS -ne 0 ]; then
+    # Errors (or something else, assume bad)
     exit 1
 fi
 

@@ -1,6 +1,8 @@
-image: python:latest
+image: python:3.10-slim
 
 before_script:
+  - apt-get update -q -y
+  - apt-get install -y make
   - python3 -V
   - pip install pytest
 
@@ -13,7 +15,12 @@ symbol_rulechecker:
       - "klc-check/*symbol/*"
   script:
     - make test-klc-symbols
-    - python3 klc-check/comparelibs.py -v --old klc-check/test_symbol/comparelibs_old/* --new klc-check/test_symbol/comparelibs_new/* --check --check-derived -m
+    # Don't care if the actually are KLC errors
+    - python3 klc-check/comparelibs.py -v
+        --old klc-check/test_symbol/comparelibs_old/*
+        --new klc-check/test_symbol/comparelibs_new/*
+        --check --check-derived
+        --metrics || if [ $? -eq 2 ] || [ $? -eq 3 ] ; then true; fi
   artifacts:
     reports:
       metrics: metrics.txt

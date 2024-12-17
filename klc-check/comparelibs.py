@@ -150,6 +150,7 @@ def build_library_dict(filelist):
 new_libs = build_library_dict(args.new)
 old_libs = build_library_dict(args.old)
 errors = 0
+warnings = 0
 design_breaking_changes = 0
 
 # create a SymbolCheck instance
@@ -280,6 +281,8 @@ for lib_name in new_libs:
                 (ec, wc) = sym_check.do_rulecheck(new_sym[symname])
                 if ec != 0:
                     errors += 1
+                if wc != 0:
+                    warnings += 1
 
     for symname in old_sym:
         # Component has been deleted from library
@@ -318,4 +321,12 @@ if args.junit:
     junit_report.save_report()
 
 # Return the number of errors found ( zero if --check is not set )
-sys.exit(errors + design_breaking_changes)
+if errors > 0 or design_breaking_changes > 0:
+    # This will fail the pipeline
+    sys.exit(3)
+
+if warnings > 0:
+    # Handled as an "allowed failure"
+    sys.exit(2)
+
+sys.exit(0)

@@ -478,9 +478,9 @@ if __name__ == "__main__":
 
     if error_count:
         # This will fail the pipeline
-        ret_code = -1
+        ret_code = 3
     elif warning_count:
         # This will be an "allowed failure"
-        ret_code = -2
+        ret_code = 2
 
     sys.exit(ret_code)

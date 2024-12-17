@@ -1,4 +1,5 @@
 from xml.etree import ElementTree as ET
+from typing import TypeAlias
 import os
 import sys
 
@@ -13,7 +14,7 @@ if common not in sys.path:
 
 from rulebase import Severity
 
-type ComponentName = str
+ComponentName: TypeAlias = str
 
 SeverityToStr = {
     Severity.ERROR: "Errors",
