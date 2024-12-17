@@ -23,6 +23,7 @@ class Vec2D:
     def __abs__(self) -> float:
         return math.sqrt(self.x * self.x + self.y * self.y)
 
+    @property
     def length(self) -> float:
         return abs(self)
 
@@ -51,6 +52,22 @@ class Vec2D:
     @property
     def manhattan_length(self):
         return self.x + self.y
+
+    @property
+    def square_length(self):
+        return self.x**2 + self.y**2
+
+    def cross(self, other: "Vec2D") -> float:
+        """
+        Cross product of two vectors
+        """
+        return self.x * other.y - self.y * other.x
+
+    def dot(self, other: "Vec2D") -> float:
+        """
+        Dot product of two vectors
+        """
+        return self.x * other.x + self.y * other.y
 
 
 @dataclass
@@ -96,6 +113,13 @@ class Point:
         """
         The vector from the origin to this point"""
         return self.vec
+
+    @property
+    def arg(self) -> float:
+        """
+        The angle of the vector from the origin to this point
+        """
+        return self.vec.angle
 
     def vec_to(self, other: "Point") -> Vec2D:
         """
@@ -163,3 +187,69 @@ class Seg2D:
         """
         s_e = sorted((self.start, self.end), key=Point.lexicographic_key)
         return Seg2D(s_e[0], s_e[1])
+
+    def is_same(self, other: "Seg2D", tol=1e-7) -> bool:
+        """
+        Check if two segments are the same, within a tolerance, and regardless of
+        the direction of the segment.
+        """
+        slo = self.lexicographically_ordered()
+        olo = other.lexicographically_ordered()
+
+        return (
+            slo.start.distance_to(olo.start) < tol
+            and slo.end.distance_to(olo.end) < tol
+        )
+
+    def shares_one_endpoint(self, other: "Seg2D", tol=1e-7) -> bool:
+        """
+        Check if two segments share exactly one endpoint, within a tolerance
+        """
+        if self.start.distance_to(other.start) < tol:
+            return self.end.distance_to(other.end) > tol
+
+        if self.start.distance_to(other.end) < tol:
+            return self.end.distance_to(other.start) > tol
+
+        if self.end.distance_to(other.start) < tol:
+            return self.start.distance_to(other.end) > tol
+
+        if self.end.distance_to(other.end) < tol:
+            return self.start.distance_to(other.start) > tol
+
+    def is_point_on_self(self, point, tolerance=1e-7):
+        """
+        Check if a point is on the segment.
+        """
+        # Vector from segment start to point
+        pvec = self.start.vec_to(point)
+
+        # Cross product to check collinearity
+        if abs(self.vector.cross(pvec)) > tolerance:
+            return False
+
+        # Check if point is within segment bounds
+        dot = self.vector.dot(pvec)
+        if dot < -tolerance or dot > self.vector.square_length + tolerance:
+            return False
+
+        return True
+
+    def overlaps(self, other: "Seg2D", tolerance=1e-7) -> bool:
+        """
+        Determine if two segments overlap.
+        """
+
+        # Exclude chained segments
+        if self.shares_one_endpoint(other, tolerance):
+            return False
+
+        if (
+            self.is_point_on_self(other.start, tolerance)
+            or self.is_point_on_self(other.end, tolerance)
+            or other.is_point_on_self(self.start, tolerance)
+            or other.is_point_on_self(self.end, tolerance)
+        ):
+            return True
+
+        return False
