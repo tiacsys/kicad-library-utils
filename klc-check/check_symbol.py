@@ -24,7 +24,7 @@ from print_color import PrintColor
 from rulebase import Verbosity, logError
 from rules_symbol import get_all_symbol_rules
 from rules_symbol.rule import KLCRule
-from junit import JunitReport
+import junit
 
 
 class SymbolCheck:
@@ -37,8 +37,7 @@ class SymbolCheck:
         use_color: bool = True,
         no_warnings: bool = False,
         silent: bool = False,
-        log: bool = False,
-        junit_report: JunitReport = None,
+        log: bool = False
     ):
         self.footprints = footprints
         self.printer = PrintColor(use_color=use_color)
@@ -49,7 +48,7 @@ class SymbolCheck:
         self.silent: bool = silent
         self.error_count: int = 0
         self.warning_count: int = 0
-        self.junit_report = junit_report
+        self.junit_cases = []
 
         # build a list of rules to work with
         self.rules: List[KLCRule] = []
@@ -99,6 +98,10 @@ class SymbolCheck:
         symbol_error_count = 0
         symbol_warning_count = 0
         first = True
+
+        junit_case = junit.JunitTestCase(f'{symbol.libname}:{symbol.name}')
+        self.junit_cases.append(junit_case)
+
         for rule in self.rules:
             rule.footprints_dir = self.footprints
             rule = rule(symbol)
@@ -123,15 +126,13 @@ class SymbolCheck:
                     "Violating " + rule.name + " - " + rule.url, indentation=2
                 )
 
-                def add_problem_fn(severity, msg):
-                    self.junit_report.add_problem(f'{symbol.libname}:{symbol.name}', severity, msg)
+                def add_problem_fn(log_entry):
+                    junit_case.add_result(
+                        log_entry.severity,
+                        junit.JUnitResult(log_entry.message, log_entry.extras),
+                    )
 
-                if self.junit_report:
-                    problem_fn = add_problem_fn
-                else:
-                    problem_fn = None
-
-                rule.processOutput(self.printer, self.verbosity, self.silent, problem_fn)
+                rule.processOutput(self.printer, self.verbosity, self.silent, add_problem_fn)
 
             if rule.hasErrors():
                 if self.log:
@@ -226,6 +227,7 @@ class CheckResults:
     identifier: int
     error_count: int
     warning_count: int
+    test_cases: List[junit.JunitTestCase]
     metrics: List[str]
 
 
@@ -268,7 +270,7 @@ def worker(
             break
 
     # output all the metrics at once
-    outp.put(CheckResults(i, c.error_count, c.warning_count, c.metrics))
+    outp.put(CheckResults(i, c.error_count, c.warning_count, c.junit_cases, c.metrics))
 
 
 if __name__ == "__main__":
@@ -343,6 +345,11 @@ if __name__ == "__main__":
         help="unit test mode (to be used with test-symbols)",
         action="store_true",
     )
+    parser.add_argument(
+        "--junit",
+        help="Path to save results in JUnit XML format. Specify with e.g. './xxx --junit file.xml'",
+        metavar="file",
+    )
     parser.add_argument("-j", "--multiprocess", help="use parallel processing")
     parser.add_argument(
         "--footprints",
@@ -390,6 +397,8 @@ if __name__ == "__main__":
     if not args.unittest:
         files.sort(key=lambda filename: filename[1], reverse=True)
 
+    junit_suite = junit.JunitTestSuite(name="Symbol KLC Checks", id="klc-sym")
+
     # Create queues for multiprocessing
     task_queue = JoinableQueue()
     out_queue = Queue()
@@ -433,6 +442,9 @@ if __name__ == "__main__":
 
                     job_output[str(results.identifier)] += results.metrics
 
+                    for junit_case in results.test_cases:
+                        junit_suite.add_case(junit_case)
+
                     error_count += results.error_count
                     warning_count += results.warning_count
                 except queue.Empty:
@@ -450,6 +462,15 @@ if __name__ == "__main__":
             for identifier in job_output:
                 for line in job_output[identifier]:
                     metrics_file.write(line + "\n")
+
+    if args.junit:
+        # create the junit xml report
+        if args.verbose:
+            print(f"Creating JUnit report: {args.junit}")
+
+        junit_report = junit.JUnitReport(args.junit)
+        junit_report.add_suite(junit_suite)
+        junit_report.save_report()
 
     out_queue.close()
 

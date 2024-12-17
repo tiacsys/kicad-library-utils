@@ -152,13 +152,11 @@ old_libs = build_library_dict(args.old)
 errors = 0
 design_breaking_changes = 0
 
-junit_reporter = junit.JunitReport()
-
 # create a SymbolCheck instance
 # add footprints dir if possible
 sym_check = check_symbol.SymbolCheck(
     None, args.exclude, Verbosity(2), args.footprint_directory,
-    False if args.nocolor else True, silent=False, junit_report=junit_reporter
+    False if args.nocolor else True, silent=False
 )
 
 # iterate over all new libraries
@@ -308,8 +306,16 @@ for lib_name in old_libs:
 if args.junit:
     # create the junit xml report
     if args.verbose:
-        printer.light_green("Creating JUnit report")
-    junit_reporter.create_report(args.junit)
+        printer.light_green(f"Creating JUnit report: {args.junit}")
+
+    junit_report = junit.JUnitReport(args.junit)
+    junit_suite = junit.JunitTestSuite(name="Symbol KLC Checks", id="klc-sym")
+    junit_report.add_suite(junit_suite)
+
+    for testcase in sym_check.junit_cases:
+        junit_suite.add_case(testcase)
+
+    junit_report.save_report()
 
 # Return the number of errors found ( zero if --check is not set )
 sys.exit(errors + design_breaking_changes)

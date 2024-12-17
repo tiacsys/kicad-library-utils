@@ -49,13 +49,33 @@ for LIBNAME in $LIBS_OLD; do
 done
 
 # now run comparelibs
-$CI_BUILDS_DIR/kicad-library-utils/klc-check/comparelibs.py -v --old $CI_BUILDS_DIR/kicad-symbols-prev/* --new $LIBS_NEW --check --check-derived --footprint_directory $CI_BUILDS_DIR/kicad-footprints -m --junit junit.xml
-SYM_ERROR_CNT=$?
-echo "SymbolErrorCount $SYM_ERROR_CNT" >> metrics.txt
+$CI_BUILDS_DIR/kicad-library-utils/klc-check/comparelibs.py -v \
+  --old $CI_BUILDS_DIR/kicad-symbols-prev/* \
+  --new $LIBS_NEW \
+  --check --check-derived \
+  --footprint_directory $CI_BUILDS_DIR/kicad-footprints \
+  -m \
+  --junit junit.xml
+KLC_ERRORS=$?
 
 # check lib table
-$CI_BUILDS_DIR/kicad-library-utils/klc-check/check_lib_table.py $CI_PROJECT_DIR/*.kicad_sym --table $CI_PROJECT_DIR/sym-lib-table
-TAB_ERROR_CNT=$?
-echo "LibTableErrorCount $TAB_ERROR_CNT" >> metrics.txt
+$CI_BUILDS_DIR/kicad-library-utils/klc-check/check_lib_table.py $CI_PROJECT_DIR/*.kicad_sym \
+    --table $CI_PROJECT_DIR/sym-lib-table \
+    --junit junit.xml
 
-exit $(($SYM_ERROR_CNT + $TAB_ERROR_CNT))
+TABLE_ERRORS=$?
+
+# Table errors are always bad
+if [ $TABLE_ERRORS -ne 0 ]; then
+    exit 1
+fi
+
+if [ $KLC_ERRORS -eq 2 ]; then
+    # Warnings
+    exit 2
+elif [ $KLC_ERRORS -eq 1 ]; then
+    # Errors
+    exit 1
+fi
+
+exit 0

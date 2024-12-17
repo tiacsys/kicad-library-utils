@@ -2,7 +2,7 @@ import inspect
 import json
 import os
 from enum import Enum
-from typing import List, Tuple, Callable
+from typing import List, Optional, Callable
 
 from print_color import PrintColor
 
@@ -107,12 +107,23 @@ class Severity(Enum):
     SUCCESS = 3
 
 
+class KLCRuleLogItem:
+    def __init__(self, severity: Severity, message: str):
+        self.severity = severity
+        self.message = message
+        self.extras = []
+
+    def add_extra(self, extra: str):
+        self.extras.append(extra)
+
+
 class KLCRuleBase:
     """
     A base class to represent a KLC rule
     """
 
     verbosity: Verbosity = Verbosity.NONE
+    logEntries: List[KLCRuleLogItem] = []
 
     @property
     def name(self) -> str:
@@ -137,7 +148,7 @@ class KLCRuleBase:
 
     def __init__(self):
         self.description = self.__doc__.strip().splitlines()[0].strip()
-        self.messageBuffer: List[Tuple[str, Verbosity, Severity]] = []
+        self.logEntries = []
 
         self.resetErrorCount()
         self.resetWarningCount()
@@ -166,27 +177,27 @@ class KLCRuleBase:
     def verboseOut(
         self, msgVerbosity: Verbosity, severity: Severity, message: str
     ) -> None:
-        self.messageBuffer.append((message, msgVerbosity, severity))
+        self.messageBuffer.append((message, msgVerbosity, severity, []))
 
     def warning(self, msg: str) -> None:
         self.warning_count += 1
-        self.verboseOut(Verbosity.NORMAL, Severity.WARNING, msg)
+        self.logEntries.append(KLCRuleLogItem(Severity.WARNING, msg))
 
     def warningExtra(self, msg: str) -> None:
-        self.verboseOut(Verbosity.HIGH, Severity.WARNING, " - " + msg)
+        self.logEntries[-1].add_extra(msg)
 
     def error(self, msg: str) -> None:
         self.error_count += 1
-        self.verboseOut(Verbosity.NORMAL, Severity.ERROR, msg)
+        self.logEntries.append(KLCRuleLogItem(Severity.ERROR, msg))
 
     def errorExtra(self, msg: str) -> None:
-        self.verboseOut(Verbosity.HIGH, Severity.ERROR, " - " + msg)
+        self.logEntries[-1].add_extra(msg)
 
     def info(self, msg: str) -> None:
-        self.verboseOut(Verbosity.NONE, Severity.INFO, "> " + msg)
+        self.logEntries.append(KLCRuleLogItem(Severity.INFO, msg))
 
     def success(self, msg: str) -> None:
-        self.verboseOut(Verbosity.NORMAL, Severity.SUCCESS, msg)
+        self.logEntries.append(KLCRuleLogItem(Severity.SUCCESS, msg))
 
     def check(self, component) -> None:
         raise NotImplementedError("The check method must be implemented")
@@ -207,46 +218,54 @@ class KLCRuleBase:
             self.success("Everything fixed")
 
     def hasOutput(self) -> bool:
-        return len(self.messageBuffer) > 0
+        return len(self.logEntries) > 0
 
     def processOutput(
         self,
         printer: PrintColor,
         verbosity: Verbosity = Verbosity.NONE,
         silent: bool = False,
-        problem_callback_fn: Callable[Severity, str] = None,
+        problem_callback_fn: Optional[Callable[[KLCRuleLogItem], None]] = None,
     ) -> bool:
 
         # No violations
-        if len(self.messageBuffer) == 0:
+        if len(self.logEntries) == 0:
             return False
 
         if verbosity.value > Verbosity.NONE.value:
             printer.light_blue(self.description, indentation=4, max_width=100)
 
-        for message in self.messageBuffer:
-            v = message[1]  # Verbosity
-            s = message[2]  # Severity
-            msg = message[0]
+        for entry in self.logEntries:
+            s = entry.severity  # Severity
+            entry_verbosity = {
+                Severity.INFO: Verbosity.NONE,
+                Severity.WARNING: Verbosity.NORMAL,
+                Severity.ERROR: Verbosity.NORMAL,
+                Severity.SUCCESS: Verbosity.NORMAL,
+            }[s]
 
-            if v.value <= verbosity.value:
+            if entry_verbosity.value <= verbosity.value:
+
+                msg = entry.message
+
+                # Join the message with the extra message
+                if verbosity.value >= Verbosity.HIGH.value:
+                    msg += '\n   -'.join(entry.extras)
+
                 if s == Severity.INFO:
                     printer.gray(msg, indentation=4)
                 elif s == Severity.WARNING:
-                    if problem_callback_fn:
-                        problem_callback_fn(s, msg)
-
                     printer.brown(msg, indentation=4)
                 elif s == Severity.ERROR:
-                    if problem_callback_fn:
-                        problem_callback_fn(s, msg)
-
                     printer.red(msg, indentation=4)
                 elif s == Severity.SUCCESS:
                     printer.green(msg, indentation=4)
                 else:
                     printer.red("unknown severity: " + msg, indentation=4)
 
+            if problem_callback_fn:
+                problem_callback_fn(entry)
+
         # Clear message buffer
-        self.messageBuffer = []
+        self.logEntries = []
         return True

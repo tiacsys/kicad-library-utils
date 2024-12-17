@@ -22,19 +22,20 @@ if common not in sys.path:
     sys.path.insert(0, common)
 
 from lib_table import LibTable
-
-parser = argparse.ArgumentParser(
-    description="Compare a sym-lib-table file against a list of .lib library files"
-)
-parser.add_argument("libs", nargs="+", help=".lib files")
-parser.add_argument("-t", "--table", help="sym-lib-table file", action="store")
-
-args = parser.parse_args()
+import junit
 
 
-def check_entries(lib_table, lib_names):
+def check_entries(lib_table, lib_names, junit_suite: junit.JunitTestSuite):
 
-    errors = 0
+    errors = [0]
+
+    def add_error(case_name, error_msg):
+        print(f"ERROR: {error_msg}")
+        jtestcase = junit.JunitTestCase(name=case_name)
+        jtestcase.add_result(junit.Severity.ERROR, junit.JUnitResult(error_msg))
+        junit_suite.add_case(jtestcase)
+        # List allows mutability of the errors variable
+        errors[0] += 1
 
     # Check for entries that are incorrectly formatted
     for entry in lib_table.entries:
@@ -42,58 +43,74 @@ def check_entries(lib_table, lib_names):
         uri = entry["uri"]
 
         if "\\" in uri:
-            print(
-                "Found '\\' character in entry '{nick}' - Path separators must be '/'".format(
-                    nick=nickname
-                )
-            )
-            errors += 1
+            error_msg = f"Found '\\' character in entry '{nickname}' - Path separators must be '/'"
+            add_error("Path separators", error_msg)
 
         uri_last = ".".join(uri.split("/")[-1].split(".")[:-1])
 
         if not uri_last == nickname:
-            print("Nickname '{n}' does not match path '{p}'".format(n=nickname, p=uri))
-            errors += 1
+            error_msg = f"Nickname '{nickname}' does not match path '{uri}'"
+            add_error("Incorrect nickname", error_msg)
 
     lib_table_names = [entry["name"] for entry in lib_table.entries]
 
     # Check for libraries that are in the lib_table but should not be
     for name in lib_table_names:
         if name not in lib_names:
-            errors += 1
-            print("- Extra library '{l}' found in library table".format(l=name))
+            error_msg = f"Extra library '{name}' found in library table"
+            add_error("Extra library", error_msg)
 
         if lib_table_names.count(name) > 1:
-            errors += 1
-            print("- Library '{l}' is duplicated in table".format(l=name))
+            error_msg = f"Library '{name}' is duplicated in table"
+            add_error("Duplicated library", error_msg)
 
     # Check for libraries that are not in the lib_table but should be
     for name in lib_names:
         if name not in lib_table_names:
-            errors += 1
-            print("- Library '{l}' missing from library table".format(l=name))
+            error_msg = f"Library '{name}' missing from library table"
+            add_error("Missing library", error_msg)
 
     # Incorrect lines in the library table
     for error in lib_table.errors:
-        errors += 1
-        print("- Incorrect line found in library table:")
-        print("  - '{line}'".format(line=error))
+        add_error("Library table bad lines", error)
+        error_msg = f"Incorrect line found in library table:\n\t{error}"
 
-    return errors
+    return errors[0]
 
 
-lib_names = []
+if __name__ == "__main__":
 
-for lib in args.libs:
-    lib_name = ".".join(os.path.basename(lib).split(".")[:-1])
-    lib_names.append(lib_name)
+    parser = argparse.ArgumentParser(
+        description="Compare a sym-lib-table file against a list of .lib library files"
+    )
+    parser.add_argument("libs", nargs="+", help=".lib files")
+    parser.add_argument("-t", "--table", help="sym-lib-table file", action="store")
+    parser.add_argument(
+        "--junit",
+        help="Path to save results in JUnit XML format. Specify with e.g. './xxx --junit file.xml'",
+        metavar="file",
+    )
 
-print("Checking library table - '{table}'".format(table=os.path.basename(args.table)))
+    args = parser.parse_args()
 
-print("Found {n} libraries".format(n=len(lib_names)))
+    lib_names = []
 
-table = LibTable(args.table)
+    for lib in args.libs:
+        lib_name = ".".join(os.path.basename(lib).split(".")[:-1])
+        lib_names.append(lib_name)
 
-errors = check_entries(table, lib_names)
+    print("Checking library table - '{table}'".format(table=os.path.basename(args.table)))
 
-sys.exit(errors)
+    print("Found {n} libraries".format(n=len(lib_names)))
+
+    table = LibTable(args.table)
+    junit_suite = junit.JunitTestSuite(name="Library Table Checks", id='lib-table-fp')
+
+    errors = check_entries(table, lib_names, junit_suite)
+
+    if args.junit:
+        junit_report = junit.JUnitReport(args.junit)
+        junit_report.add_suite(junit_suite)
+        junit_report.save_report()
+
+    sys.exit(errors)

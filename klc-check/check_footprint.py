@@ -6,7 +6,7 @@ import re
 import sys
 import traceback
 from glob import glob
-from typing import List, Tuple
+from typing import Tuple
 
 common = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
@@ -22,7 +22,9 @@ from rules_footprint.rule import KLCRule
 import junit
 
 
-def check_library(filename: str, rules, metrics: List[str], junit_reporter: junit.JunitReport, args) -> Tuple[int, int]:
+def check_library(
+    filename: str, rules, metrics, junit_suite: junit.JunitTestSuite, args
+) -> Tuple[int, int]:
     """
     Returns (error count, warning count)
     """
@@ -51,12 +53,14 @@ def check_library(filename: str, rules, metrics: List[str], junit_reporter: juni
         module.rotateFootprint(int(args.rotate))
         printer.green("rotated footprint by {deg} degrees".format(deg=int(args.rotate)))
 
+    junit_case = junit.JunitTestCase(module.name)
+    junit_suite.add_case(junit_case)
+
     # check which kind of tests we want to run
     if args.unittest:
         (ec, wc) = do_unittest(module, rules, metrics)
     else:
-        (ec, wc) = do_rulecheck(module, rules, metrics, junit_reporter)
-
+        (ec, wc) = do_rulecheck(module, rules, metrics, junit_case)
     # done checking the footpint
     metrics.append("{lib}.errors {n}".format(lib=module.name, n=ec))
     metrics.append("{lib}.warnings {n}".format(lib=module.name, n=wc))
@@ -97,7 +101,7 @@ def do_unittest(footprint, rules, metrics) -> Tuple[int, int]:
     return (error_count, warning_count)
 
 
-def do_rulecheck(module, rules, metrics, junit_reporter: junit.JunitReport) -> Tuple[int, int]:
+def do_rulecheck(module, rules, metrics, junit_case: junit.JunitTestCase) -> Tuple[int, int]:
     ec = 0
     wc = 0
     first = True
@@ -124,8 +128,11 @@ def do_rulecheck(module, rules, metrics, junit_reporter: junit.JunitReport) -> T
 
             printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
 
-            def add_problem_fn(severity, msg):
-                junit_reporter.add_problem(module.name, severity, msg)
+            def add_problem_fn(log_entry):
+                junit_case.add_result(
+                    log_entry.severity,
+                    junit.JUnitResult(log_entry.message, log_entry.extras),
+                )
 
             rule.processOutput(printer, verbosity, args.silent, add_problem_fn)
 
@@ -271,13 +278,18 @@ if not files:
     printer.red("File argument invalid: {f}".format(f=args.kicad_mod_files))
     sys.exit(1)
 
+# Sort the files for consistent output
+files.sort()
+
 # now iterate over all files and check them
 metrics = []
-junit_reporter = junit.JunitReport()
+
+junit_suite = junit.JunitTestSuite(name="Footprint KLC Checks", id="klc-fp")
+
 error_count = 0
 warning_count = 0
 for filename in files:
-    (ec, wc) = check_library(filename, rules, metrics, junit_reporter, args)
+    (ec, wc) = check_library(filename, rules, metrics, junit_suite, args)
     error_count += ec
     warning_count += wc
 
@@ -297,15 +309,18 @@ ret_code = 0  # pass
 
 if error_count:
     # This will fail the pipeline
-    ret_code = -1
+    ret_code = 1
 elif warning_count:
     # This will be an "allowed failure"
-    ret_code = -2
+    ret_code = 2
 
 if args.junit:
     # create the junit xml report
     if args.verbose:
-        printer.light_green("Creating JUnit report")
-    junit_reporter.create_report(args.junit)
+        printer.light_green(f"Creating JUnit report: {args.junit}")
+
+    junit_report = junit.JUnitReport(args.junit)
+    junit_report.add_suite(junit_suite)
+    junit_report.save_report()
 
 sys.exit(ret_code)
