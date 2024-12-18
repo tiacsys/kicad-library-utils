@@ -15,9 +15,9 @@ klc-check:
   stage: test
   needs: []
   when: always
-  allow_failure: true
-    #exit_codes:
-    #  - -2  # KLC checks have warnings
+  allow_failure:
+    exit_codes:
+     - 2  # KLC checks have warnings
   only:
     refs:
       - merge_requests
@@ -25,6 +25,8 @@ klc-check:
       - "**/*.kicad_mod"
       - "fp-lib-table"
   script:
+      # Don't let Gitlab force return code 1 on error
+    - set +e
     - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/check_footprints.sh
   artifacts:
     reports:
