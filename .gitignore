@@ -1,6 +1,9 @@
 *.swp
 *.pyc
-metrics.txt
 *.bak
 symbol-generators/**/*kicad_sym
 .vscode
+
+# CI output files
+metrics.txt
+junit*.xml

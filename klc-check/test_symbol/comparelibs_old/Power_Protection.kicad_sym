@@ -21467,18 +21467,6 @@
 			)
 			(polyline
 				(pts
-					(xy -0.508 -0.635) (xy -0.508 -0.635)
-				)
-				(stroke
-					(width 0)
-					(type default)
-				)
-				(fill
-					(type none)
-				)
-			)
-			(polyline
-				(pts
 					(xy 1.651 -1.016) (xy 1.651 -2.286)
 				)
 				(stroke
