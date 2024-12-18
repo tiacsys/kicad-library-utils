@@ -1,5 +1,5 @@
 from xml.etree import ElementTree as ET
-from typing import TypeAlias
+from typing import List
 import os
 import sys
 
@@ -13,8 +13,6 @@ if common not in sys.path:
     sys.path.insert(0, common)
 
 from rulebase import Severity
-
-ComponentName: TypeAlias = str
 
 SeverityToStr = {
     Severity.ERROR: "Errors",
@@ -31,9 +29,14 @@ class JUnitResult:
 
 class JunitTestCase:
 
-    def __init__(self, name: ComponentName):
+    name: str
+    description: str
+    results: dict[Severity, List[JUnitResult]]
+
+    def __init__(self, name: str, description: str = ""):
         self.name = name
-        self.results: dict[Severity, JUnitResult] = {}
+        self.description = description
+        self.results = {}
 
     def add_result(self, severity: Severity, result: JUnitResult):
 
@@ -49,7 +52,7 @@ class JunitTestSuite:
     """
 
     name: str
-    cases: dict[ComponentName, JunitTestCase]
+    cases: List[JunitTestCase]
 
     def __init__(self, name, id=None):
         self.name = name
@@ -115,6 +118,8 @@ class JUnitReport:
                             "type": SeverityToStr[severity],
                         })
 
+                        failure_type = "FAILURE" if severity == Severity.ERROR else "WARNING"
+
                         # we remove duplicates, while preserving the order of the list,
                         # because on footprints, there can be many:
                         # Some THT pads have incorrect layer settings
@@ -125,10 +130,15 @@ class JUnitReport:
 
                         for result in unique_results:
                             failures += 1
-                            full_msg = result.message + "\n" + "\n    ".join(result.extras)
+                            full_msg = (
+                                result.message
+                                + "\n    "
+                                + "\n    ".join(result.extras)
+                            )
 
                             ET.SubElement(testcase_et, "failure", {
                                 "message": result.message,
+                                "type": failure_type,
                             }).text = full_msg
 
             suite_et.set("tests", str(tests))
@@ -140,3 +150,26 @@ class JUnitReport:
 
     def add_suite(self, suite: JunitTestSuite):
         self.suites.append(suite)
+
+
+def add_klc_rule_results(test_case: JunitTestCase, rule):
+    """
+    Transforms the log entries of a KLC rule into JUnit test results.
+
+    One result per severity per rule.
+    """
+
+    sev_msgs = {}
+
+    for log_entry in rule.logEntries:
+        severity = log_entry.severity
+
+        if severity not in sev_msgs:
+            sev_msgs[severity] = [rule.url]
+
+        sev_msgs[severity].append(log_entry.message)
+        sev_msgs[severity] += ["   - " + m for m in log_entry.extras]
+
+    for severity, msgs in sev_msgs.items():
+        result_msg = rule.name + ": " + rule.description
+        test_case.add_result(severity, JUnitResult(result_msg, msgs))

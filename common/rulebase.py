@@ -2,7 +2,7 @@ import inspect
 import json
 import os
 from enum import Enum
-from typing import List, Optional, Callable
+from typing import List
 
 from print_color import PrintColor
 
@@ -220,12 +220,10 @@ class KLCRuleBase:
     def hasOutput(self) -> bool:
         return len(self.logEntries) > 0
 
-    def processOutput(
+    def printOutput(
         self,
         printer: PrintColor,
         verbosity: Verbosity = Verbosity.NONE,
-        silent: bool = False,
-        problem_callback_fn: Optional[Callable[[KLCRuleLogItem], None]] = None,
     ) -> bool:
 
         # No violations
@@ -250,7 +248,7 @@ class KLCRuleBase:
 
                 # Join the message with the extra message
                 if verbosity.value >= Verbosity.HIGH.value:
-                    msg += '\n   -'.join(entry.extras)
+                    msg += '\n      -'.join(entry.extras)
 
                 if s == Severity.INFO:
                     printer.gray(msg, indentation=4)
@@ -262,9 +260,6 @@ class KLCRuleBase:
                     printer.green(msg, indentation=4)
                 else:
                     printer.red("unknown severity: " + msg, indentation=4)
-
-            if problem_callback_fn:
-                problem_callback_fn(entry)
 
         # Clear message buffer
         self.logEntries = []

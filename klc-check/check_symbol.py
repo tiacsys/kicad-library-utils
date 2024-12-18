@@ -99,7 +99,7 @@ class SymbolCheck:
         symbol_warning_count = 0
         first = True
 
-        junit_case = junit.JunitTestCase(f'{symbol.libname}:{symbol.name}')
+        junit_case = junit.JunitTestCase(name=f"{symbol.libname}:{symbol.name}")
         self.junit_cases.append(junit_case)
 
         for rule in self.rules:
@@ -126,13 +126,8 @@ class SymbolCheck:
                     "Violating " + rule.name + " - " + rule.url, indentation=2
                 )
 
-                def add_problem_fn(log_entry):
-                    junit_case.add_result(
-                        log_entry.severity,
-                        junit.JUnitResult(log_entry.message, log_entry.extras),
-                    )
-
-                rule.processOutput(self.printer, self.verbosity, self.silent, add_problem_fn)
+                junit.add_klc_rule_results(junit_case, rule)
+                rule.printOutput(self.printer, self.verbosity)
 
             if rule.hasErrors():
                 if self.log:

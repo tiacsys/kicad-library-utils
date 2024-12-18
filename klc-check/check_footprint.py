@@ -128,13 +128,8 @@ def do_rulecheck(module, rules, metrics, junit_case: junit.JunitTestCase) -> Tup
 
             printer.yellow("Violating " + rule.name + " - " + rule.url, indentation=2)
 
-            def add_problem_fn(log_entry):
-                junit_case.add_result(
-                    log_entry.severity,
-                    junit.JUnitResult(log_entry.message, log_entry.extras),
-                )
-
-            rule.processOutput(printer, verbosity, args.silent, add_problem_fn)
+            junit.add_klc_rule_results(junit_case, rule)
+            rule.printOutput(printer, verbosity)
 
         if rule.hasErrors():
             if args.log:
@@ -147,7 +142,7 @@ def do_rulecheck(module, rules, metrics, junit_case: junit.JunitTestCase) -> Tup
                 if args.fixmore and rule.needsFixMore:
                     rule.fixmore()
                 rule.fix()
-                rule.processOutput(printer, verbosity, args.silent)
+                rule.printOutput(printer, verbosity, args.silent)
                 rule.recheck()
 
     # No messages?
