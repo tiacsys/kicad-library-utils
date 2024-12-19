@@ -75,7 +75,7 @@ def html_stacktrace(fun):
         try:
             return fun(*args, **kwargs)
         except Exception as e:
-            warnings.warn(f'Error formatting diff')  # NOQA: F541
+            warnings.warn(f'Error formatting diff: {e}')  # NOQA: F541
             return string.Template(ERROR_TEMPLATE).substitute(
                 error=''.join(traceback.format_exception(e)))
     return wrapper
@@ -137,40 +137,156 @@ def build_symlib_index(libfile):
 
 def render_symbol_kicad_cli(libfile, symname, outdir):
     outdir.mkdir(parents=True, exist_ok=True)
-    svg_glob = lambda: list(outdir.glob(f'{symname.lower()}*.svg'))  # NOQA: E731
-
-    # Remove conflicting old files in case a unit was deleted
-    for old_file in svg_glob():
-        old_file.unlink()
 
     kicad_cli = os.environ.get('KICAD_CLI', 'kicad-cli')
     try:
-        subprocess.run([kicad_cli, 'sym', 'export', 'svg',
-                        '-s', symname,
-                        '-o', str(outdir), str(libfile)],
-                       check=True, stdout=sys.stdout, stderr=sys.stderr)
+        cmd = [kicad_cli, 'sym', 'export', 'svg']
+
+        if symname:
+            cmd.extend(['-s', symname])
+
+        cmd.extend(['-o', str(outdir), str(libfile)])
+
+        subprocess.run(cmd, check=True, stdout=sys.stdout, stderr=sys.stderr)
     except FileNotFoundError:
         warnings.warn('Cannot find kicad-cli, no reference screenshots will be exported.')
-        return {}
-
-    new_files = svg_glob()
-    if len(new_files) == 1:  # only one unit
-        return {1: new_files[0]}
-    else:
-        return {int(fn.stem.rpartition('_')[2]): fn for fn in new_files}
 
 
-def render_footprint_kicad_cli(libdir, fpname, outfile):
+def render_footprint_kicad_cli(libdir: Path, fpname: str | None, outfile: Path):
+    """
+    Render a library (or a single footprint) using kicad-cli.
+    """
     outfile.parent.mkdir(parents=True, exist_ok=True)
 
     kicad_cli = os.environ.get('KICAD_CLI', 'kicad-cli')
     try:
-        subprocess.run([kicad_cli, 'fp', 'export', 'svg',
-                        '--footprint', fpname,
-                        '-o', str(outfile), str(libdir)],
-                       check=True, stdout=sys.stdout, stderr=sys.stderr)
+        cmd = [kicad_cli, 'fp', 'export', 'svg']
+
+        if fpname:
+            cmd.extend(['-f', fpname])
+
+        cmd.extend(['-o', str(outfile), str(libdir)])
+
+        subprocess.run(cmd, check=True, stdout=sys.stdout, stderr=sys.stderr)
     except FileNotFoundError:
         warnings.warn('Cannot find kicad-cli, no reference screenshots will be exported.')
+
+
+class BatchRenderLibrary:
+    """
+    Render a library of parts (symbols or footprints) using kicad-cli.
+
+    This class is used to render a batch of parts from a library at once.
+    This is radically faster than rendering each part individually in a
+    separate kicad-cli invocation.
+    """
+
+    def __init__(self, libdir, outdir: Path):
+        self.stems = set()
+        self.libdir = libdir
+        self.outdir = outdir
+
+    def add_stem(self, stem: str):
+        self.stems.add(stem)
+
+    def get_files_for_stem(self, stem) -> list[Path]:
+        """
+        Get all existing files for a given stem, in order as suitable
+        (e.g. by unit for symbols).
+        """
+        raise NotImplementedError()
+
+    def _clear_unwanted(self):
+
+        # Can't be anything to delete if the output directory doesn't exist
+        if not self.outdir.is_dir():
+            return
+
+        # find all SVG files in the output directory
+        # that we didn't ask for and delete them
+        wanted_files = set()
+
+        for stem in self.stems:
+            for file in self.get_files_for_stem(stem):
+                wanted_files.add(file)
+
+        for f in self.outdir.iterdir():
+            if f.suffix == '.svg':
+                if f not in wanted_files:
+                    f.unlink()
+
+
+class BatchRenderFootprints(BatchRenderLibrary):
+
+    def render(self):
+
+        fp: str | None = None
+
+        # if there's only one footprint, we can render it directly
+        if len(self.stems) == 1:
+            fp = min(self.stems)
+
+        render_footprint_kicad_cli(self.libdir, fp, self.outdir)
+
+        self._clear_unwanted()
+
+    def get_files_for_stem(self, stem):
+        # Very simple: name and extension
+        # no useful unit for FPs
+
+        if self.outdir.is_dir():
+            fn = self.outdir / f'{stem}.svg'
+            if fn.is_file():
+                return [fn]
+
+        return []
+
+
+class BatchRenderSymbols(BatchRenderLibrary):
+
+    def render(self):
+
+        # First, clear the output directory of any matching files
+        # in case we deleted a unit
+
+        for symname in self.stems:
+            for file in self.get_files_for_stem(symname):
+                file.unlink()
+
+        sym: str | None = None
+
+        # if there's only one symbol, we can render it directly
+        if len(self.stems) == 1:
+            sym = min(self.stems)
+
+        render_symbol_kicad_cli(self.libdir, sym, self.outdir)
+
+        self._clear_unwanted()
+
+    def get_files_for_stem(self, stem):
+        # Why lower(), IDK but it's a kicad-cli thing
+        stem = stem.lower()
+
+        if not self.outdir.is_dir():
+            return []
+
+        if os.path.isfile(self.outdir / f'{stem}.svg'):
+            return [self.outdir / f'{stem}.svg']
+
+        # A little sus in pathological cases, in 8.0 but it applies to
+        # only a small number of symbols (e.g. HDSP-4830)
+        # https://gitlab.com/kicad/code/kicad/-/issues/18929
+        regex = re.compile(f'{re.escape(stem)}(?:_unit|_)?([0-9]+).svg')
+
+        files = []
+        for file in self.outdir.iterdir():
+            if match := regex.match(file.name):
+                files.append((int(match.group(1)), file))
+
+        # Sort by the number in the filename
+        files.sort(key=lambda x: x[0])
+        # Return just the files
+        return [file for _, file in files]
 
 
 class HTMLDiff:
@@ -376,7 +492,10 @@ class HTMLDiff:
             new_svg=js_str_list([new_svg_text]),
             reference_svg=js_str_list([ref_svg]))
 
-    def pretty_diff(self, old, new):
+    def _get_ref_fn(self, new_file):
+        return self.screenshot_dir / new_file.parent.name / f'{new_file.stem}.kicad_mod.svg'
+
+    def pretty_diff(self, old, new: Path):
         self.diff_index = []
         files = []
         meta['lib_name'] = new.stem
@@ -401,6 +520,18 @@ class HTMLDiff:
             self.diff_index.append((diff_name(new_file), created, changed))
             files.append(new_file)
 
+        # Render reference SVGs all at once
+        # This is a lot faster than rendering them one by one, even if we end up over-rendering
+        renderer = BatchRenderFootprints(new, self.screenshot_dir / new.name)
+
+        for new_file in files:
+            renderer.add_stem(new_file.stem)
+
+        try:
+            renderer.render()
+        except Exception as e:
+            warnings.warn(f'Error exporting reference render using kicad-cli: {e}')
+
         for i, new_file in enumerate(files):
             meta['prev_diff'] = str(diff_name(files[(i-1) % len(files)]).name)
             meta['next_diff'] = str(diff_name(files[(i+1) % len(files)]).name)
@@ -412,17 +543,13 @@ class HTMLDiff:
             old_text = old_file.read_text() if old_file.is_file() else ''
             new_text = new_file.read_text()
 
-            ref_fn = self.screenshot_dir / new_file.parent.name / f'{new_file.stem}.kicad_mod.svg'
+            ref_fn = self._get_ref_fn(new_file)
             ref_svg = ''
             if ref_fn.is_file():
                 ref_svg = ref_fn.read_text()
             else:
-                try:
-                    render_footprint_kicad_cli(new_file.parent, new_file.stem, ref_fn.parent)
-                    ref_fn = ref_fn.with_name(f'{new_file.stem}.svg')
-                    ref_svg = ref_fn.read_text()
-                except Exception as e:
-                    warnings.warn(f'Error exporting reference render using kicad-cli: {e}')
+                ref_fn = ref_fn.with_name(f'{new_file.stem}.svg')
+                ref_svg = ref_fn.read_text()
 
             diff_name(new_file).write_text(self.mod_diff(old_text, new_text, ref_svg))
 
@@ -455,6 +582,16 @@ class HTMLDiff:
             self.diff_index.append((out_file, created, changed))
             files.append((name, out_file, start, end, old_name, old_start, old_end))
 
+        # Render reference SVGs all at once
+        batch_renderer = BatchRenderSymbols(new, self.screenshot_dir / new.name)
+        for name, _, _, _, _, _, _ in files:
+            batch_renderer.add_stem(name)
+
+        try:
+            batch_renderer.render()
+        except Exception as e:
+            warnings.warn(f'Error exporting reference render using kicad-cli: {e}')
+
         for i, (name, out_file, start, end, old_name, old_start, old_end) in enumerate(files):
             meta['prev_diff'] = files[(i-1) % len(files)][0] + '.html'
             meta['next_diff'] = files[(i+1) % len(files)][0] + '.html'
@@ -468,15 +605,8 @@ class HTMLDiff:
             old_sym = temporary_symbol_library(old_lines[old_start:old_end])
             new_sym = temporary_symbol_library(new_lines[start:end])
 
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmpdir = Path(tmpdir)
-                out = self.screenshot_dir / new.name if self.screenshot_dir else tmpdir
-
-                screenshots_new = render_symbol_kicad_cli(new, name, out)
-                screenshots_new_sorted = [v.read_text()
-                                          for k, v in sorted(
-                                              screenshots_new.items(),
-                                              key=lambda x: x[0])]
+            screenshots_new = batch_renderer.get_files_for_stem(name)
+            screenshots_content = [f.read_text() for f in screenshots_new]
 
             if old_lines[old_start:old_end]:
                 svgs_old = [str(x) for x in render_sym.render_sym(old_sym, old_name,
@@ -495,7 +625,7 @@ class HTMLDiff:
                 code_diff=sexpr_diff,
                 old_svg=js_str_list(svgs_old),
                 new_svg=js_str_list(svgs_new),
-                reference_svg=js_str_list(screenshots_new_sorted)))
+                reference_svg=js_str_list(screenshots_content)))
 
 
 if __name__ == '__main__':
