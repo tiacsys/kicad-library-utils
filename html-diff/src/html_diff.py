@@ -13,6 +13,8 @@ import subprocess
 from pathlib import Path
 import fnmatch
 from typing import Optional
+import multiprocessing
+import logging
 
 
 from pygments.lexer import RegexLexer
@@ -75,7 +77,7 @@ def html_stacktrace(fun):
         try:
             return fun(*args, **kwargs)
         except Exception as e:
-            warnings.warn(f'Error formatting diff: {e}')  # NOQA: F541
+            warnings.warn(f'Error formatting diff: {traceback.format_exception(e)}')
             return string.Template(ERROR_TEMPLATE).substitute(
                 error=''.join(traceback.format_exception(e)))
     return wrapper
@@ -298,6 +300,7 @@ class HTMLDiff:
     screenshot_dir: Path
     # If present, the directory where the diff old/new files are written to
     diff_svg_output_dir: Optional[Path]
+    max_workers: int
 
     def __init__(
         self,
@@ -314,6 +317,7 @@ class HTMLDiff:
         self.changes_only = changes_only
         self.name_map = {}
         self.diff_index = []
+        self.max_workers = 1
 
         if screenshot_dir is None:
             tmp = self.screenshot_tmpdir = tempfile.TemporaryDirectory()
@@ -421,7 +425,7 @@ class HTMLDiff:
 
             html_file_path = self.output / new.with_suffix('.html').name
             html_file_path.write_text(
-                self.mod_diff(old_text, new_text, ref_svg))
+                self.mod_diff(self.meta, old_text, new_text, ref_svg))
 
         elif new.suffix == '.pretty':
             if ':' in old.suffix or ':' in new.suffix:
@@ -436,21 +440,22 @@ class HTMLDiff:
         else:
             raise ValueError('Unhandled input type {new.suffix}. Supported formats are .kicad_sym, .kicad_mod and .pretty.')  # NOQA: E501
 
-    def format_index(self):
-        for filename, created, changed in self.diff_index:
+    @staticmethod
+    def format_index(diff_index, file_meta):
+        for filename, created, changed in diff_index:
             if created:
                 css_class = 'created'
             elif changed:
                 css_class = 'changed'
             else:
                 css_class = 'unchanged'
-            self_class = ' index-self' if filename.stem == self.meta['part_name'] else ''
+            self_class = ' index-self' if filename.stem == file_meta['part_name'] else ''
             yield f'<div class="{css_class}{self_class}"><a href="{filename.name}">{filename.stem}</a></div>'  # NOQA: E501
 
-    def _format_html_diff(self, enable_layers, hide_text_in_diff, **kwargs):
+    def _format_html_diff(self, file_meta, enable_layers, hide_text_in_diff, **kwargs):
         return j2env.get_template('diff.html').render(
-            page_title = f'diff: {self.meta["part_name"]} in {self.meta["lib_name"]}',
-            part_name = self.meta["part_name"],
+            page_title = f'diff: {file_meta["part_name"]} in {file_meta["lib_name"]}',
+            part_name = file_meta["part_name"],
             source_revisions = self.source_revisions,
             enable_layers = 'true' if enable_layers else 'false',
             hide_text_in_diff = 'true' if hide_text_in_diff else 'false',
@@ -458,30 +463,32 @@ class HTMLDiff:
             code_diff_css=wsdiff.MAIN_CSS,
             diff_syntax_css=wsdiff.PYGMENTS_CSS,
 
-            prev_button = button('<', meta.get('prev_diff'), _id='nav-bt-prev'),
-            next_button = button('>', meta.get('next_diff'), _id='nav-bt-next'),
-            diff_index = '\n'.join(self.format_index()),
+            prev_button = button('<', file_meta.get('prev_diff'), _id='nav-bt-prev'),
+            next_button = button('>', file_meta.get('next_diff'), _id='nav-bt-next'),
+            diff_index = '\n'.join(self.format_index(self.diff_index, file_meta)),
 
             pipeline_button = button_if('Pipeline', os.environ.get('CI_PIPELINE_URL')),
             old_file_button = button_if('Old File', self.old_url),
             new_file_button = button_if('New File', self.new_url),
             merge_request_button = button_if('Merge Request', self.mr_url),
-            **kwargs)
+            **kwargs
+        )
 
     @html_stacktrace
-    def mod_diff(self, old_text, new_text, ref_svg):
+    def mod_diff(self, meta, old_text, new_text, ref_svg):
 
         old_svg_text = render_fp.render_mod(old_text)
         new_svg_text = render_fp.render_mod(new_text)
 
         # Write the SVGs to disk for debugging or use in other tools
         if self.diff_svg_output_dir is not None:
-            old_svg_path = self.diff_svg_output_dir / f'{self.meta["part_name"]}.old.svg'
-            new_svg_path = self.diff_svg_output_dir / f'{self.meta["part_name"]}.new.svg'
+            old_svg_path = self.diff_svg_output_dir / f'{meta["part_name"]}.old.svg'
+            new_svg_path = self.diff_svg_output_dir / f'{meta["part_name"]}.new.svg'
             old_svg_path.write_text(old_svg_text)
             new_svg_path.write_text(new_svg_text)
 
         return self._format_html_diff(
+            file_meta=meta,
             enable_layers=True,
             canvas_background='#001023',
             hide_text_in_diff=True,
@@ -532,26 +539,46 @@ class HTMLDiff:
         except Exception as e:
             warnings.warn(f'Error exporting reference render using kicad-cli: {e}')
 
-        for i, new_file in enumerate(files):
-            meta['prev_diff'] = str(diff_name(files[(i-1) % len(files)]).name)
-            meta['next_diff'] = str(diff_name(files[(i+1) % len(files)]).name)
-            meta['diff_index'] = 'index.html'
-            meta['part_name'] = new_file.stem
-            meta['old_path'] = new_file
-            meta['new_path'] = new_file
-            old_file = old / new_file.name
-            old_text = old_file.read_text() if old_file.is_file() else ''
-            new_text = new_file.read_text()
+        with multiprocessing.Pool(processes=self.max_workers) as pool:
 
-            ref_fn = self._get_ref_fn(new_file)
-            ref_svg = ''
-            if ref_fn.is_file():
-                ref_svg = ref_fn.read_text()
-            else:
-                ref_fn = ref_fn.with_name(f'{new_file.stem}.svg')
-                ref_svg = ref_fn.read_text()
+            args = []
 
-            diff_name(new_file).write_text(self.mod_diff(old_text, new_text, ref_svg))
+            for i, new_file in enumerate(files):
+                next_file = str(diff_name(files[(i-1) % len(files)]).name)
+                prev_file = str(diff_name(files[(i+1) % len(files)]).name)
+                out_file = diff_name(new_file)
+                args.append((old, i, new_file, next_file, prev_file, out_file))
+            try:
+                pool.starmap(self._process_one_mod, args)
+            except KeyboardInterrupt:
+                pool.terminate()
+                pool.join()
+            except Exception as e:
+                warnings.warn(f'Error processing footprints: {e}')
+
+    def _process_one_mod(self, old, i, new_file, next_file, prev_file, out_file):
+        file_meta = meta.copy()
+
+        file_meta['prev_diff'] = prev_file
+        file_meta['next_diff'] = next_file
+        file_meta['diff_index'] = 'index.html'
+        file_meta['part_name'] = new_file.stem
+        file_meta['old_path'] = new_file
+        file_meta['new_path'] = new_file
+        old_file = old / new_file.name
+        old_text = old_file.read_text() if old_file.is_file() else ''
+        new_text = new_file.read_text()
+
+        ref_fn = self._get_ref_fn(new_file)
+        ref_svg = ''
+        if ref_fn.is_file():
+            ref_svg = ref_fn.read_text()
+        else:
+            ref_fn = ref_fn.with_name(f'{new_file.stem}.svg')
+            ref_svg = ref_fn.read_text()
+
+        diff_text = self.mod_diff(file_meta, old_text, new_text, ref_svg)
+        out_file.write_text(diff_text)
 
     def symlib_diff(self, old, new):
         if self.output is None:
@@ -592,40 +619,68 @@ class HTMLDiff:
         except Exception as e:
             warnings.warn(f'Error exporting reference render using kicad-cli: {e}')
 
-        for i, (name, out_file, start, end, old_name, old_start, old_end) in enumerate(files):
-            meta['prev_diff'] = files[(i-1) % len(files)][0] + '.html'
-            meta['next_diff'] = files[(i+1) % len(files)][0] + '.html'
-            meta['diff_index'] = 'index.html'
-            meta['part_name'] = name
-            meta['old_path'] = old
-            meta['new_path'] = new
-            meta['old_line_range'] = (old_start, old_end)
-            meta['new_line_range'] = (start, end)
+        with multiprocessing.Pool(processes=self.max_workers) as pool:
 
-            old_sym = temporary_symbol_library(old_lines[old_start:old_end])
-            new_sym = temporary_symbol_library(new_lines[start:end])
+            args = []
+            for i, (name, out_file, start, end, old_name, old_start, old_end) in enumerate(files):
+                unit_files = batch_renderer.get_files_for_stem(name)
 
-            screenshots_new = batch_renderer.get_files_for_stem(name)
-            screenshots_content = [f.read_text() for f in screenshots_new]
+                next_file = files[(i-1) % len(files)][1].name
+                prev_file = files[(i+1) % len(files)][1].name
 
-            if old_lines[old_start:old_end]:
-                svgs_old = [str(x) for x in render_sym.render_sym(old_sym, old_name,
-                                                                  default_style=False)]
-            else:
-                svgs_old = []
-            svgs_new = [str(x) for x in render_sym.render_sym(new_sym, name, default_style=False)]
+                args.append((name, out_file, old, new, old_name,  unit_files,
+                            new_lines, start, end,
+                            old_lines, old_start, old_end,
+                            next_file, prev_file))
+            try:
+                pool.starmap(self._process_one_sym, args)
+            except KeyboardInterrupt:
+                pool.terminate()
+                pool.join()
 
-            sexpr_diff = wsdiff.html_diff_block(old_sym, new_sym, filename='', lexer=SexprLexer())
+    def _process_one_sym(self, name, out_file, old, new, old_name, unit_files,
+                         new_lines, start, end, old_lines, old_start, old_end,
+                         next_file, prev_file):  # fmt: skip
+        file_meta = meta.copy()
 
-            out_file.write_text(self._format_html_diff(
+        file_meta['prev_diff'] = prev_file + '.html'
+        file_meta['next_diff'] = next_file + '.html'
+        file_meta['diff_index'] = 'index.html'
+        file_meta['part_name'] = name
+        file_meta['old_path'] = old
+        file_meta['new_path'] = new
+        file_meta['old_line_range'] = (old_start, old_end)
+        file_meta['new_line_range'] = (start, end)
+
+        old_sym = temporary_symbol_library(old_lines[old_start:old_end])
+        new_sym = temporary_symbol_library(new_lines[start:end])
+
+        screenshots_content = [f.read_text() for f in unit_files]
+
+        if old_lines[old_start:old_end]:
+            svgs_old = [
+                str(x)
+                for x in render_sym.render_sym(old_sym, old_name, default_style=False)
+            ]
+        else:
+            svgs_old = []
+        svgs_new = [str(x) for x in render_sym.render_sym(new_sym, name, default_style=False)]
+
+        sexpr_diff = wsdiff.html_diff_block(old_sym, new_sym, filename='', lexer=SexprLexer())
+
+        out_file.write_text(
+            self._format_html_diff(
+                file_meta=file_meta,
                 enable_layers=False,
-                canvas_background='#e0e0e0',
+                canvas_background="#e0e0e0",
                 hide_text_in_diff=False,
                 properties_table=print_sym_properties.format_properties(new_sym, name),
                 code_diff=sexpr_diff,
                 old_svg=js_str_list(svgs_old),
                 new_svg=js_str_list(svgs_new),
-                reference_svg=js_str_list(screenshots_content)))
+                reference_svg=js_str_list(screenshots_content),
+            )
+        )
 
 
 if __name__ == '__main__':
@@ -645,6 +700,11 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--screenshot-dir', type=Path, help='Read (footprints) or write (symbols) screenshots generated with kicad-cli to given directory instead of re-generating them on the fly.')  # NOQA: E501
     parser.add_argument('-S', '--diff-svg-output-dir', type=Path,
                         help='Write the diff A/B files to the given directory instead of a temporary directory.')  # NOQA: E501
+    parser.add_argument('-j', '--jobs', type=int, default=1,
+                        help="Number of parallel jobs to run when rendering symbols or footprints. Default is 1, "
+                        "0 is use all available cores.")
+    parser.add_argument('-v', '--verbose', action='count', default=0,
+                        help='Increase verbosity. Can be given multiple times.')
     parser.add_argument('-o', '--output', type=Path, help='Where to output the diff. Must be a directory for symbol/footprint library comparisons, and must be a file for individual symbol or footprint comparisons.')  # NOQA: E501
     args = parser.parse_args()
 
@@ -653,14 +713,22 @@ if __name__ == '__main__':
 
     meta = {}
 
+    if args.verbose == 1:
+        logging.basicConfig(level=logging.INFO)
+    elif args.verbose > 1:
+        logging.basicConfig(level=logging.DEBUG)
+
     if not (path.is_file() or path.is_dir()):
-        print(f'Path "{path}" does not exist or is not a file.', file=sys.stderr)
+        logging.error(f'Path "{path}" does not exist or is not a file.', file=sys.stderr)
         sys.exit(2)
+
+    workers = args.jobs if args.jobs > 0 else multiprocessing.cpu_count()
+    logging.info(f'Running with {workers} parallel jobs')
 
     try:
         if base.exists():
             if not path.exists():
-                print(f'File "{path}" does not exist.', file=sys.stderr)
+                logging.error(f'File "{path}" does not exist.', file=sys.stderr)
                 sys.exit(2)
 
             meta['old_git'] = None
@@ -671,12 +739,13 @@ if __name__ == '__main__':
                                  changes_only=(not args.unchanged),
                                  screenshot_dir=args.screenshot_dir,
                                  diff_svg_output_dir=args.diff_svg_output_dir)
+            html_diff.max_workers = workers
             html_diff.diff(base, path)
 
         else:
             if base.suffix.lower() in ('.kicad_mod', '.kicad_sym') and ':' not in args.base:
                 # This does not look like either "[git_revision]" or "[git_revision]:[path]"
-                print(f'File "{base}" does not exist.', file=sys.stderr)
+                logging.error(f'File "{base}" does not exist.', file=sys.stderr)
                 sys.exit(2)
 
             base_rev, _, rest = args.base.partition(':')
@@ -702,7 +771,7 @@ if __name__ == '__main__':
                 meta['new_path'] = str(path.absolute().relative_to(tl))
 
             except subprocess.CalledProcessError as e:
-                print(f'Error parsing git revision "{base_rev}": rc={e.returncode}\n{e.stderr.strip()}', file=sys.stderr)  # NOQA: E501
+                logging.error(f'Error parsing git revision "{base_rev}": rc={e.returncode}\n{e.stderr.strip()}', file=sys.stderr)  # NOQA: E501
                 sys.exit(1)
 
             with tempfile.TemporaryDirectory(suffix=path.suffix) as tmpd:
@@ -725,7 +794,7 @@ if __name__ == '__main__':
                                            text=True,
                                            cwd=path.parent)
                 except subprocess.CalledProcessError as e:
-                    print(f'Error checking out file "{base_file}" from git revision "{base_rev}": rc={e.returncode}\n{e.stderr.strip()}', file=sys.stderr)  # NOQA: E501
+                    logging.error(f'Error checking out file "{base_file}" from git revision "{base_rev}": rc={e.returncode}\n{e.stderr.strip()}', file=sys.stderr)  # NOQA: E501
                     sys.exit(1)
 
                 base = tmpd if path.is_dir() else tmpd / base_file.name
@@ -734,6 +803,7 @@ if __name__ == '__main__':
                                      changes_only=(not args.unchanged),
                                      screenshot_dir=args.screenshot_dir,
                                      diff_svg_output_dir=args.diff_svg_output_dir)
+                html_diff.max_workers = workers
                 html_diff.diff(base, path)
 
     except ValueError as e:
