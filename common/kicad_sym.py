@@ -1136,9 +1136,8 @@ class KicadLibrary(KicadSymbolBase):
     version: str = "20231120"
 
     def write(self) -> None:
-        lib_file = open(self.filename, "w")
-        lib_file.write(self.get_sexpr() + '\n')
-        lib_file.close()
+        with open(self.filename, "w", encoding="utf-8") as lib_file:
+            lib_file.write(self.get_sexpr() + '\n')
 
     def get_sexpr(self) -> str:
         sx = [
