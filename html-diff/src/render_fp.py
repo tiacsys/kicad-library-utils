@@ -147,8 +147,12 @@ def render_arc(arc, **style):
     x2, y2 = arc['mid']['x'], arc['mid']['y']
     x3, y3 = arc['end']['x'], arc['end']['y']
 
-    c, r, collinear, large_arc = define_arc((x1, y1), (x2, y2), (x3, y3), False)
+    c, r, collinear, large_arc, is_circle = define_arc((x1, y1), (x2, y2), (x3, y3), False)
 
+    if is_circle:
+        elem_bbox = bbox((c[0] - r, c[1] - r), (c[0] + r, c[1] + r))
+        yield elem_bbox, Tag("circle", **style, cx=c[0], cy=c[1], r=r)
+        return
     if collinear:
         # The points are collinear, so we just draw a line
         elem_bbox = bbox((x1, y1), (x2, y2))

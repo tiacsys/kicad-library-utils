@@ -49,8 +49,18 @@ def define_arc(p1, p2, p3, y_axis_up=False):
     x2, y2 = p2
     x3, y3 = p3
 
+    # If the end points are the same, the circle is at the midpoint
+    if distance_between(p1, p3) < 1.0e-6:
+        cx = (x1 + x2) / 2
+        cy = (y1 + y2) / 2
+        r = distance_between((cx, cy), (x1, y1))
+        return (cx, cy), r, False, False, True
+
     # Compute temporary values to help with calculations
     denom = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+
+    if math.isclose(denom, 0):
+        return (x1, y1), 0, True, False, False
 
     # Compute intermediate values
     cx = ((x1**2 + y1**2) * (y2 - y3) +
@@ -69,7 +79,7 @@ def define_arc(p1, p2, p3, y_axis_up=False):
     cross_product_ends_c = (x3 - cx) * (y1 - cy) - (y3 - cy) * (x1 - cx)
     large_arc = (cross_product_ends_c > 0) ^ y_axis_up
 
-    return (cx, cy), r, collinear, large_arc
+    return (cx, cy), r, collinear, large_arc, False
 
 
 def bbox(*args):
