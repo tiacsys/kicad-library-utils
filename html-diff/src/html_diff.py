@@ -165,7 +165,7 @@ def render_footprint_kicad_cli(libdir: Path, fpname: str | None, outfile: Path):
         cmd = [kicad_cli, 'fp', 'export', 'svg']
 
         if fpname:
-            cmd.extend(['-f', fpname])
+            cmd.extend(['--fp', fpname])
 
         cmd.extend(['-o', str(outfile), str(libdir)])
 
