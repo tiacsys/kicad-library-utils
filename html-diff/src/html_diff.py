@@ -15,6 +15,7 @@ import fnmatch
 from typing import Optional
 import multiprocessing
 import logging
+from dataclasses import dataclass
 
 
 from pygments.lexer import RegexLexer
@@ -104,7 +105,7 @@ def js_str_list(l):  # NOQA: E741
     return '[' + ', '.join(js_template_strs) + ']'
 
 
-def temporary_symbol_library(symbol_lines):
+def temporary_symbol_library(symbol_lines: list[str]) -> str:
     if symbol_lines and not symbol_lines[0].strip().startswith('(symbol'):
         warnings.warn(f'Leading garbage in same line before symbol definition or broken symbol index')  # NOQA: E501, F541
 
@@ -184,7 +185,7 @@ class BatchRenderLibrary:
     """
 
     def __init__(self, libdir, outdir: Path):
-        self.stems = set()
+        self.stems: set[str] = set()
         self.libdir = libdir
         self.outdir = outdir
 
@@ -294,7 +295,6 @@ class BatchRenderSymbols(BatchRenderLibrary):
 class HTMLDiff:
 
     output: Path
-    meta: dict
     name_glob: str
     changes_only: bool
     screenshot_dir: Path
@@ -312,7 +312,6 @@ class HTMLDiff:
         diff_svg_output_dir=None,
     ):
         self.output = output
-        self.meta = meta
         self.name_glob = name_glob
         self.changes_only = changes_only
         self.name_map = {}
@@ -347,7 +346,7 @@ class HTMLDiff:
         else:
             self.old_url = self.new_url = self.mr_url = None
 
-        if self.meta.get("old_git") is not None:
+        if meta.get("old_git") is not None:
             revname, commit_id = meta["old_git"]
             if meta['old_path'] == meta['new_path']:
                 self.source_revisions = f'Comparing {meta["new_path"]} against rev {commit_id}'
@@ -405,27 +404,38 @@ class HTMLDiff:
             self.output.mkdir(exist_ok=True)
 
             old_text, new_text = old.read_text(), new.read_text()
-            meta['part_name'] = new.stem
-            if new.parent.suffix.lower() == '.pretty':
-                meta['lib_name'] = new.parent.stem
-            else:
-                meta['lib_name'] = '<unknown library>'
 
-            ref_fn = self.screenshot_dir / f'{meta["lib_name"]}.pretty' / f'{meta["part_name"]}.kicad_mod.svg'  # NOQA: E501
+            part_name = new.stem
+
+            if new.parent.suffix.lower() == '.pretty':
+                lib_name = new.parent.stem
+            else:
+                lib_name = '<unknown library>'
+
+            ref_fn = self.screenshot_dir / f'{lib_name}.pretty' / f'{part_name}.kicad_mod.svg'
             ref_svg = ''
             if ref_fn.is_file():
                 ref_svg = ref_fn.read_text()
             else:
                 try:
                     render_footprint_kicad_cli(new.parent, new.stem, ref_fn.parent)
-                    ref_fn = ref_fn.with_name(f'{meta["part_name"]}.svg')
+                    ref_fn = ref_fn.with_name(f'{part_name}.svg')
                     ref_svg = ref_fn.read_text()
                 except Exception as e:
                     warnings.warn(f'Error exporting reference render using kicad-cli: {e}')
 
             html_file_path = self.output / new.with_suffix('.html').name
             html_file_path.write_text(
-                self.mod_diff(self.meta, old_text, new_text, ref_svg))
+                self.mod_diff(
+                    part_name=part_name,
+                    lib_name=lib_name,
+                    old_text=old_text,
+                    new_text=new_text,
+                    prev_diff="",
+                    next_diff="",
+                    ref_svg=ref_svg,
+                )
+            )
 
         elif new.suffix == '.pretty':
             if ':' in old.suffix or ':' in new.suffix:
@@ -441,7 +451,7 @@ class HTMLDiff:
             raise ValueError('Unhandled input type {new.suffix}. Supported formats are .kicad_sym, .kicad_mod and .pretty.')  # NOQA: E501
 
     @staticmethod
-    def format_index(diff_index, file_meta):
+    def format_index(diff_index, part_name: str):
         for filename, created, changed in diff_index:
             if created:
                 css_class = 'created'
@@ -449,13 +459,15 @@ class HTMLDiff:
                 css_class = 'changed'
             else:
                 css_class = 'unchanged'
-            self_class = ' index-self' if filename.stem == file_meta['part_name'] else ''
+            self_class = ' index-self' if filename.stem == part_name else ''
             yield f'<div class="{css_class}{self_class}"><a href="{filename.name}">{filename.stem}</a></div>'  # NOQA: E501
 
-    def _format_html_diff(self, file_meta, enable_layers, hide_text_in_diff, **kwargs):
+    def _format_html_diff(self, part_name: str, lib_name: str,
+                          next_diff: str, prev_diff: str,
+                          enable_layers, hide_text_in_diff, **kwargs):
         return j2env.get_template('diff.html').render(
-            page_title = f'diff: {file_meta["part_name"]} in {file_meta["lib_name"]}',
-            part_name = file_meta["part_name"],
+            page_title = f'diff: {part_name} in {lib_name}',
+            part_name = part_name,
             source_revisions = self.source_revisions,
             enable_layers = 'true' if enable_layers else 'false',
             hide_text_in_diff = 'true' if hide_text_in_diff else 'false',
@@ -463,9 +475,9 @@ class HTMLDiff:
             code_diff_css=wsdiff.MAIN_CSS,
             diff_syntax_css=wsdiff.PYGMENTS_CSS,
 
-            prev_button = button('<', file_meta.get('prev_diff'), _id='nav-bt-prev'),
-            next_button = button('>', file_meta.get('next_diff'), _id='nav-bt-next'),
-            diff_index = '\n'.join(self.format_index(self.diff_index, file_meta)),
+            prev_button = button('<', prev_diff, _id='nav-bt-prev'),
+            next_button = button('>', next_diff, _id='nav-bt-next'),
+            diff_index = '\n'.join(self.format_index(self.diff_index, part_name)),
 
             pipeline_button = button_if('Pipeline', os.environ.get('CI_PIPELINE_URL')),
             old_file_button = button_if('Old File', self.old_url),
@@ -475,20 +487,26 @@ class HTMLDiff:
         )
 
     @html_stacktrace
-    def mod_diff(self, meta, old_text, new_text, ref_svg):
+    def mod_diff(self, part_name: str, lib_name: str,
+                 old_text: list[str], new_text: list[str],
+                 prev_diff: str, next_diff: str,
+                 ref_svg):
 
         old_svg_text = render_fp.render_mod(old_text)
         new_svg_text = render_fp.render_mod(new_text)
 
         # Write the SVGs to disk for debugging or use in other tools
         if self.diff_svg_output_dir is not None:
-            old_svg_path = self.diff_svg_output_dir / f'{meta["part_name"]}.old.svg'
-            new_svg_path = self.diff_svg_output_dir / f'{meta["part_name"]}.new.svg'
+            old_svg_path = self.diff_svg_output_dir / f'{part_name}.old.svg'
+            new_svg_path = self.diff_svg_output_dir / f'{part_name}.new.svg'
             old_svg_path.write_text(old_svg_text)
             new_svg_path.write_text(new_svg_text)
 
         return self._format_html_diff(
-            file_meta=meta,
+            part_name=part_name,
+            lib_name=lib_name,
+            next_diff=next_diff,
+            prev_diff=prev_diff,
             enable_layers=True,
             canvas_background='#001023',
             hide_text_in_diff=True,
@@ -502,11 +520,12 @@ class HTMLDiff:
     def _get_ref_fn(self, new_file):
         return self.screenshot_dir / new_file.parent.name / f'{new_file.stem}.kicad_mod.svg'
 
-    def pretty_diff(self, old, new: Path):
+    def pretty_diff(self, old: Path, new: Path):
         self.diff_index = []
         files = []
-        meta['lib_name'] = new.stem
-        diff_name = lambda new_file: self.output / new_file.with_suffix('.html').name  # NOQA: E731
+
+        def diff_name(new_file) -> Path:
+            return self.output / new_file.with_suffix('.html').name
 
         mod_files = list(new.glob('*.kicad_mod'))
         mod_files.sort(key=lambda x: x.stem)
@@ -544,10 +563,10 @@ class HTMLDiff:
             args = []
 
             for i, new_file in enumerate(files):
-                next_file = str(diff_name(files[(i-1) % len(files)]).name)
-                prev_file = str(diff_name(files[(i+1) % len(files)]).name)
+                next_file = diff_name(files[(i-1) % len(files)]).name
+                prev_file = diff_name(files[(i+1) % len(files)]).name
                 out_file = diff_name(new_file)
-                args.append((old, i, new_file, next_file, prev_file, out_file))
+                args.append((old, new_file, next_file, prev_file, out_file))
             try:
                 pool.starmap(self._process_one_mod, args)
             except KeyboardInterrupt:
@@ -556,15 +575,9 @@ class HTMLDiff:
             except Exception as e:
                 warnings.warn(f'Error processing footprints: {e}')
 
-    def _process_one_mod(self, old, i, new_file, next_file, prev_file, out_file):
-        file_meta = meta.copy()
-
-        file_meta['prev_diff'] = prev_file
-        file_meta['next_diff'] = next_file
-        file_meta['diff_index'] = 'index.html'
-        file_meta['part_name'] = new_file.stem
-        file_meta['old_path'] = new_file
-        file_meta['new_path'] = new_file
+    def _process_one_mod(self, old: Path, new_file: Path,
+                         next_file: Path, prev_file: Path,
+                         out_file: Path):  # fmt: skip
         old_file = old / new_file.name
         old_text = old_file.read_text() if old_file.is_file() else ''
         new_text = new_file.read_text()
@@ -577,21 +590,70 @@ class HTMLDiff:
             ref_fn = ref_fn.with_name(f'{new_file.stem}.svg')
             ref_svg = ref_fn.read_text()
 
-        diff_text = self.mod_diff(file_meta, old_text, new_text, ref_svg)
+        diff_text = self.mod_diff(
+            part_name=new_file.stem,
+            lib_name=new_file.parent.stem,
+            new_text=new_text,
+            old_text=old_text,
+            prev_diff=prev_file,
+            next_diff=next_file,
+            ref_svg=ref_svg
+        )
         out_file.write_text(diff_text)
 
-    def symlib_diff(self, old, new):
+    @dataclass
+    class SymLibDiffInfo():
+        """
+        Metadata describing a symbol library diff.
+        """
+        # Line content of the old and new symbol library files
+        old_lines: list[str]
+        new_lines: list[str]
+
+        # Name of the new/current symbol library
+        old_libfile: Path
+        new_libfile: Path
+
+    @dataclass
+    class SymbolDiffInfo():
+        """
+        Information about the files related to a symbol diff
+        for a single symbol.
+        """
+        # Output HTML file
+        out_file: Path
+
+        # Name of the symbol in the new kicad_sym file
+        new_name: str
+        # Lines range in the new kicad_sym file
+        new_start_line: int
+        new_end_line: int
+
+        # Name of the symbol in the old kicad_sym file
+        old_name: str
+        # Lines range in the old kicad_sym file
+        old_start_line: int
+        old_end_line: int
+
+    def symlib_diff(self, old_symlib: Path, new_symlib: Path):
         if self.output is None:
-            self.output = new.with_suffix('.diff')
+            self.output = new_symlib.with_suffix('.diff')
         self.output.mkdir(exist_ok=True)
 
-        index_old = dict(build_symlib_index(old))
-        index_new = dict(build_symlib_index(new))
-        old_lines = old.read_text().splitlines() if old.is_file() else []
-        new_lines = new.read_text().splitlines()
-        meta['lib_name'] = new.stem
+        index_old = dict(build_symlib_index(old_symlib))
+        index_new = dict(build_symlib_index(new_symlib))
+        old_lines = old_symlib.read_text().splitlines() if old_symlib.is_file() else []
+        new_lines = new_symlib.read_text().splitlines()
 
-        self.diff_index, files = [], []
+        symlib_diff_info = self.SymLibDiffInfo(
+            old_libfile=old_symlib,
+            new_libfile=new_symlib,
+            old_lines=old_lines,
+            new_lines=new_lines
+        )
+
+        self.diff_index = []
+        files: list[HTMLDiff.SymbolDiffInfo] = []
         for name, (start, end) in sorted(index_new.items()):
             if not fnmatch.fnmatch(name, self.name_glob):
                 continue
@@ -607,12 +669,25 @@ class HTMLDiff:
 
             out_file = self.output / f'{name}.html'
             self.diff_index.append((out_file, created, changed))
-            files.append((name, out_file, start, end, old_name, old_start, old_end))
+
+            files.append(
+                self.SymbolDiffInfo(
+                    out_file=out_file,
+                    new_name=name,
+                    new_start_line=start,
+                    new_end_line=end,
+                    old_name=old_name,
+                    old_start_line=old_start,
+                    old_end_line=old_end,
+                )
+            )
 
         # Render reference SVGs all at once
-        batch_renderer = BatchRenderSymbols(new, self.screenshot_dir / new.name)
-        for name, _, _, _, _, _, _ in files:
-            batch_renderer.add_stem(name)
+        batch_renderer = BatchRenderSymbols(
+            new_symlib, self.screenshot_dir / new_symlib.name
+        )
+        for sym_diff_info in files:
+            batch_renderer.add_stem(sym_diff_info.new_name)
 
         try:
             batch_renderer.render()
@@ -622,59 +697,69 @@ class HTMLDiff:
         with multiprocessing.Pool(processes=self.max_workers) as pool:
 
             args = []
-            for i, (name, out_file, start, end, old_name, old_start, old_end) in enumerate(files):
+            for i, sym_diff_info in enumerate(files):
                 unit_files = batch_renderer.get_files_for_stem(name)
 
-                prev_file = files[(i - 1) % len(files)][1].name
-                next_file = files[(i + 1) % len(files)][1].name
+                prev_file = files[(i - 1) % len(files)].out_file.name
+                next_file = files[(i + 1) % len(files)].out_file.name
 
-                args.append((name, out_file, old, new, old_name,  unit_files,
-                            new_lines, start, end,
-                            old_lines, old_start, old_end,
-                            next_file, prev_file))
+                args.append((symlib_diff_info, sym_diff_info, unit_files,
+                             next_file, prev_file))
             try:
                 pool.starmap(self._process_one_sym, args)
             except KeyboardInterrupt:
                 pool.terminate()
                 pool.join()
 
-    def _process_one_sym(self, name, out_file, old, new, old_name, unit_files,
-                         new_lines, start, end, old_lines, old_start, old_end,
-                         next_file, prev_file):  # fmt: skip
-        file_meta = meta.copy()
+    def _process_one_sym(self,
+                         symlib_diff_info: SymLibDiffInfo,
+                         sym_diff_info: SymbolDiffInfo,
+                         unit_files, next_file, prev_file):  # fmt: skip
 
-        file_meta['prev_diff'] = prev_file
-        file_meta['next_diff'] = next_file
-        file_meta['diff_index'] = 'index.html'
-        file_meta['part_name'] = name
-        file_meta['old_path'] = old
-        file_meta['new_path'] = new
-        file_meta['old_line_range'] = (old_start, old_end)
-        file_meta['new_line_range'] = (start, end)
+        # The actual line content of the symbol
+        symbol_old_lines = symlib_diff_info.old_lines[
+            sym_diff_info.old_start_line : sym_diff_info.old_end_line
+        ]
+        symbol_new_lines = symlib_diff_info.new_lines[
+            sym_diff_info.new_start_line : sym_diff_info.new_end_line
+        ]
 
-        old_sym = temporary_symbol_library(old_lines[old_start:old_end])
-        new_sym = temporary_symbol_library(new_lines[start:end])
+        # Construct a temporary symbol library that contains only the new/old symbol
+        old_sym = temporary_symbol_library(symbol_old_lines)
+        new_sym = temporary_symbol_library(symbol_new_lines)
 
         screenshots_content = [f.read_text() for f in unit_files]
 
-        if old_lines[old_start:old_end]:
+        if symbol_old_lines:
             svgs_old = [
                 str(x)
-                for x in render_sym.render_sym(old_sym, old_name, default_style=False)
+                for x in render_sym.render_sym(
+                    old_sym, sym_diff_info.old_name, default_style=False
+                )
             ]
         else:
             svgs_old = []
-        svgs_new = [str(x) for x in render_sym.render_sym(new_sym, name, default_style=False)]
+        svgs_new = [
+            str(x)
+            for x in render_sym.render_sym(
+                new_sym, sym_diff_info.new_name, default_style=False
+            )
+        ]
 
         sexpr_diff = wsdiff.html_diff_block(old_sym, new_sym, filename='', lexer=SexprLexer())
 
-        out_file.write_text(
+        prop_table = print_sym_properties.format_properties(new_sym, sym_diff_info.new_name)
+
+        sym_diff_info.out_file.write_text(
             self._format_html_diff(
-                file_meta=file_meta,
+                lib_name=symlib_diff_info.new_libfile.stem,
+                part_name=sym_diff_info.new_name,
+                next_diff=next_file,
+                prev_diff=prev_file,
                 enable_layers=False,
                 canvas_background="#e0e0e0",
                 hide_text_in_diff=False,
-                properties_table=print_sym_properties.format_properties(new_sym, name),
+                properties_table=prop_table,
                 code_diff=sexpr_diff,
                 old_svg=js_str_list(svgs_old),
                 new_svg=js_str_list(svgs_new),
@@ -719,7 +804,7 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.DEBUG)
 
     if not (path.is_file() or path.is_dir()):
-        logging.error(f'Path "{path}" does not exist or is not a file.', file=sys.stderr)
+        logging.error(f'Path "{path}" does not exist or is not a file.')
         sys.exit(2)
 
     workers = args.jobs if args.jobs > 0 else multiprocessing.cpu_count()
@@ -728,7 +813,7 @@ if __name__ == '__main__':
     try:
         if base.exists():
             if not path.exists():
-                logging.error(f'File "{path}" does not exist.', file=sys.stderr)
+                logging.error(f'File "{path}" does not exist.')
                 sys.exit(2)
 
             meta['old_git'] = None
@@ -745,7 +830,7 @@ if __name__ == '__main__':
         else:
             if base.suffix.lower() in ('.kicad_mod', '.kicad_sym') and ':' not in args.base:
                 # This does not look like either "[git_revision]" or "[git_revision]:[path]"
-                logging.error(f'File "{base}" does not exist.', file=sys.stderr)
+                logging.error(f'File "{base}" does not exist.')
                 sys.exit(2)
 
             base_rev, _, rest = args.base.partition(':')
@@ -771,7 +856,10 @@ if __name__ == '__main__':
                 meta['new_path'] = str(path.absolute().relative_to(tl))
 
             except subprocess.CalledProcessError as e:
-                logging.error(f'Error parsing git revision "{base_rev}": rc={e.returncode}\n{e.stderr.strip()}', file=sys.stderr)  # NOQA: E501
+                logging.error(
+                    f"Error parsing git revision '{base_rev}': "
+                    f"rc={e.returncode}\n{e.stderr.strip()}"
+                )
                 sys.exit(1)
 
             with tempfile.TemporaryDirectory(suffix=path.suffix) as tmpd:
@@ -794,7 +882,10 @@ if __name__ == '__main__':
                                            text=True,
                                            cwd=path.parent)
                 except subprocess.CalledProcessError as e:
-                    logging.error(f'Error checking out file "{base_file}" from git revision "{base_rev}": rc={e.returncode}\n{e.stderr.strip()}', file=sys.stderr)  # NOQA: E501
+                    logging.error(
+                        f"Error checking out file '{base_file}' from git revision '{base_rev}': "
+                        f"rc={e.returncode}\n{e.stderr.strip()}"
+                    )
                     sys.exit(1)
 
                 base = tmpd if path.is_dir() else tmpd / base_file.name
