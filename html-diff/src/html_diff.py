@@ -578,8 +578,8 @@ class HTMLDiff:
             args = []
 
             for i, new_file in enumerate(files):
-                next_file = diff_name(files[(i-1) % len(files)]).name
-                prev_file = diff_name(files[(i+1) % len(files)]).name
+                prev_file = diff_name(files[(i - 1) % len(files)]).name
+                next_file = diff_name(files[(i + 1) % len(files)]).name
                 out_file = diff_name(new_file)
                 args.append((old, new_file, next_file, prev_file, out_file))
             try:
