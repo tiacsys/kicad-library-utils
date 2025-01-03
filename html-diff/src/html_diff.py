@@ -116,26 +116,41 @@ def temporary_symbol_library(symbol_lines: list[str]) -> str:
     return f'(kicad_symbol_lib (version 20231120) (generator kicad_html_diff)\n{content}\n)'
 
 
-def build_symlib_index(libfile):
+def build_symlib_index(libfile: Path):
+    """
+    Yields the names and line ranges (start, end) of all symbols in a library.
+
+    Note, end is the line after the last line of the symbol.
+    """
     if not libfile.is_file():
         return
 
-    text = Path(libfile).read_text()
     lineno = 0
-    last_start, last_name = 1, None
-    for match in re.finditer(r'\(\W*symbol\W*\s"(\S+)"\s|(\r?\n)', text, re.MULTILINE):
-        symbol_name, newline = match.groups()
+    last_start = 0
+    last_name: str | None = None
 
-        if symbol_name and not re.fullmatch(r'.*_[0-9]+_[0-9]+', symbol_name):
+    # Note that this exploits the KiCad v8+ formatting:
+    # symbols always indent with exactly one tab, and end with "\t)".
+    #
+    # If it gets more complex, either we need to autodetect indentation
+    # or do more complex parsing (or delegate to kicad API one day?)
+
+    symbol_start_patt = re.compile(r'^\t\(symbol\s+"(\S+)"')
+
+    for line in libfile.read_text().splitlines():
+
+        # Start of a symbol?
+        if match := re.match(symbol_start_patt, line):
+            last_name = match.group(1)
+            last_start = lineno
+
+        # End of a symbol?
+        elif line == "\t)":
             if last_name:
-                yield last_name, (last_start, lineno)
-            last_name, last_start = symbol_name, lineno
+                yield last_name, (last_start, lineno + 1)
+                last_name = None
 
-        # newlines might be embedded in between the symbol def, e.g. (symbol\n"FOO"
-        lineno += match.group(0).count('\n')
-
-    if last_name:
-        yield last_name, (last_start, lineno)
+        lineno += 1
 
 
 def render_symbol_kicad_cli(libfile, symname, outdir):
