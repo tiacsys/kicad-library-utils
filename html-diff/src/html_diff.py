@@ -625,8 +625,8 @@ class HTMLDiff:
             for i, (name, out_file, start, end, old_name, old_start, old_end) in enumerate(files):
                 unit_files = batch_renderer.get_files_for_stem(name)
 
-                next_file = files[(i-1) % len(files)][1].name
-                prev_file = files[(i+1) % len(files)][1].name
+                prev_file = files[(i - 1) % len(files)][1].name
+                next_file = files[(i + 1) % len(files)][1].name
 
                 args.append((name, out_file, old, new, old_name,  unit_files,
                             new_lines, start, end,
@@ -643,8 +643,8 @@ class HTMLDiff:
                          next_file, prev_file):  # fmt: skip
         file_meta = meta.copy()
 
-        file_meta['prev_diff'] = prev_file + '.html'
-        file_meta['next_diff'] = next_file + '.html'
+        file_meta['prev_diff'] = prev_file
+        file_meta['next_diff'] = next_file
         file_meta['diff_index'] = 'index.html'
         file_meta['part_name'] = name
         file_meta['old_path'] = old
