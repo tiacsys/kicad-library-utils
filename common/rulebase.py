@@ -248,7 +248,8 @@ class KLCRuleBase:
 
                 # Join the message with the extra message
                 if verbosity.value >= Verbosity.HIGH.value:
-                    msg += '\n      -'.join(entry.extras)
+                    for e in entry.extras:
+                        msg += "\n      - " + e
 
                 if s == Severity.INFO:
                     printer.gray(msg, indentation=4)
