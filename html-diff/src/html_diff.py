@@ -713,7 +713,7 @@ class HTMLDiff:
 
             args = []
             for i, sym_diff_info in enumerate(files):
-                unit_files = batch_renderer.get_files_for_stem(name)
+                unit_files = batch_renderer.get_files_for_stem(sym_diff_info.new_name)
 
                 prev_file = files[(i - 1) % len(files)].out_file.name
                 next_file = files[(i + 1) % len(files)].out_file.name
