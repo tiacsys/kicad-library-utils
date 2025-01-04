@@ -68,17 +68,50 @@ class Rule(KLCRule):
         """
         Proceeds the checking of the rule.
         """
+        ds = self.component.get_property("Datasheet")
+        fp = self.component.get_property("Footprint")
+
+        # No FP and DS is '~' -> looks like a virtual root symbol
+        # Be careful not to use logic here that uses "doesn't have filters"
+        # as a condition, as that's what we're checking for.
+        maybe_virtual_root = (fp and not fp.value) and (ds and ds.value == "~")
+
+        should_have_filters = not (
+            self.component.is_graphic_symbol()
+            or self.component.is_power_symbol()
+            or maybe_virtual_root
+        )
+
+        # If it's a graphic or power symbol, it should not have filters
+        # but virtual root symbols might have them
+        should_not_have_filters = (
+            self.component.is_graphic_symbol() or self.component.is_power_symbol()
+        )
 
         filters = self.component.get_fp_filters()
 
-        if (
-            not self.component.is_graphic_symbol()
-            and not self.component.is_power_symbol()
-        ) and not filters:
-            self.warning("No footprint filters defined")
+        if should_have_filters:
+            if not filters:
+                self.warning("No footprint filters defined")
+        elif should_not_have_filters:
+            if filters:
+                looks_like = None
+                if self.component.is_graphic_symbol():
+                    looks_like = "graphic symbol"
+                elif self.component.is_power_symbol():
+                    looks_like = "power symbol"
+                else:
+                    raise ValueError("Unexpected no-filter symbol type")
+
+                if looks_like:
+                    self.warning(
+                        f"This symbol looks like a {looks_like}, but it has footprint"
+                        " filters defined:"
+                    )
+                    for f in filters:
+                        self.warningExtra(f)
 
         self.checkFilters(filters)
-
         return len(self.bad_filters) > 0
 
     def fix(self) -> None:
