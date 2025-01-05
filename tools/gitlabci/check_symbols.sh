@@ -30,6 +30,11 @@ if [ -z "$TARGET_SHA" ]; then
   exit 1
 fi
 
+echo "BASE_SHA: $BASE_SHA"
+echo "TARGET_SHA: $TARGET_SHA"
+echo "CI_PROJECT_DIR: $CI_PROJECT_DIR"
+echo "CI_BUILDS_DIR: $CI_BUILDS_DIR"
+
 # clone required repos
 git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-footprints.git $CI_BUILDS_DIR/kicad-footprints
 

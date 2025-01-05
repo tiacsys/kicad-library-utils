@@ -320,13 +320,29 @@ if args.junit:
 
     junit_report.save_report()
 
+
+def print_for(val: int, msg: str, bad_printer):
+    if val > 0:
+        bad_printer(msg)
+    else:
+        printer.light_green(msg)
+
+
+printer.white("\nSummary:")
+print_for(errors, f"  Errors: {errors}", printer.red)
+print_for(warnings, f"  Warnings: {warnings}", printer.yellow)
+print_for(design_breaking_changes, f"  Design breaking changes: {design_breaking_changes}", printer.red)
+
+retcode = 0
+
 # Return the number of errors found ( zero if --check is not set )
 if errors > 0 or design_breaking_changes > 0:
     # This will fail the pipeline
-    sys.exit(3)
+    retcode = 3
 
-if warnings > 0:
+elif warnings > 0:
     # Handled as an "allowed failure"
-    sys.exit(2)
+    retcode = 2
 
-sys.exit(0)
+printer.white(f"\nChecks complete with return code: {retcode}")
+sys.exit(retcode)
