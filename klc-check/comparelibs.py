@@ -149,9 +149,9 @@ def build_library_dict(filelist):
 # prepare variables
 new_libs = build_library_dict(args.new)
 old_libs = build_library_dict(args.old)
-errors = 0
-warnings = 0
 design_breaking_changes = 0
+
+problems = {}
 
 # create a SymbolCheck instance
 # add footprints dir if possible
@@ -159,6 +159,14 @@ sym_check = check_symbol.SymbolCheck(
     None, args.exclude, Verbosity(2), args.footprint_directory,
     False if args.nocolor else True, silent=False
 )
+
+
+def add_errors_and_warnings(symname: str, sym_errors: int, sym_warnings: int):
+    """
+    Add the number of errors and warnings to the global counters
+    """
+    problems[symname] = (sym_errors, sym_warnings)
+
 
 # iterate over all new libraries
 for lib_name in new_libs:
@@ -181,10 +189,8 @@ for lib_name in new_libs:
         for sym in new_lib.symbols:
             if args.check:
                 (ec, wc) = sym_check.do_rulecheck(sym)
-                if ec != 0:
-                    errors += 1
-                if wc != 0:
-                    warnings += 1
+                add_errors_and_warnings(sym.name, ec, wc)
+
         continue
 
     # Library has been updated - check each component to see if it has been changed
@@ -216,10 +222,7 @@ for lib_name in new_libs:
             if args.check:
                 # only check new components
                 (ec, wc) = sym_check.check_library(lib_path, component=symname)
-                if ec != 0:
-                    errors += 1
-                if wc != 0:
-                    warnings += 1
+                add_errors_and_warnings(symname, ec, wc)
 
             continue
 
@@ -283,10 +286,7 @@ for lib_name in new_libs:
 
             if args.check:
                 (ec, wc) = sym_check.do_rulecheck(new_sym[symname])
-                if ec != 0:
-                    errors += 1
-                if wc != 0:
-                    warnings += 1
+                add_errors_and_warnings(symname, ec, wc)
 
     for symname in old_sym:
         # Component has been deleted from library
@@ -332,19 +332,37 @@ def print_for(val: int, msg: str, bad_printer):
         printer.light_green(msg)
 
 
+total_errors = 0
+total_warnings = 0
+error_symbols = 0
+warning_symbols = 0
+
+for _symname, (errors, warnings) in problems.items():
+    total_errors += errors
+    total_warnings += warnings
+
+    if errors > 0:
+        error_symbols += 1
+    if warnings > 0:
+        warning_symbols += 1
+
 printer.white("\nSummary:")
-print_for(errors, f"  Errors: {errors}", printer.red)
-print_for(warnings, f"  Warnings: {warnings}", printer.yellow)
-print_for(design_breaking_changes, f"  Design breaking changes: {design_breaking_changes}", printer.red)
+print_for(total_errors, f"  Errors: {total_errors} from {error_symbols} symbols", printer.red)
+print_for(total_warnings, f"  Warnings: {total_warnings} from {warning_symbols} symbols", printer.yellow)
+print_for(
+    design_breaking_changes,
+    f"  Symbols with design breaking changes: {design_breaking_changes}",
+    printer.red,
+)
 
 retcode = 0
 
 # Return the number of errors found ( zero if --check is not set )
-if errors > 0 or design_breaking_changes > 0:
+if total_errors > 0 or design_breaking_changes > 0:
     # This will fail the pipeline
     retcode = 3
 
-elif warnings > 0:
+elif total_warnings > 0:
     # Handled as an "allowed failure"
     retcode = 2
 
