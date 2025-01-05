@@ -183,6 +183,8 @@ for lib_name in new_libs:
                 (ec, wc) = sym_check.do_rulecheck(sym)
                 if ec != 0:
                     errors += 1
+                if wc != 0:
+                    warnings += 1
         continue
 
     # Library has been updated - check each component to see if it has been changed
@@ -216,6 +218,8 @@ for lib_name in new_libs:
                 (ec, wc) = sym_check.check_library(lib_path, component=symname)
                 if ec != 0:
                     errors += 1
+                if wc != 0:
+                    warnings += 1
 
             continue
 
