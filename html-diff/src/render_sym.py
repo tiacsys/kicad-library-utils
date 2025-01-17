@@ -195,36 +195,32 @@ def render_pin(sym, elem, **style):
         yield from text_elem(nx, ny, t_rot, elem.number, elem.number_effect, {'class': 'l-any-f'})
 
 
-def _render_sym_internal(sym, unit=1):
+def _render_sym_internal(sym, root_sym, unit=1):
     for fun, elems in [
-            (render_rect, sym.rectangles),
-            (render_circle, sym.circles),
-            (render_polyline, sym.polylines),
-            (render_arc, sym.arcs),
-            (render_pin, sym.pins),
-            (render_text, sym.texts),
+            (render_rect, root_sym.rectangles),
+            (render_circle, root_sym.circles),
+            (render_polyline, root_sym.polylines),
+            (render_arc, root_sym.arcs),
+            (render_pin, root_sym.pins),
+            (render_text, root_sym.texts),
+            # Properties are the only bit that is not in the root symbol
             (render_text, sym.properties)]:
         for elem in elems:
             if not hasattr(elem, 'unit') or elem.unit in (0, unit):  # bad API
-                for bbox, tag in fun(sym, elem, **elem_style(elem)):  # NOQA: F402
+                for bbox, tag in fun(root_sym, elem, **elem_style(elem)):  # NOQA: F402
                     yield bbox, tag
 
 
-def render_sym(data, name, default_style=True):
-    if not data:
-        return
+def render_sym(
+    sym: kicad_sym.KicadSymbol, lib: kicad_sym.KicadLibrary, default_style=True
+):
+    # The parent symbol that contributes graphical data
+    root_sym = sym.get_root_symbol()
 
-    lib = kicad_sym.KicadLibrary.from_file('<command line>', data=data)
-    for sym in lib.symbols:
-        if sym.name == name:
-            break
-    else:
-        raise KeyError(f'Symbol "{name}" not found in library.')
-
-    for unit in range(1, sym.unit_count+1):
+    for unit in range(1, root_sym.unit_count+1):
         tags, bboxes = [], []
 
-        for bbox, tag in _render_sym_internal(sym, unit):  # NOQA: F402
+        for bbox, tag in _render_sym_internal(sym, root_sym, unit):  # NOQA: F402
             tags.append(tag)
             bboxes.append(bbox)
 

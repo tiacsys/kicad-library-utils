@@ -506,3 +506,9 @@ document.getElementById('body').addEventListener('keydown', event => {
         }
     }
 });
+
+// Make sure the current link is visible in the index
+const indexSelf = document.querySelector('.index-self');
+if (indexSelf) {
+    indexSelf.scrollIntoView({ block: 'nearest' });
+}

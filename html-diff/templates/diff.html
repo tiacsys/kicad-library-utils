@@ -8,6 +8,9 @@
             {{ code_diff_css|safe }}
             {{ diff_syntax_css|safe }}
         </style>
+        {% if prefetch_url %}
+        <link rel="prefetch" href="{{ prefetch_url }}">
+        {% endif %}
     </head>
     <body id="body">
         <div class="header">

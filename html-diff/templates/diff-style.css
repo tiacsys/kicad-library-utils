@@ -79,6 +79,10 @@ body {
     color: #aa6a44;
 }
 
+.index .deleted {
+    color: #c42418;
+}
+
 .index {
     display: flex;
     flex-direction: column;
@@ -274,6 +278,10 @@ div.index-self {
 
 #metadata tr:first-child {
     background-color: #a0a0a0;
+}
+
+#metadata td.prop-same {
+    opacity: 0.5;
 }
 
 .canvas-container {

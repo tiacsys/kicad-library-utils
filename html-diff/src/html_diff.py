@@ -467,19 +467,41 @@ class HTMLDiff:
 
     @staticmethod
     def format_index(diff_index, part_name: str):
-        for filename, created, changed in diff_index:
+
+        index = ""
+        prefetch = None
+        prefetch_next = False
+
+        for filename, created, changed, deleted in diff_index:
+            classes = []
             if created:
-                css_class = 'created'
+                classes.append('created')
+            elif deleted:
+                classes.append('deleted')
             elif changed:
-                css_class = 'changed'
+                classes.append('changed')
             else:
-                css_class = 'unchanged'
-            self_class = ' index-self' if filename.stem == part_name else ''
-            yield f'<div class="{css_class}{self_class}"><a href="{filename.name}">{filename.stem}</a></div>'  # NOQA: E501
+                classes.append('unchanged')
+
+            if prefetch_next:
+                prefetch = filename.name
+                prefetch_next = False
+
+            if filename.stem == part_name:
+                classes.append('index-self')
+                prefetch_next = True
+
+            link = f'<a href="{filename.name}">{filename.stem}</a>'
+            index += f'  <div class="{" ".join(classes)}">{link}</div>\n'
+
+        return index, prefetch
 
     def _format_html_diff(self, part_name: str, lib_name: str,
                           next_diff: str, prev_diff: str,
                           enable_layers, hide_text_in_diff, **kwargs):
+
+        index, prefetch = self.format_index(self.diff_index, part_name)
+
         return j2env.get_template('diff.html').render(
             page_title = f'diff: {part_name} in {lib_name}',
             part_name = part_name,
@@ -492,7 +514,8 @@ class HTMLDiff:
 
             prev_button = button('<', prev_diff, _id='nav-bt-prev'),
             next_button = button('>', next_diff, _id='nav-bt-next'),
-            diff_index = '\n'.join(self.format_index(self.diff_index, part_name)),
+            diff_index = index,
+            prefetch_url = prefetch,
 
             pipeline_button = button_if('Pipeline', os.environ.get('CI_PIPELINE_URL')),
             old_file_button = button_if('Old File', self.old_url),
@@ -558,7 +581,7 @@ class HTMLDiff:
             if self.changes_only and not changed:
                 continue
 
-            self.diff_index.append((diff_name(new_file), created, changed))
+            self.diff_index.append((diff_name(new_file), created, changed, False))
             files.append(new_file)
 
         # Render reference SVGs all at once
@@ -625,9 +648,11 @@ class HTMLDiff:
         old_lines: list[str]
         new_lines: list[str]
 
+        new_lib_stem: str
+
         # Name of the new/current symbol library
-        old_libfile: Path
-        new_libfile: Path
+        old_lib: kicad_sym.KicadLibrary
+        new_lib: kicad_sym.KicadLibrary
 
     @dataclass
     class SymbolDiffInfo():
@@ -650,28 +675,50 @@ class HTMLDiff:
         old_start_line: int
         old_end_line: int
 
-    def symlib_diff(self, old_symlib: Path, new_symlib: Path):
+    def symlib_diff(self, old_symlib_path: Path, new_symlib_path: Path):
         if self.output is None:
-            self.output = new_symlib.with_suffix('.diff')
+            self.output = new_symlib_path.with_suffix('.diff')
         self.output.mkdir(exist_ok=True)
 
-        index_old = dict(build_symlib_index(old_symlib))
-        index_new = dict(build_symlib_index(new_symlib))
-        old_lines = old_symlib.read_text().splitlines() if old_symlib.is_file() else []
-        new_lines = new_symlib.read_text().splitlines()
+        old_lib = kicad_sym.KicadLibrary.from_file(filename=old_symlib_path)
+        new_lib = kicad_sym.KicadLibrary.from_file(filename=new_symlib_path)
+
+        # Get the raw s-expr lines of the symbol libraries for code-level diffs
+        index_old = dict(build_symlib_index(old_symlib_path))
+        index_new = dict(build_symlib_index(new_symlib_path))
+        old_lines = old_symlib_path.read_text().splitlines() if old_symlib_path.is_file() else []
+        new_lines = new_symlib_path.read_text().splitlines()
 
         symlib_diff_info = self.SymLibDiffInfo(
-            old_libfile=old_symlib,
-            new_libfile=new_symlib,
+            old_lib=old_lib,
+            new_lib=new_lib,
             old_lines=old_lines,
-            new_lines=new_lines
+            new_lines=new_lines,
+            new_lib_stem=new_symlib_path.stem,
         )
 
         self.diff_index = []
         files: list[HTMLDiff.SymbolDiffInfo] = []
-        for name, (start, end) in sorted(index_new.items()):
+
+        to_diff = []
+
+        # Add all the new items
+        for name, (start, end) in index_new.items():
             if not fnmatch.fnmatch(name, self.name_glob):
                 continue
+            to_diff.append((name, (start, end)))
+
+        # Add any deleted items
+        for name, (start, end) in index_old.items():
+            if not fnmatch.fnmatch(name, self.name_glob):
+                continue
+            if name not in index_new:
+                to_diff.append((name, (0, 0)))
+
+        # Sort in name order
+        to_diff.sort(key=lambda x: x[0])
+
+        for name, (start, end) in to_diff:
 
             old_name = self.name_map.get(name, name)
             old_start, old_end = index_old.get(old_name, (0, 0))
@@ -679,11 +726,13 @@ class HTMLDiff:
             created = (old_start, old_end) == (0, 0)
             changed = old_lines[old_start:old_end] != new_lines[start:end]
 
+            deleted = (start, end) == (0, 0)
+
             if self.changes_only and not changed:
                 continue
 
             out_file = self.output / f'{name}.html'
-            self.diff_index.append((out_file, created, changed))
+            self.diff_index.append((out_file, created, changed, deleted))
 
             files.append(
                 self.SymbolDiffInfo(
@@ -699,7 +748,7 @@ class HTMLDiff:
 
         # Render reference SVGs all at once
         batch_renderer = BatchRenderSymbols(
-            new_symlib, self.screenshot_dir / new_symlib.name
+            new_symlib_path, self.screenshot_dir / new_symlib_path.name
         )
         for sym_diff_info in files:
             batch_renderer.add_stem(sym_diff_info.new_name)
@@ -740,34 +789,42 @@ class HTMLDiff:
         ]
 
         # Construct a temporary symbol library that contains only the new/old symbol
-        old_sym = temporary_symbol_library(symbol_old_lines)
-        new_sym = temporary_symbol_library(symbol_new_lines)
+        old_sym = symlib_diff_info.old_lib.get_symbol(sym_diff_info.old_name)
+        new_sym = symlib_diff_info.new_lib.get_symbol(sym_diff_info.new_name)
 
         screenshots_content = [f.read_text() for f in unit_files]
+
+        svgs_old = []
+        svgs_new = []
 
         if symbol_old_lines:
             svgs_old = [
                 str(x)
                 for x in render_sym.render_sym(
-                    old_sym, sym_diff_info.old_name, default_style=False
+                    old_sym, symlib_diff_info.old_lib, default_style=False
                 )
             ]
-        else:
-            svgs_old = []
-        svgs_new = [
-            str(x)
-            for x in render_sym.render_sym(
-                new_sym, sym_diff_info.new_name, default_style=False
-            )
-        ]
 
-        sexpr_diff = wsdiff.html_diff_block(old_sym, new_sym, filename='', lexer=SexprLexer())
+        if symbol_new_lines:
+            svgs_new = [
+                str(x)
+                for x in render_sym.render_sym(
+                    new_sym, symlib_diff_info.new_lib, default_style=False
+                )
+            ]
 
-        prop_table = print_sym_properties.format_properties(new_sym, sym_diff_info.new_name)
+        sexpr_diff = wsdiff.html_diff_block(
+            "\n".join(symbol_old_lines),
+            "\n".join(symbol_new_lines),
+            filename="",
+            lexer=SexprLexer(),
+        )
+
+        prop_table = print_sym_properties.format_properties(old_sym, new_sym)
 
         sym_diff_info.out_file.write_text(
             self._format_html_diff(
-                lib_name=symlib_diff_info.new_libfile.stem,
+                lib_name=symlib_diff_info.new_lib_stem,
                 part_name=sym_diff_info.new_name,
                 next_diff=next_file,
                 prev_diff=prev_file,

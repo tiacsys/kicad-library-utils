@@ -898,6 +898,10 @@ class KicadSymbol(KicadSymbolBase):
     unit_count: int = 0
     demorgan_count: int = 0
 
+    # List of parent symbols, the first element is the direct parent,
+    # the last element is the root symbol
+    _inheritance: list["KicadSymbol"] = field(default_factory=list)
+
     def __post_init__(self):
         if self.filename == "":
             raise ValueError("Filename can not be empty")
@@ -1011,6 +1015,16 @@ class KicadSymbol(KicadSymbolBase):
                     else:
                         stacks[loc] = [pin]
         return stacks
+
+    def get_parent_symbol(self) -> "KicadSymbol":
+        if self._inheritance:
+            return self._inheritance[0]
+        return self
+
+    def get_root_symbol(self) -> "KicadSymbol":
+        if self._inheritance:
+            return self._inheritance[-1]
+        return self
 
     def get_property(self, pname: str) -> Optional[Property]:
         for p in self.properties:
@@ -1314,7 +1328,34 @@ class KicadLibrary(KicadSymbolBase):
             # add it to the list of symbols
             library.symbols.append(symbol)
 
+        for symbol in library.symbols:
+
+            cursor = symbol
+            while cursor.extends:
+                if symbol.name == symbol.extends:
+                    raise KicadFileFormatError(
+                        f"Symbol {symbol.name} extends itself"
+                    )
+
+                if symbol.extends in symbol._inheritance:
+                    raise KicadFileFormatError(
+                        f"Symbol {symbol.name} has a circular inheritance"
+                    )
+
+                parent_sym = symbol_names.get(cursor.extends)
+                symbol._inheritance.append(parent_sym)
+                cursor = parent_sym
+
         return library
+
+    def get_symbol(self, name: str) -> Optional[KicadSymbol]:
+        """
+        Get the symbol with the given name in the library, or None if not found.
+        """
+        for symbol in self.symbols:
+            if symbol.name == name:
+                return symbol
+        return None
 
 
 if __name__ == "__main__":

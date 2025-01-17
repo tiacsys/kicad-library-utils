@@ -2322,7 +2322,7 @@
 		)
 	)
 	(symbol "Fail__S6.2__KeywordFiller"
-		(extends "Fail__S6.2__KeywordFiller")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2386,7 +2386,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__DuplicateKeywords"
-		(extends "Warn__S6.2__DuplicateKeywords")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2450,7 +2450,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__DuplicateKeywordsSubTokens"
-		(extends "Warn__S6.2__DuplicateKeywordsSubTokens")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2514,7 +2514,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__DuplicateKeywordsDescription"
-		(extends "Warn__S6.2__DuplicateKeywordsDescription")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2578,7 +2578,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__DuplicateKeywordsDescriptionNextToComma"
-		(extends "Warn__S6.2__DuplicateKeywordsDescriptionNextToComma")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2642,7 +2642,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__DuplicateKeywordsDescriptionInSubTokens"
-		(extends "Warn__S6.2__DuplicateKeywordsDescriptionInSubTokens")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2706,7 +2706,7 @@
 		)
 	)
 	(symbol "Pass__S6.2__DescriptionSameWordTwice"
-		(extends "Pass__S6.2__DescriptionSameWordTwice")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2770,7 +2770,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__OperationalAmplifierNotOpamp"
-		(extends "Warn__S6.2__OperationalAmplifierNotOpamp")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2834,7 +2834,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__OpampNotOperationalAmplifier"
-		(extends "Warn__S6.2__OpampNotOperationalAmplifier")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2898,7 +2898,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__LowDropoutRegulatorNotLDO"
-		(extends "Warn__S6.2__LowDropoutRegulatorNotLDO")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -2962,7 +2962,7 @@
 		)
 	)
 	(symbol "Warn__S6.2__LDONotLowDropoutRegulator"
-		(extends "Warn__S6.2__LDONotLowDropoutRegulator")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
@@ -3026,7 +3026,7 @@
 		)
 	)
 	(symbol "Pass__S6.2__LowDropoutButNotARegulator"
-		(extends "Pass__S6.2__LowDropoutButNotARegulator")
+		(extends "Fail__S6.2__ComaKeywords")
 		(property "Reference" "U"
 			(at 7.62 12.7 0)
 			(effects
