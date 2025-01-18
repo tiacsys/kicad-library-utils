@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
 
-import sys
-from collections import defaultdict
-from pathlib import Path
+from xml.etree import ElementTree as ET
 
-try:
-    # Try importing kicad_mod to figure out whether the kicad-library-utils stuff is in path
-    import kicad_mod  # NOQA: F401
-except ImportError:
-    if (
-        common := Path(__file__).parent.parent.with_name("common").absolute()
-    ) not in sys.path:
-        sys.path.insert(0, str(common))
-
+import html_util
+from html_util import DiffProperty, PropertyType
 from kicad_mod import KicadMod
 
 
@@ -24,48 +15,143 @@ def lookup(l, k, default=None):  # NOQA: 741
     return default
 
 
-def format_properties(data):
-    mod = KicadMod(data=data)
-    out = "<table>\n"
-    out += "  <tr><th>Name</th><th>Value</th></tr>\n"
-    counts = defaultdict(lambda: 0)
-    _module, _name, *mod = mod.sexpr_data
-    for tag, *values in mod:
-        counts[tag] += 1
-        # Exclude graphical primitives
-        if tag in ("fp_line", "fp_rect", "fp_circle", "fp_poly", "pad", "zone"):
-            continue
+def _fp_properties(old: KicadMod, new: KicadMod) -> list[DiffProperty]:
 
-        if tag == "fp_text":
-            tag = f"fp_text <pre>{values[0]}</pre>"
-            x, y, *_ignored = lookup(values, "at", ("?", "?"))
-            layer = lookup(values, "layer", "?")
-            value = f'at ({x}, {y}), layers {", ".join(layer)} <pre>{values[1]}</pre>'
-        elif tag == "model":
-            value = f"<pre>{values[0]}</pre>"
-        else:
-            value = "<pre>" + "\n".join(map(str, values)) + "</pre>"
+    properties = []
 
-        out += f"  <tr><td>{tag}</td><td>{value}</td></tr>\n"
+    simple_props = [
+        ["Name", "name"],
+        ["Version", "version"],
+        ["Generator", "generator"],
+        ["Description", "description"],
+        ["Tags", "tags"],
+        ["Layer", "layer"],
+        ["Footprint type", "footprint_type"],
+        ["Exclude from BOM", "exclude_from_bom"],
+        ["Exclude from pos files", "exclude_from_pos_files"],
+    ]
 
-    out += "</table>\n"
-    out += "<h4>Item counts:</h4>\n"
-    out += "<table>\n"
-    out += "  <tr><th>Type</th><th>Count</th></tr>\n"
+    for name, attr in simple_props:
+        old_val = getattr(old, attr) if old else None
+        new_val = getattr(new, attr) if new else None
+        properties.append(DiffProperty(name, old_val, new_val, PropertyType.NATIVE))
 
-    # "-count" hack to sort by count descending, but tag alphabetically ascending
-    for count, tag in sorted((-count, tag) for tag, count in counts.items()):
-        out += f"  <tr><td>{tag}</td><td>{-count}</td></tr>\n"
+    # Annoyingly this is a dict when read out of a file, it should really be a type
+    def format_textitem(prop_dict: dict, text_key: str) -> str:
 
-    out += "</table>"
+        strs = [
+            f"Text: {prop_dict[text_key]}",
+            f"Layer: {prop_dict['layer']}",
+            f"Pos: {prop_dict['pos']}",
+            f"Font: {prop_dict['font']}",
+            f"Hidden: {prop_dict['hide']}",
+        ]
 
+        return "\n".join([str(s) for s in strs])
+
+    mod_properties = [
+        ["Reference", "reference"],
+        ["Value", "value"],
+    ]
+
+    for name, prop_name in mod_properties:
+        old_val = None
+        new_val = None
+        if old:
+            old_val = format_textitem(old.getProperty(prop_name), prop_name)
+        if new:
+            new_val = format_textitem(new.getProperty(prop_name), prop_name)
+
+        properties.append(DiffProperty(name, old_val, new_val, PropertyType.FIELD))
+
+    # Pull out the user texts and compare them
+    old_usertexts = old.userText if old else []
+    new_usertexts = new.userText if new else []
+
+    for i in range(max(len(old_usertexts), len(new_usertexts))):
+        old_val = None
+        new_val = None
+
+        if i < len(old_usertexts):
+            old_val = format_textitem(old_usertexts[i], "user")
+
+        if i < len(new_usertexts):
+            new_val = format_textitem(new_usertexts[i], "user")
+
+        properties.append(
+            DiffProperty(f"User text {i}", old_val, new_val, PropertyType.FIELD)
+        )
+
+    # Annoyingly this is a dict when read out of a file, it should really be a type
+    def format_model(model: dict) -> str:
+        strs = [
+            model["file"],
+            str(model["pos"]),
+            str(model["scale"]),
+        ]
+        return "\n".join(strs)
+
+    # Break the models down to text lines
+    old_model_str = ""
+    new_model_str = ""
+
+    if old:
+        old_models = old.models
+        old_model_str += "\n\n".join([format_model(m) for m in old_models])
+
+    if new:
+        new_models = new.models
+        new_model_str += "\n\n".join([format_model(m) for m in new_models])
+
+    properties.append(
+        DiffProperty("Models", old_model_str, new_model_str, PropertyType.FIELD)
+    )
+    return properties
+
+
+def _fp_counts(old: KicadMod | None, new: KicadMod | None) -> list[DiffProperty]:
+
+    tag_types = ["fp_line", "fp_rect", "fp_circle", "fp_poly", "pad", "zone", "group"]
+
+    old_sexp = old.sexpr_data if old else []
+    new_sexp = new.sexpr_data if new else []
+
+    counts = {tag: [0, 0] for tag in tag_types}
+
+    for tag, *values in old_sexp:
+        if tag in tag_types:
+            counts[tag][0] += 1
+
+    for tag, *values in new_sexp:
+        if tag in tag_types:
+            counts[tag][1] += 1
+
+    diffs = []
+    for tag in tag_types:
+        diffs.append(
+            DiffProperty(
+                tag, str(counts[tag][0]), str(counts[tag][1]), PropertyType.NATIVE
+            )
+        )
+
+    # Sort by count descending, but tag alphabetically ascending
+    diffs.sort(key=lambda x: (x.name, -int(x.new)))
+
+    return diffs
+
+
+def format_properties(old_mod: KicadMod | None, new_mod: KicadMod | None) -> str:
+
+    props = _fp_properties(old_mod, new_mod)
+
+    container = ET.Element("div")
+
+    container.append(html_util.make_property_diff_table(props))
+    container.append(html_util.heading("h4", "Item counts:"))
+
+    counts = _fp_counts(old_mod, new_mod)
+    container.append(html_util.make_count_table(counts))
+
+    # Convert the XML container to a string
+    out = ET.tostring(container, encoding="unicode", method="html")
     return out
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("kicad_mod_file", type=Path)
-    args = parser.parse_args()
-    print(format_properties(args.kicad_mod_file.read_text()))

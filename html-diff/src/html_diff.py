@@ -30,6 +30,7 @@ except ImportError:
     ) not in sys.path:
         sys.path.insert(0, str(common))
 import jinja2
+import kicad_mod  # NOQA: F811
 import kicad_sym
 import print_fp_properties
 import print_sym_properties
@@ -570,15 +571,31 @@ class HTMLDiff:
         ref_svg,
     ):
 
-        old_svg_text = render_fp.render_mod(old_text)
-        new_svg_text = render_fp.render_mod(new_text)
+        old_mod = None
+        new_mod = None
+        old_svg_text = ""
+        new_svg_text = ""
+
+        if old_text:
+            old_mod = kicad_mod.KicadMod(data=old_text)
+            old_svg_text = render_fp.render_mod(old_mod)
+
+        if new_text:
+            new_mod = kicad_mod.KicadMod(data=new_text)
+            new_svg_text = render_fp.render_mod(new_mod)
 
         # Write the SVGs to disk for debugging or use in other tools
         if self.diff_svg_output_dir is not None:
             old_svg_path = self.diff_svg_output_dir / f"{part_name}.old.svg"
             new_svg_path = self.diff_svg_output_dir / f"{part_name}.new.svg"
-            old_svg_path.write_text(old_svg_text)
-            new_svg_path.write_text(new_svg_text)
+
+            if old_svg_text:
+                old_svg_path.write_text(old_svg_text)
+
+            if new_svg_text:
+                new_svg_path.write_text(new_svg_text)
+
+        properties_table = print_fp_properties.format_properties(old_mod, new_mod)
 
         return self._format_html_diff(
             part_name=part_name,
@@ -588,7 +605,7 @@ class HTMLDiff:
             enable_layers=True,
             canvas_background="#001023",
             hide_text_in_diff=True,
-            properties_table=print_fp_properties.format_properties(new_text),
+            properties_table=properties_table,
             code_diff=wsdiff.html_diff_block(
                 old_text, new_text, filename="", lexer=SexprLexer()
             ),
@@ -620,14 +637,15 @@ class HTMLDiff:
 
             old_file = old / new_file.name
             old_text = old_file.read_text() if old_file.is_file() else ""
-            new_text = new_file.read_text()
+            new_text = new_file.read_text() if new_file.is_file() else ""
             changed = old_text != new_text
             created = not old_file.is_file()
+            deleted = not new_file.is_file()
 
             if self.changes_only and not changed:
                 continue
 
-            self.diff_index.append((diff_name(new_file), created, changed, False))
+            self.diff_index.append((diff_name(new_file), created, changed, deleted))
             files.append(new_file)
 
         # Render reference SVGs all at once
@@ -664,15 +682,17 @@ class HTMLDiff:
                          out_file: Path):  # fmt: skip
         old_file = old / new_file.name
         old_text = old_file.read_text() if old_file.is_file() else ""
-        new_text = new_file.read_text()
+        new_text = new_file.read_text() if new_file.is_file() else ""
 
-        ref_fn = self._get_ref_fn(new_file)
         ref_svg = ""
-        if ref_fn.is_file():
-            ref_svg = ref_fn.read_text()
-        else:
-            ref_fn = ref_fn.with_name(f"{new_file.stem}.svg")
-            ref_svg = ref_fn.read_text()
+
+        if new_file.is_file():
+            ref_fn = self._get_ref_fn(new_file)
+            if ref_fn.is_file():
+                ref_svg = ref_fn.read_text()
+            else:
+                ref_fn = ref_fn.with_name(f"{new_file.stem}.svg")
+                ref_svg = ref_fn.read_text()
 
         diff_text = self.mod_diff(
             part_name=new_file.stem,

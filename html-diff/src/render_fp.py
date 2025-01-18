@@ -16,7 +16,6 @@ except ImportError:
     ) not in sys.path:
         sys.path.insert(0, str(common))
 
-from kicad_mod import KicadMod
 from svg_util import Tag, add_bboxes, bbox, define_arc, setup_svg
 
 LAYERS = [
@@ -392,10 +391,7 @@ def _render_mod_internal(mod):
                 yield layer, bbox, tag
 
 
-def render_mod(data):
-    if not data:
-        return ""
-    mod = KicadMod(data=data)
+def render_mod(mod: kicad_mod.KicadMod) -> str:
     tags = collections.defaultdict(lambda: [])
     bboxes = []
     for layer, bbox, tag in _render_mod_internal(mod):  # NOQA: F402

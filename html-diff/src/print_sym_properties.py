@@ -1,55 +1,14 @@
 #!/usr/bin/env python3
 
-import enum
+from xml.etree import ElementTree as ET
 
+from html_util import (
+    DiffProperty,
+    PropertyType,
+    make_count_table,
+    make_property_diff_table,
+)
 from kicad_sym import KicadSymbol, Property
-
-
-class PropertyType(enum.Enum):
-    """
-    This drives how we might want to display a property in the table.
-    """
-
-    # Text field dat
-    FIELD = enum.auto()
-    # DS URL
-    DATASHEET = enum.auto()
-    # Some "internal" data not directly entered as strings
-    NATIVE = enum.auto()
-
-
-class DiffProperty:
-    """
-    Class that represents some property of a symbol that night change.
-    """
-
-    old: str | None
-    new: str | None
-    prop_type: PropertyType
-
-    def __init__(
-        self, name: str, old: str | None, new: str | None, prop_type: PropertyType
-    ):
-        """
-        :param name: The name of the property
-        :param old: The old value of the property, or none if the old property is not present
-        :param new: The new value of the property, or none if the new property is not present
-        :param prop_type: The type of the property
-        """
-
-        self._old = old
-        self._new = new
-
-        self.name = name
-        self.prop_type = prop_type
-
-    @property
-    def old(self) -> str:
-        return self._old if self._old is not None else ""
-
-    @property
-    def new(self) -> str:
-        return self._new if self._new is not None else ""
 
 
 def _symbol_properties(old: KicadSymbol, new: KicadSymbol) -> list[DiffProperty]:
@@ -124,7 +83,9 @@ def _symbol_properties(old: KicadSymbol, new: KicadSymbol) -> list[DiffProperty]
     return properties
 
 
-def _symbol_counts(old, new) -> list[DiffProperty]:
+def _symbol_counts(
+    old: KicadSymbol | None, new: KicadSymbol | None
+) -> list[DiffProperty]:
 
     attrs = ["pins", "rectangles", "circles", "arcs", "polylines", "texts"]
 
@@ -143,69 +104,20 @@ def _symbol_counts(old, new) -> list[DiffProperty]:
 
 def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
 
-    out = "<table>\n"
-    out += "  <tr><th>Name</th><th>Old Value</th><th>New Value</th></tr>\n"
-
     properties = _symbol_properties(old, new)
 
-    def cell(val, cls: str | None, inner_tag: str | None = None):
+    container = ET.Element("div")
 
-        if inner_tag:
-            if inner_tag == "a":
-                val = f'<a target="_blank" href="{val}">{val}</a>'
-            else:
-                val = f"<{inner_tag}>{val}</{inner_tag}>"
+    prop_table = make_property_diff_table(properties)
+    container.append(prop_table)
 
-        c = "    <td"
-        if cls:
-            c += f' class="{cls}"'
+    count_header = ET.Element("h4")
+    count_header.text = "Primitive counts:"
+    container.append(count_header)
 
-        c += f">{val}</td>\n"
-        return c
+    count_table = make_count_table(_symbol_counts(old, new))
+    container.append(count_table)
 
-    for prop in properties:
-
-        cls = None
-        if prop.old == prop.new:
-            cls = "prop-same"
-
-        out += "  <tr>\n"
-        if prop.prop_type == PropertyType.DATASHEET:
-            out += cell(prop.name, None, "pre")
-            out += cell(prop.old, cls, "a")
-            out += cell(prop.new, cls, "a")
-
-        elif prop.prop_type == PropertyType.FIELD:
-            out += cell(prop.name, None, "pre")
-            out += cell(prop.old, cls, "pre")
-            out += cell(prop.new, cls, "pre")
-
-        elif prop.prop_type == PropertyType.NATIVE:
-            out += cell(prop.name, None, "strong")
-            out += cell(prop.old, cls)
-            out += cell(prop.new, cls)
-        else:
-            raise ValueError(f"Unknown property type {prop.prop_type}")
-
-        out += "  </tr>\n"
-
-    out += "</table>\n"
-    out += "<h4>Primitive counts:</h4>\n"
-    out += "<table>\n"
-    out += "  <tr><th>Type</th><th>Old count</th><th>New count</th></tr>\n"
-
-    counts = _symbol_counts(old, new)
-
-    # sort descending by count, then ascending alphabetically by name
-    for count_diff in sorted(counts, key=lambda d: (-d.new, d.name)):
-
-        cls = "prop-same" if count_diff.old == count_diff.new else None
-
-        out += "  <tr>\n"
-        out += cell(count_diff.name, None, "strong")
-        out += cell(count_diff.old, cls)
-        out += cell(count_diff.new, cls)
-
-    out += "</table>"
-
+    # Convert the XML container to a string
+    out = ET.tostring(container, encoding="unicode", method="html")
     return out
