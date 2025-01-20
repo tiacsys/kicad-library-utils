@@ -324,7 +324,9 @@ def _render_mod_internal(mod):
             elif pad['type'] == 'np_thru_hole':
                 layer = 'Hole_Nonplated'
             else:
-                raise ValueError(f'Found drill in pad of type {pad["type"]}')
+                # SMD pads don't have drills, but they *can* have an offset
+                # which is in the drill structure.
+                continue
 
             for bbox, tag in render_drill(pad, **{'class': f'l-{layer}-f'}):
                 yield layer, bbox, tag
