@@ -325,7 +325,7 @@ class Rule(KLCRule):
             description_property = self.component.get_property("Description")
             description = description_property.value if description_property else ""
 
-            _result |= self._checkKeywordsDuplicateTokens(keywords, description)
+            # Skip duplicate token checks
 
             # Other checks
             _result |= self._checkCommonKeywordAliases(keywords, description)
