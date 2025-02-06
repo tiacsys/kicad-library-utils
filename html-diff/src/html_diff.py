@@ -416,7 +416,7 @@ class HTMLDiff:
 
             if self.output is None:
                 self.output = new.with_suffix('.diff')
-            self.output.mkdir(exist_ok=True)
+            self.output.mkdir(exist_ok=True, parents=True)
 
             old_text, new_text = old.read_text(), new.read_text()
 
@@ -458,7 +458,7 @@ class HTMLDiff:
 
             if self.output is None:
                 self.output = new.with_suffix('.diff')
-            self.output.mkdir(exist_ok=True)
+            self.output.mkdir(exist_ok=True, parents=True)
 
             self.pretty_diff(old, new)
 

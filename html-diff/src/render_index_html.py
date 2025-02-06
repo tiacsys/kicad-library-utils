@@ -69,23 +69,28 @@ def generate_index_html(directory, prefix):
     Raises:
         None
     """
-    # Find sub-directories
-    sub_dirs = [
-                d for d
-                in os.listdir(directory)
-                if os.path.isdir(os.path.join(directory, d))
-                and d.endswith(".diff")  # e.g. "Regulator_Switching.diff"
-        ]
+
+    sub_dirs = []
+
+    # Find sub-directories recursively
+    for root, dirs, files in os.walk(directory):
+        for d in dirs:
+            if d.endswith(".diff"):
+                sub_dirs.append(os.path.relpath(os.path.join(root, d), directory))
+
     sub_dirs.sort()
 
     if len(sub_dirs) == 0:
         return "<html><h1>No diff sub-directories found</h1></html>"
     if len(sub_dirs) == 1:
         # If there is only one sub-directory
-        sub_dir_path = Path(directory) / sub_dirs[0]
+        sub_dir = sub_dirs[0]
+        sub_dir_path = Path(directory) / sub_dir
+
         html_files = sorted(sub_dir_path.glob("*.html"))
+
         if html_files and len(html_files) > 0:
-            url = f'{prefix}{sub_dir_path.name}/{html_files[0].name}'
+            url = f'{prefix}{sub_dir}/{html_files[0].name}'
             return f'''
                 <html>
                     <head>
@@ -99,7 +104,9 @@ def generate_index_html(directory, prefix):
         buttons_html = ""
         for sub_dir in sub_dirs:
             sub_dir_path = Path(directory) / sub_dir
+
             html_files = sorted(sub_dir_path.glob("*.html"))
+
             if html_files:
                 path = f'{prefix}{sub_dir}/{html_files[0].name}'
                 buttons_html += f'''
