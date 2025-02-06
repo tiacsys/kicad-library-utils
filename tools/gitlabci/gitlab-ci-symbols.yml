@@ -4,9 +4,17 @@ stages:
   - diffs
   - export
 
-before_script:
-  - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-library-utils $CI_BUILDS_DIR/kicad-library-utils
-  - git config --global --add safe.directory $(realpath .)
+variables:
+  # By default, use the master branch of the main KLU repository
+  # You can override this in your projects GitLab UI
+  KICAD_LIBRARY_UTILS_REPO: https://gitlab.com/kicad/libraries/kicad-library-utils
+  KICAD_LIBRARY_UTILS_BRANCH: master
+
+default:
+  before_script:
+    - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git config --global --add safe.directory $(realpath .)
 
 klc-check:
   stage: tests
@@ -70,7 +78,7 @@ nightly-convert:
   before_script:
     - sudo apt update -q && sudo apt install -qqy git
     - git config --global "http.${CI_SERVER_URL}.sslCAInfo" "$CI_SERVER_TLS_CA_FILE"
-    - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-library-utils $CI_BUILDS_DIR/kicad-library-utils
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
   script:
     - export LIB_NAME_MASK="*.kicad_sym" LIB_TYPE=sym LIB_DEST="$CI_BUILDS_DIR/libraries" LIB_REMOTE_BRANCH=nightly-rolling
     - git clone --branch $LIB_REMOTE_BRANCH --depth 1 "https://token:$GITLAB_ACCESS_TOKEN@gitlab.com/kicad/libraries/kicad-symbols.git" $CI_BUILDS_DIR/libraries

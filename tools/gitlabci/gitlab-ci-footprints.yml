@@ -7,9 +7,17 @@ stages:
   - model
   - convert
 
-before_script:
-  - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-library-utils $CI_BUILDS_DIR/kicad-library-utils
-  - git config --global --add safe.directory $(realpath .)
+variables:
+  # By default, use the master branch of the main KLU repository
+  # You can override this in your projects GitLab UI
+  KICAD_LIBRARY_UTILS_REPO: https://gitlab.com/kicad/libraries/kicad-library-utils
+  KICAD_LIBRARY_UTILS_BRANCH: master
+
+default:
+  before_script:
+    - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git config --global --add safe.directory $(realpath .)
 
 klc-check:
   stage: test
@@ -41,7 +49,7 @@ nightly-convert:
   before_script:
     - sudo apt update -q && sudo apt install -qqy git
     - git config --global "http.${CI_SERVER_URL}.sslCAInfo" "$CI_SERVER_TLS_CA_FILE"
-    - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-library-utils $CI_BUILDS_DIR/kicad-library-utils
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
   script:
     - find . -name "*.kicad_mod" -exec sed -i 's/\${KICAD6_3DMODEL_DIR}/\${KICAD7_3DMODEL_DIR}/g' {} \;
     - export LIB_NAME_MASK="*.pretty" LIB_TYPE=fp LIB_DEST="$CI_BUILDS_DIR/libraries" LIB_REMOTE_BRANCH=nightly-rolling
@@ -69,7 +77,7 @@ screenshot:
     - sudo apt update -qq
     - sudo apt install curl inkscape python3 git -qqy --no-install-recommends
     - mkdir -p $HOME/.config/kicad/8.0/colors
-    - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-library-utils $CI_BUILDS_DIR/kicad-library-utils
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)
   script:
     - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/screenshot_footprints.sh
@@ -93,7 +101,7 @@ model:
     - sudo apt update -qq
     - sudo apt install curl python3 git -qqy --no-install-recommends
     - mkdir -p $HOME/.config/kicad/8.0/colors
-    - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-library-utils $CI_BUILDS_DIR/kicad-library-utils
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-packages3D $CI_BUILDS_DIR/kicad-packages3D
     - git config --global --add safe.directory $(realpath .)
   script:
