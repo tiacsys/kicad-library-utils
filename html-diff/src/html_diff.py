@@ -678,7 +678,7 @@ class HTMLDiff:
     def symlib_diff(self, old_symlib_path: Path, new_symlib_path: Path):
         if self.output is None:
             self.output = new_symlib_path.with_suffix('.diff')
-        self.output.mkdir(exist_ok=True)
+        self.output.mkdir(exist_ok=True, parents=True)
 
         old_lib = kicad_sym.KicadLibrary.from_file(filename=old_symlib_path)
         new_lib = kicad_sym.KicadLibrary.from_file(filename=new_symlib_path)

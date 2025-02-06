@@ -60,9 +60,13 @@ visual_diff:
         pygments
         wsdiff
         jinja2
+    # Get the MR SHA values
+    - source $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/common.sh
     - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/visual_diff.sh
-    - mkdir diffs
-    - mv *.diff diffs/
+        -r "${CI_PROJECT_DIR}"
+        -b "${BASE_SHA}"
+        -t "${TARGET_SHA}"
+        -o "diffs"
   artifacts:
     expose_as: "Visual Diff"
     paths:
