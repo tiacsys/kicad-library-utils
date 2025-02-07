@@ -169,8 +169,10 @@ class KicadSymbolBase:
 
     @classmethod
     def quoted_string(cls, s: str) -> str:
-        s = re.sub(r"\n", r"\\n", s)
-        return '"' + s + '"'
+        s = re.sub("\\n", "\\\\n", s)
+        s = re.sub('"', '\\"', s)
+        return f'"{s}"'
+
 
     @classmethod
     def dir_to_rotation(cls, d: str) -> int:
