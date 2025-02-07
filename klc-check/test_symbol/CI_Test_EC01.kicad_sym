@@ -87,7 +87,7 @@
 			)
 		)
 	)
-	(symbol "Warn__EC01__Duplicate_arc"
+	(symbol "Warn__EC01__duplicate_arc"
 		(exclude_from_sim no)
 		(in_bom no)
 		(on_board no)
@@ -100,7 +100,7 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "Warn__EC01__Duplicate_arc"
+		(property "Value" "Warn__EC01__duplicate_arc"
 			(at 0 0 0)
 			(effects
 				(font
@@ -145,7 +145,7 @@
 				(hide yes)
 			)
 		)
-		(symbol "Warn__EC01__Duplicate_arc_0_1"
+		(symbol "Warn__EC01__duplicate_arc_0_1"
 			(arc
 				(start 2 0)
 				(mid 1 1)
@@ -172,7 +172,7 @@
 			)
 		)
 	)
-	(symbol "Warn__EC01__Duplicate_circle"
+	(symbol "Warn__EC01__duplicate_circle"
 		(exclude_from_sim no)
 		(in_bom no)
 		(on_board no)
@@ -185,7 +185,7 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "Warn__EC01__Duplicate_circle"
+		(property "Value" "Warn__EC01__duplicate_circle"
 			(at 0 0 0)
 			(effects
 				(font
@@ -230,7 +230,7 @@
 				(hide yes)
 			)
 		)
-		(symbol "Warn__EC01__Duplicate_circle_0_1"
+		(symbol "Warn__EC01__duplicate_circle_0_1"
 			(circle
 				(center 42 13)
 				(radius 1)
@@ -255,7 +255,7 @@
 			)
 		)
 	)
-	(symbol "Warn__EC01__Duplicate_segment"
+	(symbol "Warn__EC01__duplicate_segment"
 		(exclude_from_sim no)
 		(in_bom no)
 		(on_board no)
@@ -268,7 +268,7 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "Warn__EC01__Duplicate_segment"
+		(property "Value" "Warn__EC01__duplicate_segment"
 			(at 0 0 0)
 			(effects
 				(font
@@ -313,7 +313,7 @@
 				(hide yes)
 			)
 		)
-		(symbol "Warn__EC01__Duplicate_segment_0_1"
+		(symbol "Warn__EC01__duplicate_segment_0_1"
 			(polyline
 				(pts
 					(xy 0 0) (xy 42 24)
@@ -340,7 +340,7 @@
 			)
 		)
 	)
-	(symbol "Warn__EC01__Duplicate_segment_reversed"
+	(symbol "Warn__EC01__duplicate_segment_reversed"
 		(exclude_from_sim no)
 		(in_bom no)
 		(on_board no)
@@ -353,7 +353,7 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "Warn__EC01__Duplicate_segment_reversed"
+		(property "Value" "Warn__EC01__duplicate_segment_reversed"
 			(at 0 0 0)
 			(effects
 				(font
@@ -398,7 +398,7 @@
 				(hide yes)
 			)
 		)
-		(symbol "Warn__EC01__Duplicate_segment_reversed_0_1"
+		(symbol "Warn__EC01__duplicate_segment_reversed_0_1"
 			(polyline
 				(pts
 					(xy 0 0) (xy 42 24)
@@ -1153,4 +1153,179 @@
 			)
 		)
 	)
+	(symbol "Pass__EC01__permitted_duplicate_bezier"
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(property "Reference" "#SYM"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "Pass__EC01__permitted_duplicate_bezier"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "http://example.com/ds.pdf"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "dummy"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "ki_keywords" "dummy"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "Pass__EC01__permitted_duplicate_bezier_0_1"
+			(bezier
+				(pts
+					(xy 0.708 -26.67) (xy 0.508 -26.8102) (xy 0.7354 -26.924) (xy 1.016 -26.924)
+				)
+				(stroke
+					(width 0.0254)
+					(type solid)
+					(color 204 185 134 1)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(bezier
+				(pts
+					(xy 0.508 -26.67) (xy 0.508 -26.8102) (xy 0.7354 -26.924) (xy 1.016 -26.924)
+				)
+				(stroke
+					(width 0.0254)
+					(type solid)
+					(color 204 185 134 1)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+	)
+	(symbol "Warn__EC01__duplicate_bezier"
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(property "Reference" "#SYM"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "Warn__EC01__duplicate_bezier"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "http://example.com/ds.pdf"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "dummy"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "ki_keywords" "dummy"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "Warn__EC01__duplicate_bezier_0_1"
+			(bezier
+				(pts
+					(xy 0.508 -26.67) (xy 0.508 -26.8102) (xy 0.7354 -26.924) (xy 1.016 -26.924)
+				)
+				(stroke
+					(width 0.0254)
+					(type solid)
+					(color 204 185 134 1)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(bezier
+				(pts
+					(xy 0.508 -26.67) (xy 0.508 -26.8102) (xy 0.7354 -26.924) (xy 1.016 -26.924)
+				)
+				(stroke
+					(width 0.0254)
+					(type solid)
+					(color 204 185 134 1)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+	)
+
 )

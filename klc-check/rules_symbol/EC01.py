@@ -2,27 +2,10 @@
 import math
 
 from kicad_sym import Polyline
+from kicad_sym import Bezier
 from rules_symbol.rule import KLCRule
 
 import geometry
-
-# class RoundedPoint:
-
-#     def __init__(self, pt, tol):
-#         self._tol = tol
-#         self._round_x = round(pt.x / tol)
-#         self._round_y = round(pt.y / tol)
-#         self._pt = geometry.Point(_round_x, _round_y)
-
-#     def _roundoff_length(self, l: float) -> int:
-#         """
-#         Returns an integer that will be the same for lengths that are within dl
-#         of each other
-#         """
-#         return round(l / self.smallLength)
-
-#     def __hash__(self):
-#         return self.
 
 
 class Rule(KLCRule):
@@ -220,6 +203,36 @@ class Rule(KLCRule):
                             f"({a2.start}, midpoint {a2.midpoint}, end {a2.end})"
                         )
 
+    def _check_duplicate_bezier(self) -> None:
+
+        def _beizer_almost_equal(b1: Bezier, b2: Bezier):
+            almost_equal = True
+            for b1_pt, b2_pt in zip(b1.points, b2.points):
+                b1_pt = geometry.Point(b1_pt.x, b1_pt.y)
+                b2_pt = geometry.Point(b2_pt.x, b2_pt.y)
+                if b1_pt.distance_to(b2_pt) >= self.smallLength:
+                    almost_equal = False
+            return almost_equal
+
+        for i in range(len(self.component.beziers)):
+            for j in range(i + 1, len(self.component.beziers)):
+                b1 = self.component.beziers[i]
+                b2 = self.component.beziers[j]
+
+                if b1.unit == b2.unit and _beizer_almost_equal(b1, b2):
+                    if b1 == b2:
+                        self.warning(
+                            "The same beizer geometry exists multiple times: "
+                            f"{b1.points}"
+                        )
+                    else:
+                        self.warning(
+                            "The bezier geometry "
+                            f"{b1.points}"
+                            "is very similar to "
+                            f"{b2.points}"
+                        )
+
     def _check_duplicate_texts(self) -> None:
         def _texts_almost_equal(t1, t2) -> bool:
             # arcs can go either way and they're still the same
@@ -263,6 +276,7 @@ class Rule(KLCRule):
         self._check_duplicate_segments()
         self._check_duplicate_circles()
         self._check_duplicate_arcs()
+        self._check_duplicate_bezier()
         self._check_duplicate_texts()
 
         return 0  # There is no KLC rule for this so this check only generates warnings

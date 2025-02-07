@@ -173,7 +173,6 @@ class KicadSymbolBase:
         s = re.sub('"', '\\"', s)
         return f'"{s}"'
 
-
     @classmethod
     def dir_to_rotation(cls, d: str) -> int:
         if d == "R":
@@ -704,6 +703,73 @@ class Polyline(KicadSymbolBase):
 
 
 @dataclass
+class Bezier(KicadSymbolBase):
+    # (bezier
+    # 	(pts
+    # 		(xy 0.508 -26.67) (xy 0.508 -26.8102) (xy 0.7354 -26.924) (xy 1.016 -26.924)
+    # 	)
+    # 	(stroke
+    # 		(width 0.0254)
+    # 		(type solid)
+    # 		(color 204 185 134 1)
+    # 	)
+    # 	(fill
+    # 		(type none)
+    # 	)
+    # )
+    points: List[float]
+    stroke_width: float = 0
+    stroke_type: str = "default"
+    stroke_color: Optional[Color] = None
+    fill_type: str = "none"
+    fill_color: Optional[Color] = None
+    unit: int = 0
+    demorgan: int = 0
+
+    def get_sexpr(self):
+        pts_list: list[Any] = [x.get_sexpr() for x in self.points]
+        pts_list.insert(0, "pts")
+        stroke_sx = [
+            "stroke",
+            ["width", self.stroke_width],
+            ["type", self.stroke_type],
+        ]
+        if self.stroke_color:
+            stroke_sx.append(self.stroke_color.get_sexpr())
+        fill_sx = ["fill", ["type", self.fill_type]]
+        if self.fill_color:
+            fill_sx.append(self.fill_color.get_sexpr())
+        sx = [
+            "bezier",
+            pts_list,
+            stroke_sx,
+            fill_sx,
+        ]
+        return sx
+
+    @classmethod
+    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Bezier"]:
+        if sexpr.pop(0) != "bezier":
+            return None
+        points = []
+        for p in _get_array(sexpr, "pts")[0]:
+            if "xy" in p:
+                points.append(Point(p[1], p[2]))
+        (stroke_width, stroke_type, stroke_color) = _get_stroke(sexpr)
+        (fill_type, fill_color) = _get_fill(sexpr)
+        return Bezier(
+            points,
+            stroke_width,
+            stroke_type,
+            stroke_color,
+            fill_type,
+            fill_color,
+            unit,
+            demorgan,
+        )
+
+
+@dataclass
 class Text(KicadSymbolBase):
     text: str
     posx: float
@@ -888,6 +954,7 @@ class KicadSymbol(KicadSymbolBase):
     circles: List[Circle] = field(default_factory=list)
     arcs: List[Arc] = field(default_factory=list)
     polylines: List[Polyline] = field(default_factory=list)
+    beziers: List[Bezier] = field(default_factory=list)
     texts: List[Text] = field(default_factory=list)
     pin_names_offset: float = 0.508
     hide_pin_names: bool = False
@@ -946,6 +1013,7 @@ class KicadSymbol(KicadSymbolBase):
                     + self.circles
                     + self.texts
                     + self.rectangles
+                    + self.bezier
                     + self.polylines
                     + sorted(self.pins, key=lambda pin: pin.number)
                 ):
@@ -1323,6 +1391,10 @@ class KicadLibrary(KicadSymbolBase):
                 for poly in _get_array(unit_data, "polyline"):
                     symbol.polylines.append(
                         Polyline.from_sexpr(poly, unit_idx, demorgan_idx)
+                    )
+                for bezier in _get_array(unit_data, "bezier"):
+                    symbol.beziers.append(
+                        Bezier.from_sexpr(bezier, unit_idx, demorgan_idx)
                     )
                 for text in _get_array(unit_data, "text"):
                     symbol.texts.append(Text.from_sexpr(text, unit_idx, demorgan_idx))
