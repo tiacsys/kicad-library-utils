@@ -138,7 +138,11 @@ def main():
     index_html_path = os.path.join(args.directory, "index.html")
     print(f"Generating index.html at {index_html_path}")
 
+    # Create the directory if it does not exist (can happen for a null diff)
+    os.makedirs(args.directory, exist_ok=True)
+
     index_html_content = generate_index_html(args.directory, prefix=args.link_prefix)
+
     with open(index_html_path, "w", encoding="utf-8") as file:
         file.write(index_html_content)
 
