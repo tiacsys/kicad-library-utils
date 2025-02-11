@@ -59,7 +59,7 @@ class KicadMod:
 
     footprint_type: str = "unspecified"
 
-    def __init__(self, filename: str=None, data=None):
+    def __init__(self, filename: str = None, data=None):
         self.filename: str = filename
 
         if data is not None:
@@ -69,7 +69,7 @@ class KicadMod:
             with open(filename) as f:
                 sexpr_data = f.read()
         else:
-            raise ValueError('Either filename or data must be given.')
+            raise ValueError("Either filename or data must be given.")
 
         # parse s-expr
         sexpr_data = sexpr.parse_sexp(sexpr_data)
@@ -112,12 +112,16 @@ class KicadMod:
         # reference
         self.reference = self.getProperty("reference")
         if self.reference is None:
-            raise ValueError('file is missing the "reference" property. This file is broken and can\'t be parsed!')
+            raise ValueError(
+                'file is missing the "reference" property. This file is broken and can\'t be parsed!'
+            )
 
         # value
         self.value = self.getProperty("value")
         if self.value is None:
-            raise ValueError('file is missing the "value" property. This file is broken and can\'t be parsed!')
+            raise ValueError(
+                'file is missing the "value" property. This file is broken and can\'t be parsed!'
+            )
 
         # user text
         self.userText: List[Dict[str, Any]] = self._getText("user")
@@ -228,12 +232,17 @@ class KicadMod:
 
                     # text position
                     a = self._getArray(text, "at")[0]
-                    text_dict["pos"] = {"x": a[1], "y": a[2], "orientation": 0, "lock": 'locked'}
+                    text_dict["pos"] = {
+                        "x": a[1],
+                        "y": a[2],
+                        "orientation": 0,
+                        "lock": "locked",
+                    }
                     if len(a) > 3:
                         text_dict["pos"]["orientation"] = a[3]
-                        if text_dict["pos"]["orientation"] == 'unlocked':
+                        if text_dict["pos"]["orientation"] == "unlocked":
                             text_dict["pos"]["lock"] = a[3]
-                    if len(a) > 4 :
+                    if len(a) > 4:
                         text_dict["pos"]["lock"] = a[4]
 
                     # text layer
@@ -272,7 +281,7 @@ class KicadMod:
         """
         # For now just call _getText, which is enough to provide this interface
 
-        if (key.lower() == 'user'):
+        if key.lower() == "user":
             raise ValueError("getProperty should not be used to get user text items")
 
         prop = self._getText(key)
@@ -438,7 +447,7 @@ class KicadMod:
                 p3x = arc_dict["end"]["x"]
                 p3y = arc_dict["end"]["y"]
 
-                if math.sqrt((p1x - p3x)**2 + (p1y - p3y)**2) < 1e-7:
+                if math.sqrt((p1x - p3x) ** 2 + (p1y - p3y) ** 2) < 1e-7:
                     # start and end points match --> center is half way between
                     # start(=end) and mid
                     rx, ry = 0.5 * (p1x + p2x), 0.5 * (p1y + p2y)
@@ -453,7 +462,9 @@ class KicadMod:
 
                     # Calculate coordinates of the Center (rx,ry) from the three points
                     # using formula found on http://ambrsoft.com/TrigoCalc/Circle3D.htm
-                    A = 2 * (p1x * (p2y - p3y) - p1y * (p2x - p3x) + p2x * p3y - p3x * p2y)
+                    A = 2 * (
+                        p1x * (p2y - p3y) - p1y * (p2x - p3x) + p2x * p3y - p3x * p2y
+                    )
                     rx = (
                         ((p1x_2 + p1y_2) * (p2y - p3y))
                         + ((p2x_2 + p2y_2) * (p3y - p1y))
@@ -640,9 +651,13 @@ class KicadMod:
                                     for name in ["start", "mid", "end"]:
                                         s = self._getArray(pt, name)
                                         if s:
-                                            p["pts"].append({"x": s[0][1], "y": s[0][2]})
+                                            p["pts"].append(
+                                                {"x": s[0][1], "y": s[0][2]}
+                                            )
                                 else:
-                                    raise ValueError(f"unhandled primitive '{pt[0]}' in custom pad shape polygon")
+                                    raise ValueError(
+                                        f"unhandled primitive '{pt[0]}' in custom pad shape polygon"
+                                    )
                         elif primitive[0] == "gr_line":
                             # Read the line's start
                             p["start"] = {}
@@ -1154,7 +1169,6 @@ class KicadMod:
         return bb
 
     def _formatText(self, text_type, text, se: sexpr.SexprBuilder) -> None:
-
         """
         Text is formatted like thus:
         (fp_text <type> <value> (at <x> <y> <R>*) (layer <layer>)

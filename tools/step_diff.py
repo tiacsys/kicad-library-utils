@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 
-import cadquery as cq
-
 import argparse
 import logging
-import sys
 import os
 import pathlib
+import sys
+
+import cadquery as cq
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "."))
 
@@ -69,7 +69,9 @@ class StepDiffer:
 
         if object1_volume > 1e-6:
             diff_volume_proportion = difference_volume / object1_volume
-            logging.info(f"Proportional difference: {100 * diff_volume_proportion:.2f}%")
+            logging.info(
+                f"Proportional difference: {100 * diff_volume_proportion:.2f}%"
+            )
             significant_diff = diff_volume_proportion > self.epsilon
         else:
             logging.info("Proportional difference: Inf (added)")
@@ -79,13 +81,11 @@ class StepDiffer:
 
         if significant_diff:
 
-            assembly = cq.Assembly() \
-                .add(added_shape,
-                     name="added",
-                     color=self.added_colour) \
-                .add(removed_shape,
-                     name="removed",
-                     color=self.removed_colour)
+            assembly = (
+                cq.Assembly()
+                .add(added_shape, name="added", color=self.added_colour)
+                .add(removed_shape, name="removed", color=self.removed_colour)
+            )
 
         return significant_diff, assembly
 
@@ -93,20 +93,35 @@ class StepDiffer:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Diff two STEP files")
-    parser.add_argument("-o", "--output",
-                        help="Output difference shape to file")
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-                        help="Increase verbosity")
-    parser.add_argument("-z", "--expect-zero", action="store_true",
-                        help="Expect zero difference (return code non-zero if not)")
-    parser.add_argument("-e", "--epsilon", type=float, default=0.001,
-                        help="Volume epsilon for zero check (default 0.1%%)")
-    parser.add_argument("-D", "--ignore-deletions", action="store_true",
-                        help="Ignore files that appear to be deleted")
+    parser.add_argument("-o", "--output", help="Output difference shape to file")
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0, help="Increase verbosity"
+    )
+    parser.add_argument(
+        "-z",
+        "--expect-zero",
+        action="store_true",
+        help="Expect zero difference (return code non-zero if not)",
+    )
+    parser.add_argument(
+        "-e",
+        "--epsilon",
+        type=float,
+        default=0.001,
+        help="Volume epsilon for zero check (default 0.1%%)",
+    )
+    parser.add_argument(
+        "-D",
+        "--ignore-deletions",
+        action="store_true",
+        help="Ignore files that appear to be deleted",
+    )
 
     parser.add_argument("path1", help="First file or directory")
-    parser.add_argument("path2",
-                        help="Second file or dir (dir uses all files and compares each against path1)")
+    parser.add_argument(
+        "path2",
+        help="Second file or dir (dir uses all files and compares each against path1)",
+    )
 
     args = parser.parse_args()
 

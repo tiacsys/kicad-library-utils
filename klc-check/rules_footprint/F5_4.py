@@ -3,8 +3,8 @@
 
 from typing import Any, Dict, List
 
-from kicad_mod import KicadMod
 from geometry import Point, Seg2D
+from kicad_mod import KicadMod
 from rules_footprint.rule import KLCRule, graphItemString
 
 

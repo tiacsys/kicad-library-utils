@@ -68,7 +68,9 @@ class Rule(KLCRule):
                 )
 
         if self.power_invisible_errors:
-            self.error("Power input pins must not be invisible unless used in power symbols.")
+            self.error(
+                "Power input pins must not be invisible unless used in power symbols."
+            )
 
             for pin in self.power_invisible_errors:
                 self.errorExtra(

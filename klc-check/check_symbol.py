@@ -7,11 +7,11 @@ import re
 import sys
 import time
 import traceback
+from dataclasses import dataclass
 from functools import lru_cache
 from glob import glob  # enable windows wildcards
 from multiprocessing import JoinableQueue, Lock, Process, Queue
 from typing import List, Optional, Tuple
-from dataclasses import dataclass
 
 common = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
@@ -19,12 +19,12 @@ common = os.path.abspath(
 if common not in sys.path:
     sys.path.insert(0, common)
 
+import junit
 from kicad_sym import KicadFileFormatError, KicadLibrary
 from print_color import PrintColor
 from rulebase import Verbosity, logError
 from rules_symbol import get_all_symbol_rules
 from rules_symbol.rule import KLCRule
-import junit
 
 
 class SymbolCheck:
@@ -37,7 +37,7 @@ class SymbolCheck:
         use_color: bool = True,
         no_warnings: bool = False,
         silent: bool = False,
-        log: bool = False
+        log: bool = False,
     ):
         self.footprints = footprints
         self.printer = PrintColor(use_color=use_color)
@@ -398,7 +398,7 @@ if __name__ == "__main__":
     task_queue = JoinableQueue()
     out_queue = Queue()
 
-    for (filename, size) in files:
+    for filename, size in files:
         task_queue.put(filename)
 
     jobs = []

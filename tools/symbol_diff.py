@@ -39,22 +39,20 @@ def error(message: str):
     exit(1)
 
 
-parser = argparse.ArgumentParser(
-    description=(
-        "Print diff of two symbols"
-    )
+parser = argparse.ArgumentParser(description=("Print diff of two symbols"))
+parser.add_argument("A", help="First symbol (libpath:symbolname)")
+parser.add_argument("B", help="Second symbol (libpath:symbolname)")
+parser.add_argument(
+    "-p",
+    "--parsed",
+    action="store_true",
+    help="Print out semantic diff of parsed symbol",
 )
 parser.add_argument(
-    "A", help="First symbol (libpath:symbolname)"
-)
-parser.add_argument(
-    "B", help="Second symbol (libpath:symbolname)"
-)
-parser.add_argument(
-    "-p", "--parsed", action="store_true", help="Print out semantic diff of parsed symbol"
-)
-parser.add_argument(
-    "-s", "--sexpr", action="store_true", help="Print out unified diff of s-expr representation"
+    "-s",
+    "--sexpr",
+    action="store_true",
+    help="Print out unified diff of s-expr representation",
 )
 
 args = parser.parse_args()

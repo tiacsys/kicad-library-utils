@@ -14,12 +14,12 @@ common = os.path.abspath(
 if common not in sys.path:
     sys.path.insert(0, common)
 
+import junit
 from kicad_mod import KicadMod
 from print_color import PrintColor
 from rulebase import Verbosity, logError
 from rules_footprint import get_all_footprint_rules
 from rules_footprint.rule import KLCRule
-import junit
 
 
 def check_library(
@@ -101,7 +101,9 @@ def do_unittest(footprint, rules, metrics) -> Tuple[int, int]:
     return (error_count, warning_count)
 
 
-def do_rulecheck(module, rules, metrics, junit_case: junit.JunitTestCase) -> Tuple[int, int]:
+def do_rulecheck(
+    module, rules, metrics, junit_case: junit.JunitTestCase
+) -> Tuple[int, int]:
     ec = 0
     wc = 0
     first = True

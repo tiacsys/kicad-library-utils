@@ -6,9 +6,11 @@ def pinString(pin: Pin, loc: bool = True, unit=None, convert=None) -> str:
     return "Pin {name} ({num}){loc}{unit}".format(
         name=pin.name,
         num=pin.number,
-        loc=" @ ({x},{y})".format(x=mm_to_mil(pin.posx), y=mm_to_mil(pin.posy))
-        if loc
-        else "",
+        loc=(
+            " @ ({x},{y})".format(x=mm_to_mil(pin.posx), y=mm_to_mil(pin.posy))
+            if loc
+            else ""
+        ),
         unit=" in unit {n}".format(n=pin.unit) if unit else "",
     )
 

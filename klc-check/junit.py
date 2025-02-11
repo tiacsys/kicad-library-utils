@@ -1,8 +1,7 @@
-from xml.etree import ElementTree as ET
-from typing import List
 import os
 import sys
-
+from typing import List
+from xml.etree import ElementTree as ET
 
 # Path to common directory
 common = os.path.abspath(
@@ -87,9 +86,13 @@ class JUnitReport:
         """
 
         for suite in self.suites:
-            suite_et = ET.SubElement(self.root, "testsuite", {
-                "name": suite.name,
-            })
+            suite_et = ET.SubElement(
+                self.root,
+                "testsuite",
+                {
+                    "name": suite.name,
+                },
+            )
 
             if suite.id is not None:
                 suite_et.set("id", suite.id)
@@ -102,23 +105,33 @@ class JUnitReport:
                 if not case.results:
                     # Create a test case for each component that passes
                     tests += 1
-                    ET.SubElement(suite_et, "testcase", {
-                        "classname": suite.name,
-                        "name": case.name,
-                    })
+                    ET.SubElement(
+                        suite_et,
+                        "testcase",
+                        {
+                            "classname": suite.name,
+                            "name": case.name,
+                        },
+                    )
                 else:
                     # Create a test case for each component×severity
                     for severity, results in case.results.items():
                         tests += 1
-                        testcase_et = ET.SubElement(suite_et, "testcase", {
-                            # Classname=suite name makes it appear in the Gitlab UI
-                            # https://gitlab.com/gitlab-org/gitlab/-/issues/299086
-                            "classname": suite.name,
-                            "name": f"{case.name} - {SeverityToStr[severity]}",
-                            "type": SeverityToStr[severity],
-                        })
+                        testcase_et = ET.SubElement(
+                            suite_et,
+                            "testcase",
+                            {
+                                # Classname=suite name makes it appear in the Gitlab UI
+                                # https://gitlab.com/gitlab-org/gitlab/-/issues/299086
+                                "classname": suite.name,
+                                "name": f"{case.name} - {SeverityToStr[severity]}",
+                                "type": SeverityToStr[severity],
+                            },
+                        )
 
-                        failure_type = "FAILURE" if severity == Severity.ERROR else "WARNING"
+                        failure_type = (
+                            "FAILURE" if severity == Severity.ERROR else "WARNING"
+                        )
 
                         # we remove duplicates, while preserving the order of the list,
                         # because on footprints, there can be many:
@@ -131,15 +144,17 @@ class JUnitReport:
                         for result in unique_results:
                             failures += 1
                             full_msg = (
-                                result.message
-                                + "\n    "
-                                + "\n    ".join(result.extras)
+                                result.message + "\n    " + "\n    ".join(result.extras)
                             )
 
-                            ET.SubElement(testcase_et, "failure", {
-                                "message": result.message,
-                                "type": failure_type,
-                            }).text = full_msg
+                            ET.SubElement(
+                                testcase_et,
+                                "failure",
+                                {
+                                    "message": result.message,
+                                    "type": failure_type,
+                                },
+                            ).text = full_msg
 
             suite_et.set("tests", str(tests))
             suite_et.set("failures", str(failures))

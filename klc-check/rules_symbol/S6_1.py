@@ -7,7 +7,7 @@ RD_Map = [
 
 
 class Rule(KLCRule):
-    """If part is in oscillator library, """
+    """If part is in oscillator library,"""
 
     def checkRD(self) -> bool:
         fail = False
@@ -20,18 +20,16 @@ class Rule(KLCRule):
         for entry in RD_Map:
             if self.component.libname in entry[1]:
                 if not ref.value.startswith(entry[0]):
-                    self.error(f"Library {self.component.libname} should have {entry[0]} as RD prefix")
+                    self.error(
+                        f"Library {self.component.libname} should have {entry[0]} as RD prefix"
+                    )
                     fail = True
 
         return fail
 
     def check(self) -> bool:
 
-        return any(
-            [
-                self.checkRD()
-            ]
-        )
+        return any([self.checkRD()])
 
     def fix(self) -> None:
         """

@@ -1,6 +1,5 @@
 import argparse
 import os
-
 from pathlib import Path
 
 import pcbnew
@@ -30,20 +29,24 @@ fp_step = fp.Duplicate()
 fp_transp = fp.Duplicate()
 fp.Models()[0].m_Show = False
 b.Add(fp_wrl)
-fp_wrl.SetPosition(pcbnew.VECTOR2I_MM(100+2*pcbnew.ToMM(bb.GetWidth()), 100+2*pcbnew.ToMM(bb.GetHeight())))
+fp_wrl.SetPosition(
+    pcbnew.VECTOR2I_MM(
+        100 + 2 * pcbnew.ToMM(bb.GetWidth()), 100 + 2 * pcbnew.ToMM(bb.GetHeight())
+    )
+)
 fp_wrl.SetReference("WRL")
 fp_wrl.Models()[0].m_Filename = str(Path(os.path.abspath(args.wrl)))
 fp_wrl.Models()[0].m_Show = True
 
 b.Add(fp_step)
 fp_step.SetReference("STEP")
-fp_step.SetPosition(pcbnew.VECTOR2I_MM(100, 100+2*pcbnew.ToMM(bb.GetHeight())))
+fp_step.SetPosition(pcbnew.VECTOR2I_MM(100, 100 + 2 * pcbnew.ToMM(bb.GetHeight())))
 fp_step.Models()[0].m_Filename = str(Path(os.path.abspath(args.step)))
 fp_step.Models()[0].m_Show = True
 
 b.Add(fp_transp)
 fp_transp.SetReference("70%")
-fp_transp.SetPosition(pcbnew.VECTOR2I_MM(100+2*pcbnew.ToMM(bb.GetWidth()), 100))
+fp_transp.SetPosition(pcbnew.VECTOR2I_MM(100 + 2 * pcbnew.ToMM(bb.GetWidth()), 100))
 fp_transp.Models()[0].m_Filename = str(Path(os.path.abspath(args.step)))
 fp_transp.Models()[0].m_Show = True
 fp_transp.Models()[0].m_Opacity = 0.7

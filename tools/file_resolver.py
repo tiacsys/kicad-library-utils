@@ -1,4 +1,4 @@
-""""
+""" "
 This is a module to perform a common action in CI workflows: find a list of`
 corresponding files in two directories, or (soon) in different git commits, and
 present them in a way that can be used by other tools (e.g. a diff tool).
@@ -44,6 +44,7 @@ class FileResolver(abc.ABC):
     """
     This is something that can resolve a list of files to be compared.
     """
+
     @property
     @abc.abstractmethod
     def files(self) -> list[ResolvedFilePair]:

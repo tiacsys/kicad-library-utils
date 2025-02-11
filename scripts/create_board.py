@@ -1,7 +1,6 @@
 import argparse
 import os
 import sys
-
 from pathlib import Path
 
 try:

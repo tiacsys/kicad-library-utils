@@ -27,7 +27,9 @@ class DiffProperty:
     new: str | None
     prop_type: PropertyType
 
-    def __init__(self, name: str, old: str | None, new: str | None, prop_type: PropertyType):
+    def __init__(
+        self, name: str, old: str | None, new: str | None, prop_type: PropertyType
+    ):
         """
         :param name: The name of the property
         :param old: The old value of the property, or none if the old property is not present
@@ -43,11 +45,11 @@ class DiffProperty:
 
     @property
     def old(self) -> str:
-        return self._old if self._old is not None else ''
+        return self._old if self._old is not None else ""
 
     @property
     def new(self) -> str:
-        return self._new if self._new is not None else ''
+        return self._new if self._new is not None else ""
 
 
 def _symbol_properties(old: KicadSymbol, new: KicadSymbol) -> list[DiffProperty]:
@@ -106,7 +108,9 @@ def _symbol_properties(old: KicadSymbol, new: KicadSymbol) -> list[DiffProperty]
         if prop_name in new_props:
             new_prop_val = new.get_property(prop_name)
 
-        prop_type = PropertyType.DATASHEET if prop_name == 'Datasheet' else PropertyType.FIELD
+        prop_type = (
+            PropertyType.DATASHEET if prop_name == "Datasheet" else PropertyType.FIELD
+        )
 
         properties.append(
             DiffProperty(
@@ -122,7 +126,7 @@ def _symbol_properties(old: KicadSymbol, new: KicadSymbol) -> list[DiffProperty]
 
 def _symbol_counts(old, new) -> list[DiffProperty]:
 
-    attrs = ['pins', 'rectangles', 'circles', 'arcs', 'polylines', 'texts']
+    attrs = ["pins", "rectangles", "circles", "arcs", "polylines", "texts"]
 
     counts = []
 
@@ -139,15 +143,15 @@ def _symbol_counts(old, new) -> list[DiffProperty]:
 
 def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
 
-    out = '<table>\n'
-    out += '  <tr><th>Name</th><th>Old Value</th><th>New Value</th></tr>\n'
+    out = "<table>\n"
+    out += "  <tr><th>Name</th><th>Old Value</th><th>New Value</th></tr>\n"
 
     properties = _symbol_properties(old, new)
 
     def cell(val, cls: str | None, inner_tag: str | None = None):
 
         if inner_tag:
-            if inner_tag == 'a':
+            if inner_tag == "a":
                 val = f'<a target="_blank" href="{val}">{val}</a>'
             else:
                 val = f"<{inner_tag}>{val}</{inner_tag}>"
@@ -163,32 +167,32 @@ def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
 
         cls = None
         if prop.old == prop.new:
-            cls = 'prop-same'
+            cls = "prop-same"
 
-        out += '  <tr>\n'
+        out += "  <tr>\n"
         if prop.prop_type == PropertyType.DATASHEET:
-            out += cell(prop.name, None, 'pre')
-            out += cell(prop.old, cls, 'a')
-            out += cell(prop.new, cls, 'a')
+            out += cell(prop.name, None, "pre")
+            out += cell(prop.old, cls, "a")
+            out += cell(prop.new, cls, "a")
 
         elif prop.prop_type == PropertyType.FIELD:
-            out += cell(prop.name, None, 'pre')
-            out += cell(prop.old, cls, 'pre')
-            out += cell(prop.new, cls, 'pre')
+            out += cell(prop.name, None, "pre")
+            out += cell(prop.old, cls, "pre")
+            out += cell(prop.new, cls, "pre")
 
         elif prop.prop_type == PropertyType.NATIVE:
-            out += cell(prop.name, None, 'strong')
+            out += cell(prop.name, None, "strong")
             out += cell(prop.old, cls)
             out += cell(prop.new, cls)
         else:
             raise ValueError(f"Unknown property type {prop.prop_type}")
 
-        out += '  </tr>\n'
+        out += "  </tr>\n"
 
-    out += '</table>\n'
-    out += '<h4>Primitive counts:</h4>\n'
-    out += '<table>\n'
-    out += '  <tr><th>Type</th><th>Old count</th><th>New count</th></tr>\n'
+    out += "</table>\n"
+    out += "<h4>Primitive counts:</h4>\n"
+    out += "<table>\n"
+    out += "  <tr><th>Type</th><th>Old count</th><th>New count</th></tr>\n"
 
     counts = _symbol_counts(old, new)
 

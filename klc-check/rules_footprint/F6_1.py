@@ -43,14 +43,18 @@ class Rule(KLCRule):
 
             if module.exclude_from_bom:
                 self.error("SMD footprints should not be excluded from BOM")
-                self.errorExtra("If this part isn't physically fitted, perhaps this"
-                                " footprint should be of \"unspecified\" type.")
+                self.errorExtra(
+                    "If this part isn't physically fitted, perhaps this"
+                    ' footprint should be of "unspecified" type.'
+                )
                 error = True
 
             if module.exclude_from_pos_files:
                 self.error("SMD footprints should not be excluded from position files")
-                self.errorExtra("If this part isn't physically fitted, perhaps this"
-                                " footprint should be of \"unspecified\" type.")
+                self.errorExtra(
+                    "If this part isn't physically fitted, perhaps this"
+                    ' footprint should be of "unspecified" type.'
+                )
                 error = True
 
         # Check if there are SMD pads with paste - in some cases, this could be
@@ -64,8 +68,10 @@ class Rule(KLCRule):
                     "Footprint is excluded from BOM or position files, "
                     f" but has soldered SMD pads and is of type {module.footprint_type}"
                 )
-                self.errorExtra("This indicates a fitted part, in which case"
-                                " the type should be 'SMD'")
+                self.errorExtra(
+                    "This indicates a fitted part, in which case"
+                    " the type should be 'SMD'"
+                )
                 error = True
 
             if self.pth_count == 0:
@@ -73,14 +79,20 @@ class Rule(KLCRule):
                 self.errorExtra(
                     "For SMD footprints, footprint type must be set to 'SMD'"
                 )
-                self.errorExtra(f"There are {self.smd_paste_pad_count} soldered SMD pads")
+                self.errorExtra(
+                    f"There are {self.smd_paste_pad_count} soldered SMD pads"
+                )
                 error = True
             else:
                 self.warning("'SMD' footprint type not set")
-                self.warningExtra("Both THT and soldered SMD pads were found, which might be"
-                                  " a hybrid (a.k.a. pin-in-paste) footprint")
-                self.warningExtra("Suggest setting footprint type to 'SMD' rather than "
-                                  f" '{module.footprint_type}'")
+                self.warningExtra(
+                    "Both THT and soldered SMD pads were found, which might be"
+                    " a hybrid (a.k.a. pin-in-paste) footprint"
+                )
+                self.warningExtra(
+                    "Suggest setting footprint type to 'SMD' rather than "
+                    f" '{module.footprint_type}'"
+                )
 
         return error
 

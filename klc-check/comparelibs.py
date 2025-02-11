@@ -13,10 +13,10 @@ import os
 import sys
 from glob import glob
 
-
 env_verbose_diff_limit = os.environ.get("VERBOSE_DIFF_LIMIT", "1048576")
-VERBOSE_DIFF_LIMIT = int(env_verbose_diff_limit) \
-    if env_verbose_diff_limit.isdigit() else 1024 * 1024  # 1MB
+VERBOSE_DIFF_LIMIT = (
+    int(env_verbose_diff_limit) if env_verbose_diff_limit.isdigit() else 1024 * 1024
+)  # 1MB
 
 # Path to common directory
 common = os.path.abspath(
@@ -27,11 +27,11 @@ if common not in sys.path:
     sys.path.insert(0, common)
 
 import check_symbol
+import junit
 from kicad_sym import KicadLibrary
 from print_color import PrintColor
 from rulebase import Verbosity
 from sexpr import build_sexp, format_sexp
-import junit
 
 
 def ExitError(msg):
@@ -68,9 +68,7 @@ parser.add_argument(
 parser.add_argument(
     "-v", "--verbose", help="Enable extra verbose output", action="store_true"
 )
-parser.add_argument(
-    "-d", "--diffs", help="Show diffs", action="store_true"
-)
+parser.add_argument("-d", "--diffs", help="Show diffs", action="store_true")
 parser.add_argument(
     "--check", help="Perform KLC check on updated/added components", action="store_true"
 )
@@ -156,8 +154,12 @@ problems = {}
 # create a SymbolCheck instance
 # add footprints dir if possible
 sym_check = check_symbol.SymbolCheck(
-    None, args.exclude, Verbosity(2), args.footprint_directory,
-    False if args.nocolor else True, silent=False
+    None,
+    args.exclude,
+    Verbosity(2),
+    args.footprint_directory,
+    False if args.nocolor else True,
+    silent=False,
 )
 
 
@@ -183,7 +185,9 @@ for lib_name in new_libs:
     # New library has been created!
     if lib_name not in old_libs:
         if args.verbose:
-            printer.light_green(f"Found new library '{lib_name}' with {len(new_lib.symbols)} items")
+            printer.light_green(
+                f"Found new library '{lib_name}' with {len(new_lib.symbols)} items"
+            )
 
         # Check all the components!
         for sym in new_lib.symbols:
@@ -240,9 +244,15 @@ for lib_name in new_libs:
             if args.diffs:
                 printer.start_fold_section("symbol_diff", "Show s-expr diff")
 
-                new_sexpr = format_sexp(build_sexp(new_sym[symname].get_sexpr())).splitlines()
-                old_sexpr = format_sexp(build_sexp(old_sym[symname].get_sexpr())).splitlines()
-                difflines = [line.rstrip() for line in difflib.unified_diff(old_sexpr, new_sexpr)]
+                new_sexpr = format_sexp(
+                    build_sexp(new_sym[symname].get_sexpr())
+                ).splitlines()
+                old_sexpr = format_sexp(
+                    build_sexp(old_sym[symname].get_sexpr())
+                ).splitlines()
+                difflines = [
+                    line.rstrip() for line in difflib.unified_diff(old_sexpr, new_sexpr)
+                ]
 
                 print_colored_diff(printer, difflines)
 
@@ -347,8 +357,14 @@ for _symname, (errors, warnings) in problems.items():
         warning_symbols += 1
 
 printer.white("\nSummary:")
-print_for(total_errors, f"  Errors: {total_errors} from {error_symbols} symbols", printer.red)
-print_for(total_warnings, f"  Warnings: {total_warnings} from {warning_symbols} symbols", printer.yellow)
+print_for(
+    total_errors, f"  Errors: {total_errors} from {error_symbols} symbols", printer.red
+)
+print_for(
+    total_warnings,
+    f"  Warnings: {total_warnings} from {warning_symbols} symbols",
+    printer.yellow,
+)
 print_for(
     design_breaking_changes,
     f"  Symbols with design breaking changes: {design_breaking_changes}",

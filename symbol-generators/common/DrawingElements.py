@@ -658,7 +658,9 @@ class Drawing:
         for a in self.arc:
             start = Point(distance=a.radius, angle=a.angle_start / 10).translate(a.at)
             end = Point(distance=a.radius, angle=a.angle_end / 10).translate(a.at)
-            mi = Point(distance=a.radius, angle=(a.angle_start - a.angle_end) / 10).translate(a.at)
+            mi = Point(
+                distance=a.radius, angle=(a.angle_start - a.angle_end) / 10
+            ).translate(a.at)
 
             arc = kicad_sym.Arc(
                 startx=kicad_sym.mil_to_mm(start.x),
@@ -670,7 +672,7 @@ class Drawing:
                 stroke_width=kicad_sym.mil_to_mm(a.line_width),
                 fill_type=a.fill,
                 unit=a.unit_idx,
-                demorgan=a.deMorgan_idx
+                demorgan=a.deMorgan_idx,
             )
 
             symbol.arcs.append(arc)
@@ -740,7 +742,7 @@ class DrawingArray(Drawing):
         number_of_instances,
         pinnumber_update_function=lambda x: x + 1,
         pinname_update_function=lambda old_name, new_number: new_number,
-        pin_gap_positions=[],   # add an extra steps (of distance) at the specified positions
+        pin_gap_positions=[],  # add an extra steps (of distance) at the specified positions
     ):
         Drawing.__init__(self)
         for i in range(number_of_instances):

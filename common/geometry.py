@@ -1,8 +1,9 @@
 """
 Generic geometric utils
 """
-from dataclasses import dataclass
+
 import math
+from dataclasses import dataclass
 
 
 @dataclass

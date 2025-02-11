@@ -292,19 +292,13 @@ class PrintColor:
     ):
         self._do_print(sys._getframe().f_code.co_name, text, max_width, indentation)
 
-    def start_fold_section(
-        self,
-        name: str,
-        text: str,
-        collapsed: bool = True
-    ):
+    def start_fold_section(self, name: str, text: str, collapsed: bool = True):
         collapsed_str = "[collapsed=true]" if collapsed else ""
-        print(f"\033[0Ksection_start:{int(time())}:{name}{collapsed_str}\r\033[0K{text}")
+        print(
+            f"\033[0Ksection_start:{int(time())}:{name}{collapsed_str}\r\033[0K{text}"
+        )
 
-    def end_fold_section(
-        self,
-        name: str
-    ):
+    def end_fold_section(self, name: str):
         print(f"\033[0Ksection_end:{int(time())}:{name}\r\033[0K")
 
 

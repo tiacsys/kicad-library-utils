@@ -3,8 +3,9 @@
 # math and comments from Michal script
 # https://github.com/michal777/KiCad_Lib_Check
 
-from rules_footprint.rule import KLCRule, getStartPoint, getEndPoint, graphItemString
 import math
+
+from rules_footprint.rule import KLCRule, getEndPoint, getStartPoint, graphItemString
 
 
 class Rule(KLCRule):
@@ -29,18 +30,18 @@ class Rule(KLCRule):
                 self.nullLines.append(line)
                 continue
 
-            p1x = abs(end['x'] - start['x'])
-            p1y = abs(end['y'] - start['y'])
+            p1x = abs(end["x"] - start["x"])
+            p1y = abs(end["y"] - start["y"])
 
             # really h or v ?
             if (p1x == 0) or (p1y == 0):
                 continue
 
             # imaginary second point
-            if p1x > p1y:     # horizontal
+            if p1x > p1y:  # horizontal
                 p2x = p1x
                 p2y = 0
-            else:             # vertical
+            else:  # vertical
                 p2x = 0
                 p2y = p1y
 
@@ -50,7 +51,7 @@ class Rule(KLCRule):
             if d1 < 1e-6 or d2 < 1e-6:
                 self.hvLines.append(line)
 
-            A = math.acos((p1x*p2x + p1y*p2y) / (d1*d2))
+            A = math.acos((p1x * p2x + p1y * p2y) / (d1 * d2))
 
             if A < self.verySmallAngle:
                 self.hvLines.append(line)
@@ -64,7 +65,7 @@ class Rule(KLCRule):
         Proceeds the checking of the rule.
         """
 
-        layers_to_check = ['F.Fab', 'B.Fab', 'F.SilkS', 'B.SilkS', 'F.CrtYd', 'B.CrtYd']
+        layers_to_check = ["F.Fab", "B.Fab", "F.SilkS", "B.SilkS", "F.CrtYd", "B.CrtYd"]
 
         for layer in layers_to_check:
 
@@ -81,14 +82,17 @@ class Rule(KLCRule):
 
             if len(self.hvLines) > 0:
                 self.warning("Low angle")
-                self.warningExtra("The following lines should be vertical or horizontal")
+                self.warningExtra(
+                    "The following lines should be vertical or horizontal"
+                )
                 for bad in self.hvLines:
                     self.warningExtra(graphItemString(bad, layer=True, width=False))
 
             if len(self.strangeLines) > 0:
                 self.warning("Verticality / horizontality")
                 self.warningExtra(
-                    "The following lines might be slightly not horizontal or vertical")
+                    "The following lines might be slightly not horizontal or vertical"
+                )
                 for bad in self.strangeLines:
                     self.warningExtra(graphItemString(bad, layer=True, width=False))
 

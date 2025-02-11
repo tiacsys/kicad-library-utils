@@ -9,11 +9,11 @@ Reference Manual PDFs.
 Usage: python3 make_avr_dy.py > MCU_Microchip_AVR_Dx.kicad_sym
 """
 
-import re
 import math
 import os.path as osp
+import re
 import string
-from collections import namedtuple, deque
+from collections import deque, namedtuple
 
 Device = namedtuple("Device", "family flash_size pin_count sram_size")
 
@@ -186,8 +186,8 @@ def bank_pins(pins):
     if remaining_pins:
         remaining_pins = sorted(remaining_pins, key=lambda p: p.number)
         raise ValueError(
-            "Some pins were not sorted into banks: " +
-            ', '.join(f"{p.number}:{p.name}" for p in remaining_pins)
+            "Some pins were not sorted into banks: "
+            + ", ".join(f"{p.number}:{p.name}" for p in remaining_pins)
         )
 
     return banks
@@ -329,9 +329,9 @@ def make_base_device(family, device, package):
             f"      (pin {type} line "
             f"(at {x:0.2f} {y:0.2f} {angle}) "
             f"(length {pin_length}){' hide' if hide else ''}\n"
-            f"        (name \"{name}\" "
+            f'        (name "{name}" '
             f"(effects (font (size {font_width} {font_height}))))\n"
-            f"        (number \"{number}\" "
+            f'        (number "{number}" '
             f"(effects (font (size {font_width} {font_height}))))\n"
             "      )"
         )
@@ -349,8 +349,13 @@ def make_base_device(family, device, package):
     def render_power_bank(pins, y, angle):
         def render_power_pin(name, number, stacked=False):
             render_pin(
-                "passive" if stacked else "power_in", name, number, x, y, angle,
-                hide=stacked
+                "passive" if stacked else "power_in",
+                name,
+                number,
+                x,
+                y,
+                angle,
+                hide=stacked,
             )
 
         pin_stacks = {}

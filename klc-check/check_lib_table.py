@@ -21,8 +21,8 @@ common = os.path.abspath(
 if common not in sys.path:
     sys.path.insert(0, common)
 
-from lib_table import LibTable
 import junit
+from lib_table import LibTable
 
 
 def check_entries(lib_table, lib_names, junit_suite: junit.JunitTestSuite):
@@ -99,12 +99,14 @@ if __name__ == "__main__":
         lib_name = ".".join(os.path.basename(lib).split(".")[:-1])
         lib_names.append(lib_name)
 
-    print("Checking library table - '{table}'".format(table=os.path.basename(args.table)))
+    print(
+        "Checking library table - '{table}'".format(table=os.path.basename(args.table))
+    )
 
     print("Found {n} libraries".format(n=len(lib_names)))
 
     table = LibTable(args.table)
-    junit_suite = junit.JunitTestSuite(name="Library Table Checks", id='lib-table-fp')
+    junit_suite = junit.JunitTestSuite(name="Library Table Checks", id="lib-table-fp")
 
     errors = check_entries(table, lib_names, junit_suite)
 

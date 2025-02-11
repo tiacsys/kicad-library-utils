@@ -1,17 +1,55 @@
 import re
+from collections import Counter
 
 from rulebase import isValidName
 from rules_symbol.rule import KLCRule
-from collections import Counter
 
-DISALLOWED_FILLER_TOKENS = frozenset([
-    "and", "or", "the", "a", "an", "of", "in", "on", "at", "to",
-    "with", "by", "for", "from", "as", "into", "onto", "upon",
-    "over", "under", "through", "between", "among", "within",
-    "without", "about", "after", "before", "during", "since",
-    "until", "while", "till", "throughout", "along", "across",
-    "against", "behind", "beside", "beyond", "inside", "outside",
-])
+DISALLOWED_FILLER_TOKENS = frozenset(
+    [
+        "and",
+        "or",
+        "the",
+        "a",
+        "an",
+        "of",
+        "in",
+        "on",
+        "at",
+        "to",
+        "with",
+        "by",
+        "for",
+        "from",
+        "as",
+        "into",
+        "onto",
+        "upon",
+        "over",
+        "under",
+        "through",
+        "between",
+        "among",
+        "within",
+        "without",
+        "about",
+        "after",
+        "before",
+        "during",
+        "since",
+        "until",
+        "while",
+        "till",
+        "throughout",
+        "along",
+        "across",
+        "against",
+        "behind",
+        "beside",
+        "beyond",
+        "inside",
+        "outside",
+    ]
+)
 
 
 class Rule(KLCRule):
@@ -191,10 +229,12 @@ class Rule(KLCRule):
 
         The tokens are returned as lowercase strings.
         """
-        split_regex = r'\s+|-' if split_sub_tokens else r'\s+'
+        split_regex = r"\s+|-" if split_sub_tokens else r"\s+"
         return [token.strip().lower() for token in re.split(split_regex, keywords)]
 
-    def _tokenize_description(self, description: str, split_sub_tokens=True) -> list[str]:
+    def _tokenize_description(
+        self, description: str, split_sub_tokens=True
+    ) -> list[str]:
         """
         Similar to _tokenize_keywords but takes into account that
         the description *may* contain special characters, which would cause
@@ -204,7 +244,7 @@ class Rule(KLCRule):
         """
         # Remove everything non-alphanumeric except for dash and whitespace
         description = re.sub(r"[^\w\s-]", "", description)
-        split_regex = r'\s+|-' if split_sub_tokens else r'\s+'
+        split_regex = r"\s+|-" if split_sub_tokens else r"\s+"
         tokens = [token.strip().lower() for token in re.split(split_regex, description)]
 
         # Remove duplicates from tokens and return, preserving the order
@@ -232,12 +272,14 @@ class Rule(KLCRule):
         # tokens in the previous step (for usability)
         tokens_and_subtokens = self._tokenize_keywords(keywords, split_sub_tokens=True)
         token_counts = Counter(tokens_and_subtokens)
-        duplicate_sub_tokens = {token for token, count in token_counts.items() if count > 1}
+        duplicate_sub_tokens = {
+            token for token, count in token_counts.items() if count > 1
+        }
         duplicate_sub_tokens -= duplicate_tokens  # see NOTE above
         if duplicate_sub_tokens:
             self.warning(
-                "S6.2.7: Symbol keywords contain duplicate sub-tokens" +
-                f" (= dash-separated tokens): {duplicate_sub_tokens}"
+                "S6.2.7: Symbol keywords contain duplicate sub-tokens"
+                + f" (= dash-separated tokens): {duplicate_sub_tokens}"
             )
 
         # Now check if any tokens from the description appear in the keywords
@@ -251,8 +293,8 @@ class Rule(KLCRule):
         duplicate_desc_keyword_tokens -= duplicate_sub_tokens  # see NOTE above
         if duplicate_desc_keyword_tokens:
             self.warning(
-                "S6.2.7: Symbol keywords contain tokens which already appear " +
-                f"in description: {duplicate_desc_keyword_tokens}"
+                "S6.2.7: Symbol keywords contain tokens which already appear "
+                + f"in description: {duplicate_desc_keyword_tokens}"
             )
 
         return len(duplicate_tokens) > 0
@@ -275,8 +317,12 @@ class Rule(KLCRule):
         keywords_tokens = self._tokenize_keywords(keywords, split_sub_tokens=False)
         keywords_subtokens = self._tokenize_keywords(keywords, split_sub_tokens=True)
 
-        description_tokens = self._tokenize_description(description, split_sub_tokens=False)
-        description_subtokens = self._tokenize_description(description, split_sub_tokens=True)
+        description_tokens = self._tokenize_description(
+            description, split_sub_tokens=False
+        )
+        description_subtokens = self._tokenize_description(
+            description, split_sub_tokens=True
+        )
 
         all_tokens = keywords_tokens + description_tokens
         all_subtokens = keywords_subtokens + description_subtokens
@@ -285,19 +331,31 @@ class Rule(KLCRule):
         # Opamp <=> operational amplifier
         if "operational" in all_subtokens and "amplifier" in description_tokens:
             if "opamp" not in all_subtokens:
-                self.warning("Metadata contains 'operational amplifier', please add 'opamp' to the keywords")
+                self.warning(
+                    "Metadata contains 'operational amplifier', please add 'opamp' to the keywords"
+                )
                 _return = True
-        if "opamp" in all_subtokens and not ("operational" in all_subtokens and "amplifier" in all_subtokens):
-            self.warning("Metadata contains 'opamp', please add 'operational-amplifier' to the keywords")
+        if "opamp" in all_subtokens and not (
+            "operational" in all_subtokens and "amplifier" in all_subtokens
+        ):
+            self.warning(
+                "Metadata contains 'opamp', please add 'operational-amplifier' to the keywords"
+            )
             _return = True
 
         # LDO <=> low-dropout ... regulator
         if "low-dropout" in all_tokens and "regulator" in all_subtokens:
             if "ldo" not in all_tokens:
-                self.warning("Metadata contains 'low-dropout .. regulator', please add 'ldo' to the keywords")
+                self.warning(
+                    "Metadata contains 'low-dropout .. regulator', please add 'ldo' to the keywords"
+                )
                 _return = True
-        if "ldo" in all_tokens and not ("low-dropout" in all_tokens and "regulator" in all_subtokens):
-            self.warning("Metadata contains 'LDO', please add 'low-dropout-regulator' to the keywords")
+        if "ldo" in all_tokens and not (
+            "low-dropout" in all_tokens and "regulator" in all_subtokens
+        ):
+            self.warning(
+                "Metadata contains 'LDO', please add 'low-dropout-regulator' to the keywords"
+            )
             _return = True
 
         return _return
@@ -309,8 +367,10 @@ class Rule(KLCRule):
             if self.component.is_power_symbol():
                 return True
             else:
-                self.warning("Missing or empty Keywords field on 'Properties' tab. " +
-                             "If you have nothing to add here, add the manufacturer e.g. 'texas'")
+                self.warning(
+                    "Missing or empty Keywords field on 'Properties' tab. "
+                    + "If you have nothing to add here, add the manufacturer e.g. 'texas'"
+                )
                 return True
         else:  # have non-empty keywords
             keywords = keywords_property.value

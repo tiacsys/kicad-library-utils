@@ -7,43 +7,47 @@ from pathlib import Path
 try:
     import kicad_sym
 except ImportError:
-    if (common := Path(__file__).parent.parent.with_name('common').absolute()) not in sys.path:
+    if (
+        common := Path(__file__).parent.parent.with_name("common").absolute()
+    ) not in sys.path:
         sys.path.insert(0, str(common))
 
 import kicad_sym  # NOQA: F811
-from svg_util import Tag, setup_svg, bbox, add_bboxes, define_arc
+from svg_util import Tag, add_bboxes, bbox, define_arc, setup_svg
 
 
 def elem_style(elem):
     if isinstance(elem, (kicad_sym.Property, kicad_sym.Text)):
-        return {'class': 'l-any-f'}
+        return {"class": "l-any-f"}
     else:
-        classes = 'l-any-s'
-        if getattr(elem, 'fill_type', None) == 'outline':
-            classes += ' l-any-f'
+        classes = "l-any-s"
+        if getattr(elem, "fill_type", None) == "outline":
+            classes += " l-any-f"
 
-        return {'class': classes,
-                'stroke_width': max(0.2, getattr(elem, 'stroke_width', 0)),
-                'stroke_linecap': 'round',
-                'stroke_linejoin': 'round'}
+        return {
+            "class": classes,
+            "stroke_width": max(0.2, getattr(elem, "stroke_width", 0)),
+            "stroke_linecap": "round",
+            "stroke_linejoin": "round",
+        }
 
 
 def render_rect(sym, elem, **style):
     x, y = min(elem.startx, elem.endx), min(-elem.starty, -elem.endy)
-    w, h = max(elem.startx, elem.endx)-x, max(-elem.starty, -elem.endy)-y
-    yield (x, y, x+w, y+h), Tag('rect', **style, x=x, y=y, width=w, height=h)
+    w, h = max(elem.startx, elem.endx) - x, max(-elem.starty, -elem.endy) - y
+    yield (x, y, x + w, y + h), Tag("rect", **style, x=x, y=y, width=w, height=h)
 
 
 def render_circle(sym, elem, **style):
     x, y = elem.centerx, -elem.centery
     r = max(0.2, elem.radius)
-    yield (x-r, y-r, x+r, y+r), Tag('circle', **style, cx=x, cy=y, r=r)
+    yield (x - r, y - r, x + r, y + r), Tag("circle", **style, cx=x, cy=y, r=r)
 
 
 def render_polyline(sym, elem, **style):
     points = [(pt.x, -pt.y) for pt in elem.points]
-    path_data = 'M ' + ' L '.join(f'{x:.6f} {y:.6f}' for x, y in points)
-    yield bbox(*points), Tag('path', **style, d=path_data)
+    path_data = "M " + " L ".join(f"{x:.6f} {y:.6f}" for x, y in points)
+    yield bbox(*points), Tag("path", **style, d=path_data)
 
 
 def render_arc(sym, arc, **style):
@@ -51,7 +55,9 @@ def render_arc(sym, arc, **style):
     x2, y2 = arc.midx, -arc.midy
     x3, y3 = arc.endx, -arc.endy
 
-    c, r, collinear, large_arc, is_circle = define_arc((x1, y1), (x2, y2), (x3, y3), True)
+    c, r, collinear, large_arc, is_circle = define_arc(
+        (x1, y1), (x2, y2), (x3, y3), True
+    )
 
     if is_circle:
         elem_bbox = bbox((c[0] - r, c[1] - r), (c[0] + r, c[1] + r))
@@ -69,7 +75,7 @@ def render_arc(sym, arc, **style):
     large_arc = int(large_arc)
     sweep = 0
 
-    d = f'M {x1:.6f} {y1:.6f} A {r:.6f} {r:.6f} 0 {large_arc} {sweep} {x3:.6f} {y3:.6f}'
+    d = f"M {x1:.6f} {y1:.6f} A {r:.6f} {r:.6f} 0 {large_arc} {sweep} {x3:.6f} {y3:.6f}"
     # We just approximate the bbox here with that of a circle. Calculating precise arc bboxes is
     # hairy, and unnecessary for our purposes.
     elem_bbox = bbox((c[0] - r, c[1] - r), (c[0] + r, c[1] + r))
@@ -77,7 +83,7 @@ def render_arc(sym, arc, **style):
 
 
 def render_text(sym, elem, **style):
-    content = getattr(elem, 'text', getattr(elem, 'value', None))
+    content = getattr(elem, "text", getattr(elem, "value", None))
     assert content is not None
     x, y = elem.posx, -elem.posy
 
@@ -86,38 +92,50 @@ def render_text(sym, elem, **style):
 
 def text_elem(x, y, rot, content, effects, style):
     if rot in (90, 270):
-        xform = {'transform': f'rotate({-rot} {x} {y})'}
+        xform = {"transform": f"rotate({-rot} {x} {y})"}
     else:
         xform = {}
 
     size = 1.27
-    anchor = 'middle'
+    anchor = "middle"
     style_extra = {}
 
     if effects is not None:
         if effects.is_hidden:
             return
 
-        size = effects.sizey/2 or 1.27
-        anchor = {
-            'center': 'middle',
-            'left': 'start',
-            'right': 'end'}.get(effects.h_justify, 'middle')
-        baseline = {
-            'top': 'text-top',
-            'center': 'middle',
-            'bottom': 'hangign'}.get(effects.v_justify, 'middle')
+        size = effects.sizey / 2 or 1.27
+        anchor = {"center": "middle", "left": "start", "right": "end"}.get(
+            effects.h_justify, "middle"
+        )
+        baseline = {"top": "text-top", "center": "middle", "bottom": "hangign"}.get(
+            effects.v_justify, "middle"
+        )
 
     content = re.sub(
-        r'~{([^}]*)}|^~([^{].*)$', r'<tspan text-decoration="overline">\1\2</tspan>',
-        content)
+        r"~{([^}]*)}|^~([^{].*)$",
+        r'<tspan text-decoration="overline">\1\2</tspan>',
+        content,
+    )
     content = re.sub(
-        r'_{([^}]*)}', r'<tspan font-size="70%" baseline-shift="sub">\1</tspan>',
-        content)
+        r"_{([^}]*)}",
+        r'<tspan font-size="70%" baseline-shift="sub">\1</tspan>',
+        content,
+    )
 
-    yield (x, y, x, y), Tag('text', [content], font_family='monospace',
-                            font_size=f'{size*0.7:.3f}mm', x=x, y=y, dominant_baseline=baseline,
-                            text_anchor=anchor, **style, **xform, **style_extra)
+    yield (x, y, x, y), Tag(
+        "text",
+        [content],
+        font_family="monospace",
+        font_size=f"{size*0.7:.3f}mm",
+        x=x,
+        y=y,
+        dominant_baseline=baseline,
+        text_anchor=anchor,
+        **style,
+        **xform,
+        **style_extra,
+    )
 
 
 def render_pin(sym, elem, **style):
@@ -128,35 +146,89 @@ def render_pin(sym, elem, **style):
     x1, y1 = elem.posx, -elem.posy
     x2, y2 = x1 + l, y1
     rot = elem.rotation
-    xform = {'transform': f'rotate({-rot} {x1} {y1})'}
+    xform = {"transform": f"rotate({-rot} {x1} {y1})"}
 
-    yield bbox((x1, y1), (x2, y2)), Tag('path', **xform, **style,
-                                        d=f'M {x1:.6f} {y1:.6f} L {x2:.6f} {y2:.6f}')
+    yield bbox((x1, y1), (x2, y2)), Tag(
+        "path", **xform, **style, d=f"M {x1:.6f} {y1:.6f} L {x2:.6f} {y2:.6f}"
+    )
 
     eps = 1
     for tag in {
-            'line': [],
-            'inverted': [
-                Tag('circle', **xform, **style, cx=x2-eps/3-0.2, cy=y2, r=eps/3)],
-            'clock': [
-                Tag('path', **xform, **style, d=f'M {x2} {y2-eps/2} L {x2+eps/2} {y2} L {x2} {y2+eps/2}')],  # NOQA: E501
-            'inverted_clock': [
-                Tag('circle', **xform, **style, cx=x2-eps/3-0.2, cy=y2, r=eps/3),
-                Tag('path', **xform, **style, d=f'M {x2} {y2-eps/2} L {x2+eps/2} {y2} L {x2} {y2+eps/2}')],  # NOQA: E501
-            'input_low': [
-                Tag('path', **xform, **style, d=f'M {x2} {y2} L {x2-eps} {y2-eps} L {x2-eps} {y2}')],  # NOQA: E501
-            'clock_low': [
-                Tag('path', **xform, **style, d=f'M {x2} {y2} L {x2-eps} {y2-eps} L {x2-eps} {y2}'),  # NOQA: E501
-                Tag('path', **xform, **style, d=f'M {x2} {y2-eps/2} L {x2+eps/2} {y2} L {x2} {y2+eps/2}')],  # NOQA: E501
-            'output_low': [
-                Tag('path', **xform, **style, d=f'M {x2} {y2-eps} L {x2-eps} {y2}')],  # NOQA: E501
-            'edge_clock_high': [
-                Tag('path', **xform, **style, d=f'M {x2} {y2} L {x2-eps} {y2-eps} L {x2-eps} {y2}'),  # NOQA: E501
-                Tag('path', **xform, **style, d=f'M {x2} {y2-eps/2} L {x2+eps/2} {y2} L {x2} {y2+eps/2}')],  # NOQA: E501
-            'non_logic': [
-                Tag('path', **xform, **style, d=f'M {x2-eps/2} {y2-eps/2} L {x2+eps/2} {y2+eps/2}'),  # NOQA: E501
-                Tag('path', **xform, **style, d=f'M {x2-eps/2} {y2+eps/2} L {x2+eps/2} {y2-eps/2}')],  # NOQA: E501
-            # FIXME...
+        "line": [],
+        "inverted": [
+            Tag("circle", **xform, **style, cx=x2 - eps / 3 - 0.2, cy=y2, r=eps / 3)
+        ],
+        "clock": [
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2} {y2-eps/2} L {x2+eps/2} {y2} L {x2} {y2+eps/2}",
+            )
+        ],  # NOQA: E501
+        "inverted_clock": [
+            Tag("circle", **xform, **style, cx=x2 - eps / 3 - 0.2, cy=y2, r=eps / 3),
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2} {y2-eps/2} L {x2+eps/2} {y2} L {x2} {y2+eps/2}",
+            ),
+        ],  # NOQA: E501
+        "input_low": [
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2} {y2} L {x2-eps} {y2-eps} L {x2-eps} {y2}",
+            )
+        ],  # NOQA: E501
+        "clock_low": [
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2} {y2} L {x2-eps} {y2-eps} L {x2-eps} {y2}",
+            ),  # NOQA: E501
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2} {y2-eps/2} L {x2+eps/2} {y2} L {x2} {y2+eps/2}",
+            ),
+        ],  # NOQA: E501
+        "output_low": [
+            Tag("path", **xform, **style, d=f"M {x2} {y2-eps} L {x2-eps} {y2}")
+        ],  # NOQA: E501
+        "edge_clock_high": [
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2} {y2} L {x2-eps} {y2-eps} L {x2-eps} {y2}",
+            ),  # NOQA: E501
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2} {y2-eps/2} L {x2+eps/2} {y2} L {x2} {y2+eps/2}",
+            ),
+        ],  # NOQA: E501
+        "non_logic": [
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2-eps/2} {y2-eps/2} L {x2+eps/2} {y2+eps/2}",
+            ),  # NOQA: E501
+            Tag(
+                "path",
+                **xform,
+                **style,
+                d=f"M {x2-eps/2} {y2+eps/2} L {x2+eps/2} {y2-eps/2}",
+            ),
+        ],  # NOQA: E501
+        # FIXME...
     }.get(elem.shape, []):
         yield (x1, y1, x1, y1), tag
 
@@ -168,45 +240,51 @@ def render_pin(sym, elem, **style):
     # Use the global symbol property to decide if the text appears at all
     if not sym.hide_pin_names:
         e = l + sym.pin_names_offset
-        elem.name_effect.h_justify = 'left'
+        elem.name_effect.h_justify = "left"
         if rot in (180, 270):
-            elem.name_effect.h_justify = {
-                'left': 'right',
-                'right': 'left'
-            }.get(elem.name_effect.h_justify)
+            elem.name_effect.h_justify = {"left": "right", "right": "left"}.get(
+                elem.name_effect.h_justify
+            )
 
         nx, ny = {
-            0: (x1+e, y1),
-            90: (x1, y1-e),
-            180: (x1-e, y1),
-            270: (x1, y1+e), }[rot]
+            0: (x1 + e, y1),
+            90: (x1, y1 - e),
+            180: (x1 - e, y1),
+            270: (x1, y1 + e),
+        }[rot]
 
-        yield from text_elem(nx, ny, t_rot, elem.name, elem.name_effect, {'class': 'l-any-f'})
+        yield from text_elem(
+            nx, ny, t_rot, elem.name, elem.name_effect, {"class": "l-any-f"}
+        )
 
     if not sym.hide_pin_numbers:
         k = 0.4
-        elem.number_effect.v_justify = 'top'
+        elem.number_effect.v_justify = "top"
         nx, ny = {
-            0: (x1+l/2, y1-k),
-            90: (x1-k, y1-l/2),
-            180: (x1-l/2, y1-k),
-            270: (x1-k, y1+l/2), }[rot]
+            0: (x1 + l / 2, y1 - k),
+            90: (x1 - k, y1 - l / 2),
+            180: (x1 - l / 2, y1 - k),
+            270: (x1 - k, y1 + l / 2),
+        }[rot]
 
-        yield from text_elem(nx, ny, t_rot, elem.number, elem.number_effect, {'class': 'l-any-f'})
+        yield from text_elem(
+            nx, ny, t_rot, elem.number, elem.number_effect, {"class": "l-any-f"}
+        )
 
 
 def _render_sym_internal(sym, root_sym, unit=1):
     for fun, elems in [
-            (render_rect, root_sym.rectangles),
-            (render_circle, root_sym.circles),
-            (render_polyline, root_sym.polylines),
-            (render_arc, root_sym.arcs),
-            (render_pin, root_sym.pins),
-            (render_text, root_sym.texts),
-            # Properties are the only bit that is not in the root symbol
-            (render_text, sym.properties)]:
+        (render_rect, root_sym.rectangles),
+        (render_circle, root_sym.circles),
+        (render_polyline, root_sym.polylines),
+        (render_arc, root_sym.arcs),
+        (render_pin, root_sym.pins),
+        (render_text, root_sym.texts),
+        # Properties are the only bit that is not in the root symbol
+        (render_text, sym.properties),
+    ]:
         for elem in elems:
-            if not hasattr(elem, 'unit') or elem.unit in (0, unit):  # bad API
+            if not hasattr(elem, "unit") or elem.unit in (0, unit):  # bad API
                 for bbox, tag in fun(root_sym, elem, **elem_style(elem)):  # NOQA: F402
                     yield bbox, tag
 
@@ -217,7 +295,7 @@ def render_sym(
     # The parent symbol that contributes graphical data
     root_sym = sym.get_root_symbol()
 
-    for unit in range(1, root_sym.unit_count+1):
+    for unit in range(1, root_sym.unit_count + 1):
         tags, bboxes = [], []
 
         for bbox, tag in _render_sym_internal(sym, root_sym, unit):  # NOQA: F402
@@ -228,22 +306,34 @@ def render_sym(
         xm, ym = max(abs(x1), abs(x2)), max(abs(y1), abs(y2))
         bounds = ((-xm, -ym), (xm, ym))
         if default_style:
-            tags.insert(0, Tag('style', ['''
+            tags.insert(
+                0,
+                Tag(
+                    "style",
+                    [
+                        """
                 .l-any-f { fill: black; }
                 .l-any-s { stroke: black }
                 * { fill: none; stroke: none }
-                tspan { fill: black; } ''']))
+                tspan { fill: black; } """
+                    ],
+                ),
+            )
         yield str(setup_svg(tags, bounds, margin=10))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('kicad_sym_file', type=Path)
+    parser.add_argument("kicad_sym_file", type=Path)
     args = parser.parse_args()
-    _suffix, _, sym_name = args.kicad_sym_file.suffix.partition(':')
-    libfile = args.kicad_sym_file.with_suffix('.kicad_sym')
+    _suffix, _, sym_name = args.kicad_sym_file.suffix.partition(":")
+    libfile = args.kicad_sym_file.with_suffix(".kicad_sym")
     for i, unit_data in enumerate(render_sym(libfile.read_text(), sym_name)):
-        outf = args.kicad_sym_file.parent / f'{args.kicad_sym_file.stem}_{sym_name}_{i}.svg'
-        print(f'writing unit {i} to {str(outf)}', file=sys.stderr)
+        outf = (
+            args.kicad_sym_file.parent
+            / f"{args.kicad_sym_file.stem}_{sym_name}_{i}.svg"
+        )
+        print(f"writing unit {i} to {str(outf)}", file=sys.stderr)
         outf.write_text(unit_data)

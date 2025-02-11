@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
-import os
-import sys
-import platform
 import argparse
+import os
+import platform
+import sys
 
 parser = argparse.ArgumentParser(description="Count number of *.kicad_mod files.")
 parser.add_argument(

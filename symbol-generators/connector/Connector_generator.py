@@ -100,7 +100,7 @@ CONNECTOR = namedtuple(
         "pin_gap_positions",
     ],
 )
-CONNECTOR.__new__.__defaults__ = (None, ) * len(CONNECTOR._fields)
+CONNECTOR.__new__.__defaults__ = (None,) * len(CONNECTOR._fields)
 
 
 def num_gen_row_letter_first(old_number):
@@ -536,7 +536,10 @@ conn_samtec = {
         keywords="connector card-edge",
         datasheet="https://suddendocs.samtec.com/prints/hsec8-1xxx-xx-xx-dv-x-xx-x-xx-mkt.pdf",
         default_footprint="",  # no default footprint
-        footprint_filter=["Samtec*HSEC8*DV*P0.8mm*Socket*", "Samtec*HSEC8*DV*P0.8mm*Edge*"],
+        footprint_filter=[
+            "Samtec*HSEC8*DV*P0.8mm*Socket*",
+            "Samtec*HSEC8*DV*P0.8mm*Edge*",
+        ],
         graphic_type=0,  # 0 = neutral, 1 = male, 2 = female, 3 = screw terminal
         enclosing_rectangle=True,
         mirror=False,
@@ -802,9 +805,9 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
     current_symbol.pin_names_offset = kicad_sym.mil_to_mm(40)
 
     # pin gaps
-    if (isinstance(series_params.pin_gap_positions, dict)):
+    if isinstance(series_params.pin_gap_positions, dict):
         pin_gap_positions = series_params.pin_gap_positions.get(num_pins_per_row, [])
-    elif (series_params.pin_gap_positions):
+    elif series_params.pin_gap_positions:
         pin_gap_positions = series_params.pin_gap_positions
     else:
         pin_gap_positions = []
@@ -833,7 +836,7 @@ def generateSingleSymbol(library, series_params, num_pins_per_row, lib_params):
     body_width = pin_spacing_y * series_params.num_rows
     body_bottom_right_corner = body_top_left_corner.translate(
         {"x": body_width, "y": -pin_spacing_y * (num_pins_left_side + num_pin_gaps)},
-        apply_on_copy=True
+        apply_on_copy=True,
     )
 
     extra_pin = lib_params.get("extra_pin")

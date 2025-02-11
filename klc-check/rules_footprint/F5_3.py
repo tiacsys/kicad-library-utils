@@ -126,7 +126,7 @@ class Rule(KLCRule):
             return []
 
         # calculate degree of vertices of the graph
-        degree = [1]*2*len(layer)
+        degree = [1] * 2 * len(layer)
 
         for i in range(len(layer)):
             pi = [getStartPoint(layer[i]), getEndPoint(layer[i])]
@@ -151,7 +151,7 @@ class Rule(KLCRule):
         bad = []
         for i in range(len(layer)):
             # line is unconnected if one of it's vertices has odd degree
-            if degree[2*i] % 2 == 1 or degree[2*i + 1] % 2 == 1:
+            if degree[2 * i] % 2 == 1 or degree[2 * i + 1] % 2 == 1:
                 bad.append(layer[i])
 
         return bad

@@ -81,9 +81,7 @@ class Rule(KLCRule):
                     self.warning(f"Symbol unit {unit} slightly off-center")
                     self.warningExtra(f"  Center calculated @ ({x}, {y})")
             else:
-                self.error(
-                    f"Symbol unit {unit} not centered on origin"
-                )
+                self.error(f"Symbol unit {unit} not centered on origin")
                 self.errorExtra(f"Center calculated @ ({x}, {y})")
 
         return False

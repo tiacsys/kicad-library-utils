@@ -34,11 +34,16 @@ class Rule(KLCRule):
         # Positive power pins only
         def is_positive_power(pin):
             pos_power_patterns = [r"^[ad]*v(aa|cc|dd|bat|in)$", r"^in\+?$"]
-            return any(re.search(patt, pin.name, flags=re.IGNORECASE) for patt in pos_power_patterns)
+            return any(
+                re.search(patt, pin.name, flags=re.IGNORECASE)
+                for patt in pos_power_patterns
+            )
 
         seen_error_names = set()
 
-        positive_power_input_pins = [pin for pin in self.power_in_pins if is_positive_power(pin)]
+        positive_power_input_pins = [
+            pin for pin in self.power_in_pins if is_positive_power(pin)
+        ]
 
         for pin in positive_power_input_pins:
 
@@ -52,9 +57,7 @@ class Rule(KLCRule):
             # else they should be on the top
             if len(self.power_out_pins) == 0:
                 if pin.get_direction() != "D":
-                    self.error(
-                        "Positive power pins should be placed at top of symbol"
-                    )
+                    self.error("Positive power pins should be placed at top of symbol")
                     self.errorExtra(
                         "Power conversion devices (e.g. regulators) with both power inputs and outputs "
                         "are an exception (for these, inputs on left, outputs on right)"
@@ -85,9 +88,7 @@ class Rule(KLCRule):
                 continue
 
             if pin.get_direction() != "L":
-                self.error(
-                    "Power output pins should be placed at right of symbol"
-                )
+                self.error("Power output pins should be placed at right of symbol")
                 self.errorExtra(pinString(pin))
                 seen_error_names.add(pin.name)
 

@@ -90,15 +90,15 @@ def generate_index_html(directory, prefix):
         html_files = sorted(sub_dir_path.glob("*.html"))
 
         if html_files and len(html_files) > 0:
-            url = f'{prefix}{sub_dir}/{html_files[0].name}'
-            return f'''
+            url = f"{prefix}{sub_dir}/{html_files[0].name}"
+            return f"""
                 <html>
                     <head>
                         <meta http-equiv="refresh"content="0; URL='{url}'" />
                     </head>
                 </html>
-            '''
-        return '<h1>No diff files found</h1>'
+            """
+        return "<h1>No diff files found</h1>"
     else:
         # If there are multiple sub-directories
         buttons_html = ""
@@ -108,13 +108,13 @@ def generate_index_html(directory, prefix):
             html_files = sorted(sub_dir_path.glob("*.html"))
 
             if html_files:
-                path = f'{prefix}{sub_dir}/{html_files[0].name}'
-                buttons_html += f'''
+                path = f"{prefix}{sub_dir}/{html_files[0].name}"
+                buttons_html += f"""
                 <a class="library-button" href=\'{path}\'">{sub_dir}</a><br>
-                '''
+                """
             else:
                 buttons_html += f'<a class="library-button disabled">{sub_dir} (No HTML files)</a><br>'
-        return f'''
+        return f"""
             <html>
                 <head>
                     <style>{css}</style>
@@ -125,14 +125,19 @@ def generate_index_html(directory, prefix):
                     </div>
                 </body>
             </html>
-        '''
+        """
 
 
 def main():
     parser = argparse.ArgumentParser(description="Generate index.html for a directory")
     parser.add_argument("directory", type=str, help="Directory to process")
-    parser.add_argument("-p", "--link-prefix", type=str,
-                        default="", help="Relative path prefix to link to")
+    parser.add_argument(
+        "-p",
+        "--link-prefix",
+        type=str,
+        default="",
+        help="Relative path prefix to link to",
+    )
     args = parser.parse_args()
 
     index_html_path = os.path.join(args.directory, "index.html")

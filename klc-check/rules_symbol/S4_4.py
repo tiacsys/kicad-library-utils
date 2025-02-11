@@ -68,9 +68,7 @@ class Rule(KLCRule):
                     not etype.lower() == "power_in"
                 ):
                     if not self.power_errors:
-                        self.error(
-                            "Power pins should be of type POWER INPUT"
-                        )
+                        self.error("Power pins should be of type POWER INPUT")
                     self.power_errors.append(pin)
                     self.errorExtra(
                         "{pin} is of type {t}".format(pin=pinString(pin), t=etype)

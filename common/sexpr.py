@@ -29,16 +29,20 @@ def parse_sexp(sexp: str) -> Any:
     for leftover in re_iter:
         lparen, rparen, *rest = leftover.groups()
         if lparen or any(rest):
-            raise SexprError(f'Leftover garbage after end of expression at position {leftover.start()}')  # noqa: E501
+            raise SexprError(
+                f"Leftover garbage after end of expression at position {leftover.start()}"
+            )  # noqa: E501
 
         elif rparen:
-            raise SexprError(f'Unbalanced closing parenthesis at position {leftover.start()}')
+            raise SexprError(
+                f"Unbalanced closing parenthesis at position {leftover.start()}"
+            )
 
     if len(rv) == 0:
-        raise SexprError('No or empty expression')
+        raise SexprError("No or empty expression")
 
     if len(rv) > 1:
-        raise SexprError('Missing initial opening parenthesis')
+        raise SexprError("Missing initial opening parenthesis")
 
     return rv[0]
 
@@ -166,20 +170,20 @@ class SexprBuilder:
             self.indent -= 1
 
 
-def build_sexp(exp, indent='') -> str:
+def build_sexp(exp, indent="") -> str:
     # Special case for multi-values
     if isinstance(exp, list):
-        joined = '('
+        joined = "("
         for i, elem in enumerate(exp):
             if i > 0:
                 if isinstance(elem, list):
-                    joined += '\n\t' + indent
+                    joined += "\n\t" + indent
                 elif i >= 1:
-                    joined += ' '
-            joined += build_sexp(elem, indent=indent+'\t')
+                    joined += " "
+            joined += build_sexp(elem, indent=indent + "\t")
         if isinstance(elem, list):
-            joined += '\n' + indent
-        return joined + ')'
+            joined += "\n" + indent
+        return joined + ")"
 
     if isinstance(exp, str) and len(exp) == 0:
         return '""'
@@ -187,7 +191,7 @@ def build_sexp(exp, indent='') -> str:
         if exp.startswith('"') and exp.endswith('"'):
             return exp
         else:
-            return '"%s"' % exp.replace('"', r'\"')
+            return '"%s"' % exp.replace('"', r"\"")
     elif isinstance(exp, float):
         if exp.is_integer():
             return str(int(exp))
@@ -208,7 +212,7 @@ def build_sexp(exp, indent='') -> str:
 
 
 def format_sexp(sexp: str, indentation_size: int = 2, max_nesting: int = 2) -> str:
-    out = ''
+    out = ""
     n = 0
     for match in re.finditer(term_regex, sexp):
         indentation = "" if out[-1:] != ")" else " "
@@ -216,29 +220,29 @@ def format_sexp(sexp: str, indentation_size: int = 2, max_nesting: int = 2) -> s
         if lparen:
             if out:
                 if n <= max_nesting:
-                    if out[-1] == ' ':
+                    if out[-1] == " ":
                         out = out[:-1]
-                    indentation = '\n' + (' ' * indentation_size * n)
+                    indentation = "\n" + (" " * indentation_size * n)
                 else:
-                    if out[-1] == ')':
-                        out += ' '
+                    if out[-1] == ")":
+                        out += " "
             n += 1
-            out += indentation + '('
+            out += indentation + "("
         elif rparen:
-            if out and out[-1] == ' ':
+            if out and out[-1] == " ":
                 out = out[:-1]
             n -= 1
-            out += indentation + ')'
+            out += indentation + ")"
         elif float_num:
-            out += indentation + float_num + ' '
+            out += indentation + float_num + " "
         elif integer_num:
-            out += indentation + integer_num + ' '
+            out += indentation + integer_num + " "
         elif quoted_str is not None:
             out += f'{indentation}"{quoted_str}" '
         elif bare_str is not None:
-            out += indentation + bare_str + ' '
+            out += indentation + bare_str + " "
 
-    out += '\n'
+    out += "\n"
     return out
 
 
@@ -257,7 +261,7 @@ if __name__ == "__main__":
     print("\nThen back to: '%s'" % format_sexp(build_sexp(parsed)))
 
     def check(reparsed):
-        if (parsed == reparsed):
+        if parsed == reparsed:
             print("\nSuccess: Parsed and re-parsed match!")
             return True
         else:

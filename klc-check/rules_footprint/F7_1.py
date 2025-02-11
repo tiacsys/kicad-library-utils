@@ -35,15 +35,21 @@ class Rule(KLCRule):
 
             if module.exclude_from_bom:
                 self.error("Through hole footprints should not be excluded from BOM")
-                self.errorExtra("If this part isn't physically fitted, perhaps this"
-                                " footprint should be of \"unspecified\" type.")
+                self.errorExtra(
+                    "If this part isn't physically fitted, perhaps this"
+                    ' footprint should be of "unspecified" type.'
+                )
                 error = True
 
             if module.exclude_from_pos_files:
-                self.error("Through hole footprints should not be excluded from"
-                           " position files")
-                self.errorExtra("If this part isn't physically fitted, perhaps this"
-                                " footprint should be of \"unspecified\" type.")
+                self.error(
+                    "Through hole footprints should not be excluded from"
+                    " position files"
+                )
+                self.errorExtra(
+                    "If this part isn't physically fitted, perhaps this"
+                    ' footprint should be of "unspecified" type.'
+                )
                 error = True
 
         if self.pth_count > 0 and module.footprint_type != "through_hole":

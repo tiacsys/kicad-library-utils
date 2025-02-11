@@ -105,10 +105,12 @@ class Rule(KLCRule):
 
         if model.startswith(SYSMOD_PREFIX):
             model = model.replace(SYSMOD_PREFIX, "")
-        elif (m := re.search(OLD_SYSMOD_PREFIX_RE, model)):
+        elif m := re.search(OLD_SYSMOD_PREFIX_RE, model):
             self.model3D_oldSYSMOD = True
             self.needsFixMore = True
-            self.error(f"Model path starts with outdated prefix '{m[1]}/'; it should start with '{SYSMOD_PREFIX}'")
+            self.error(
+                f"Model path starts with outdated prefix '{m[1]}/'; it should start with '{SYSMOD_PREFIX}'"
+            )
             error = True
             model = model.replace(m[1], "")
         else:

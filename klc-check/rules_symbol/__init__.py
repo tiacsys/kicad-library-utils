@@ -2,6 +2,7 @@ def get_all_symbol_rules():
     # without this delayed import, the rules could not import our sub-modules (e.g. `rule`)
     from . import (
         EC01,
+        EC03,
         G1_1,
         G1_7,
         S3_1,
@@ -20,7 +21,6 @@ def get_all_symbol_rules():
         S6_2,
         S7_1,
         S7_2,
-        EC03,
     )
 
     return {

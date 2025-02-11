@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 import math
 
-from kicad_sym import Polyline
-from kicad_sym import Bezier
-from rules_symbol.rule import KLCRule
-
 import geometry
+from kicad_sym import Bezier, Polyline
+from rules_symbol.rule import KLCRule
 
 
 class Rule(KLCRule):
@@ -132,7 +130,9 @@ class Rule(KLCRule):
         for i in range(len(all_segs)):
             for j in range(i + 1, len(all_segs)):
 
-                if not _polylines_comparable_for_overlap(all_segs[i][1], all_segs[j][1]):
+                if not _polylines_comparable_for_overlap(
+                    all_segs[i][1], all_segs[j][1]
+                ):
                     continue
 
                 s1 = all_segs[i][0]

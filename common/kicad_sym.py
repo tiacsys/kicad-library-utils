@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import geometry
 import sexpr
 
-__version__ = '8.0'
+__version__ = "8.0"
 
 
 class KicadFileFormatError(ValueError):
@@ -511,7 +511,11 @@ class Arc(KicadSymbolBase):
     demorgan: int = 0
 
     def get_sexpr(self) -> List[Any]:
-        stroke_sx = ["stroke", ["width", self.stroke_width], ["type", self.stroke_line_style]]
+        stroke_sx = [
+            "stroke",
+            ["width", self.stroke_width],
+            ["type", self.stroke_line_style],
+        ]
         if self.stroke_color:
             stroke_sx.append(self.stroke_color.get_sexpr())
         fill_sx = ["fill", ["type", self.fill_type]]
@@ -613,7 +617,11 @@ class Polyline(KicadSymbolBase):
     def get_sexpr(self):
         pts_list: list[Any] = [x.get_sexpr() for x in self.points]
         pts_list.insert(0, "pts")
-        stroke_sx = ["stroke", ["width", self.stroke_width], ["type", self.stroke_line_style]]
+        stroke_sx = [
+            "stroke",
+            ["width", self.stroke_width],
+            ["type", self.stroke_line_style],
+        ]
         if self.stroke_color:
             stroke_sx.append(self.stroke_color.get_sexpr())
         fill_sx = ["fill", ["type", self.fill_type]]
@@ -692,7 +700,9 @@ class Polyline(KicadSymbolBase):
 
         (stroke, sline, scolor) = _get_stroke(sexpr)
         (fill, fcolor) = _get_fill(sexpr)
-        return Polyline(pts, stroke, sline, scolor, fill, fcolor, unit=unit, demorgan=demorgan)
+        return Polyline(
+            pts, stroke, sline, scolor, fill, fcolor, unit=unit, demorgan=demorgan
+        )
 
     def get_segs(self):
         """
@@ -835,7 +845,11 @@ class Rectangle(KicadSymbolBase):
         return r
 
     def get_sexpr(self) -> List[Any]:
-        stroke_sx = ["stroke", ["width", self.stroke_width], ["type", self.stroke_line_style]]
+        stroke_sx = [
+            "stroke",
+            ["width", self.stroke_width],
+            ["type", self.stroke_line_style],
+        ]
         if self.stroke_color:
             stroke_sx.append(self.stroke_color.get_sexpr())
         fill_sx = ["fill", ["type", self.fill_type]]
@@ -1025,7 +1039,9 @@ class KicadSymbol(KicadSymbolBase):
 
         return sx
 
-    def get_center_rectangle(self, units: Optional[List[int]]=None) -> Optional[Polyline]:
+    def get_center_rectangle(
+        self, units: Optional[List[int]] = None
+    ) -> Optional[Polyline]:
         # return a polyline for the requested unit that is a rectangle
         # and is closest to the center
         candidates = {}
@@ -1044,7 +1060,9 @@ class KicadSymbol(KicadSymbolBase):
             return candidates[sorted(candidates.keys())[0]]
         return None
 
-    def get_largest_area_rectangle(self, units: Optional[List[int]]=None) -> Optional[Polyline]:
+    def get_largest_area_rectangle(
+        self, units: Optional[List[int]] = None
+    ) -> Optional[Polyline]:
         """
         From all the rectangles in the requested units,
         select the one rectangle with the largest area.
@@ -1221,7 +1239,7 @@ class KicadLibrary(KicadSymbolBase):
 
     def write(self) -> None:
         with open(self.filename, "w", encoding="utf-8") as lib_file:
-            lib_file.write(self.get_sexpr() + '\n')
+            lib_file.write(self.get_sexpr() + "\n")
 
     def get_sexpr(self) -> str:
         sx = [
@@ -1281,7 +1299,9 @@ class KicadLibrary(KicadSymbolBase):
         # not work as expected. So just don't load them at all.
         version = _get_value_of(sexpr_data, "version")
         if str(version) != "20231120":
-            raise KicadFileFormatError(f'Version of symbol file is "{version}", not "20231120"')
+            raise KicadFileFormatError(
+                f'Version of symbol file is "{version}", not "20231120"'
+            )
 
         # for tracking derived symbols we need another dict
         symbol_names = {}
@@ -1318,7 +1338,9 @@ class KicadLibrary(KicadSymbolBase):
                     ) from exc
 
             # get flags
-            symbol.exclude_from_sim = _get_value_of(item, "exclude_from_sim", "no") == "yes"
+            symbol.exclude_from_sim = (
+                _get_value_of(item, "exclude_from_sim", "no") == "yes"
+            )
             symbol.in_bom = _get_value_of(item, "in_bom", "no") == "yes"
             symbol.on_board = _get_value_of(item, "on_board", "no") == "yes"
             if _has_value(item, "power"):
@@ -1407,9 +1429,7 @@ class KicadLibrary(KicadSymbolBase):
             cursor = symbol
             while cursor.extends:
                 if symbol.name == symbol.extends:
-                    raise KicadFileFormatError(
-                        f"Symbol {symbol.name} extends itself"
-                    )
+                    raise KicadFileFormatError(f"Symbol {symbol.name} extends itself")
 
                 if symbol.extends in symbol._inheritance:
                     raise KicadFileFormatError(

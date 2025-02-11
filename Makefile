@@ -35,6 +35,11 @@ style:
 	python3 -m isort .
 	black .
 
+.PHONY: style-check 
+style-check:
+	python3 -m isort --check-only . 
+	black --check .
+
 
 .PHONY: test-klc-footprints
 test-klc-footprints:
@@ -44,6 +49,7 @@ test-klc-footprints:
 
 	python klc-check/check_footprint.py -vv \
 		klc-check/test_footprint.pretty/SO-8_3.9x4.9mm_P1.27mm.kicad_mod
+
 
 .PHONY: test-klc-symbols
 test-klc-symbols:

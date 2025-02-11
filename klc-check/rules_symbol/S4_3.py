@@ -42,7 +42,7 @@ class Rule(KLCRule):
         possible_power_pin_stacks = []
 
         # iterate over pinstacks
-        for (pos, pins) in self.component.get_pinstacks().items():
+        for pos, pins in self.component.get_pinstacks().items():
             # skip stacks with only one pin
             if len(pins) == 1:
                 continue

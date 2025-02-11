@@ -22,8 +22,7 @@ class Rule(KLCRule):
         """
         Determine if some given pad is supposed to be rounded per F6.3.4
         """
-        return (pad['type'] == 'smd'
-                and pad['property'] != "pad_prop_heatsink")
+        return pad["type"] == "smd" and pad["property"] != "pad_prop_heatsink"
 
     def _check_pad_rounding(self, pad):
         """
@@ -31,14 +30,13 @@ class Rule(KLCRule):
         error list if found.
         """
 
-        if self._pad_should_be_rounded(pad) and pad['shape'] == 'rect':
+        if self._pad_should_be_rounded(pad) and pad["shape"] == "rect":
             self.pads_that_should_be_rounded.append(pad)
 
     def _check_heatsink_zone_connection(self, pad):
 
-        if (pad['type'] == 'smd'
-                and pad['property'] == "pad_prop_heatsink"):
-            if pad['zone_connect'] != 2:  # 2: SOLID
+        if pad["type"] == "smd" and pad["property"] == "pad_prop_heatsink":
+            if pad["zone_connect"] != 2:  # 2: SOLID
                 self.heatsink_pads_without_solid_zone_connect.append(pad)
 
     def checkPads(self, pads: List[Dict[str, Any]]) -> bool:
@@ -170,10 +168,14 @@ class Rule(KLCRule):
 
         if self.pads_that_should_be_rounded:
             err = True
-            non_round_pad_numbers = [str(pad["number"]) for pad in self.pads_that_should_be_rounded]
+            non_round_pad_numbers = [
+                str(pad["number"]) for pad in self.pads_that_should_be_rounded
+            ]
             self.warning("Rectangular SMD pad")
-            self.warningExtra(f"Pads {', '.join(non_round_pad_numbers)} are rectangular. "
-                              "If possible, change to rounded-rectangle.")
+            self.warningExtra(
+                f"Pads {', '.join(non_round_pad_numbers)} are rectangular. "
+                "If possible, change to rounded-rectangle."
+            )
 
         if extra_layer_errors:
             err = True
@@ -187,9 +189,13 @@ class Rule(KLCRule):
                 self.warningExtra(w)
 
         if self.heatsink_pads_without_solid_zone_connect:
-            pad_numbers = [pad["number"] for pad in self.heatsink_pads_without_solid_zone_connect]
-            self.warning("Heatsink pads are missing 'solid' zone connection: "
-                         f"{', '.join(pad_numbers)}")
+            pad_numbers = [
+                pad["number"] for pad in self.heatsink_pads_without_solid_zone_connect
+            ]
+            self.warning(
+                "Heatsink pads are missing 'solid' zone connection: "
+                f"{', '.join(pad_numbers)}"
+            )
 
         return err
 
