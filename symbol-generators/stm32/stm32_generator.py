@@ -50,16 +50,6 @@ ignore_devices = [
     "STM32L485*",
     "STM32WBA50KEU*",
     "STM32WBA50KGU*",
-    # Ignore for now to finish Mar'24 update b/c they need new footprints, re-introduce later.
-    "STM32H523HEY*",
-    "STM32H533HEY*",
-    "STM32C071FBY*",
-    "STM32WB05TZF*",
-    "STM32WB06CCF*",
-    "STM32WB06CCV*",
-    "STM32WB07CCF*",
-    "STM32WB07CCV*",
-    "STM32WB09TEF*",
 ]
 
 # Manual overrides for parts with non-standard datasheet locations
@@ -291,6 +281,10 @@ class Device:
             "Package_BGA:ST_TFBGA-361_12x12mm_Layout23x23_P0.5mmP0.65mm",
             "ST*TFBGA*12x12mm*Layout23x23*P0.5mmP0.65mm*",
         ),  # NOQA
+        "TFBGA436": (
+            "Package_BGA:ST_TFBGA-436_18x18mm_Layout22x22_P0.8mm",
+            "ST*TFBGA*18x18mm*Layout22x22*P0.8mm*",
+        ),  # NOQA
         "TSSOP14": (
             "Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
             "TSSOP*4.4x5mm*P0.65mm*",
@@ -347,6 +341,14 @@ class Device:
             "Package_BGA:UFBGA-201_10x10mm_Layout15x15_P0.65mm",
             "UFBGA*10x10mm*Layout15x15*P0.65mm*",
         ),  # NOQA
+        "VFBGA361": (
+            "Package_BGA:ST_VFBGA-361_10x10mm_Layout19x19_P0.5mm",
+            "ST*VFBGA*10x10mm*Layout19x19*P0.5mm*",
+        ),  # NOQA
+        "VFBGA424": (
+            "Package_BGA:ST_VFBGA-424_14x14mm_Layout27x27_P0.5mmP0.5x0.5mm_Stagger",
+            "ST*VFBGA*14x14mm*Layout27x27*P0.5mmP0.5x0.5mm*Stagger*",
+        ),  # NOQA
         "UFQFPN20": (
             "Package_DFN_QFN:ST_UFQFPN-20_3x3mm_P0.5mm",
             "ST*UFQFPN*3x3mm*P0.5mm*",
@@ -370,6 +372,10 @@ class Device:
         "UFQFPN48": (
             "Package_DFN_QFN:QFN-48-1EP_7x7mm_P0.5mm_EP5.6x5.6mm",
             "QFN*1EP*7x7mm*P0.5mm*",
+        ),  # NOQA
+        "VFQFPN48": (
+            "Package_DFN_QFN:QFN-48-1EP_6x6mm_P0.5mm_EP4.4x4.4mm",
+            "QFN*1EP*6x6MM*P0.5mm*",
         ),  # NOQA
         "VFQFPN68": (
             "Package_DFN_QFN:QFN-68-1EP_8x8mm_P0.4mm_EP6.4x6.4mm",
@@ -493,7 +499,69 @@ class Device:
             "Package_CSP:ST_WLCSP-208_5.8x5.6mm_Layout26x16_P0.35mm_Stagger",
             "ST*WLCSP*5.8x5.6mm*Layout26x16*P0.35mm*Stagger*",
         ),  # NOQA
+        "ST_WLCSP-49_Die01E": (
+            "Package_CSP:ST_WLCSP-49_3.14x3.14mm_Layout7x7_P0.4mm_Offcenter",
+            "ST*WLCSP*3.14x3.14mm*Layout7x7*P0.4mm*Offcenter*",
+        ),  # NOQA
+        "ST_WLCSP-36_Die028": (
+            "Package_CSP:ST_WLCSP-36_2.652x2.592mm_Layout7x12_P0.4mm_Stagger_Offcenter",
+            "ST*WLCSP*2.652x2.592mm*Layout7x12*P0.4mm*Stagger*Offcenter*",
+        ),  # NOQA
+        "ST_WLCSP-36_Die032": (
+            "Package_CSP:ST_WLCSP-36_2.83x2.99mm_Layout7x13_P0.4mm_Stagger_Offcenter",
+            "ST*WLCSP*2.83x2.99mm*Layout7x13*P0.4mm*Stagger*Offcenter*",
+        ),  # NOQA
+        "ST_WLCSP-39_Die478": (
+            "Package_CSP:ST_WLCSP-39_2.76x2.78mm_Layout11x7_P0.4mm_Stagger",
+            "ST*WLCSP*2.76x2.78mm*Layout11x7*P0.4mm*Stagger*",
+        ),  # NOQA
+        "ST_WLCSP-19_Die493": (
+            "Package_CSP:ST_WLCSP-19_1.643x2.492mm_Layout4x11_P0.35mm_Stagger",
+            "ST*WLCSP*1.643x2.492mm*Layout4x11*P0.35mm*Stagger*",
+        ),  # NOQA
     }
+    _LEGACY_WLCSPs = [
+        "ST_WLCSP-100_Die422",
+        "ST_WLCSP-100_Die446",
+        "ST_WLCSP-100_Die452",
+        "ST_WLCSP-100_Die461",
+        "ST_WLCSP-104_Die437",
+        "ST_WLCSP-143_Die419",
+        "ST_WLCSP-143_Die449",
+        "ST_WLCSP-144_Die470",
+        "ST_WLCSP-168_Die434",
+        "ST_WLCSP-180_Die451",
+        "ST_WLCSP-25_Die425",
+        "ST_WLCSP-25_Die444",
+        "ST_WLCSP-25_Die457",
+        "ST_WLCSP-36_Die417",
+        "ST_WLCSP-36_Die440",
+        "ST_WLCSP-36_Die445",
+        "ST_WLCSP-36_Die458",
+        "ST_WLCSP-49_Die423",
+        "ST_WLCSP-49_Die431",
+        "ST_WLCSP-49_Die433",
+        "ST_WLCSP-49_Die435",
+        "ST_WLCSP-49_Die438",
+        "ST_WLCSP-49_Die439",
+        "ST_WLCSP-49_Die447",
+        "ST_WLCSP-49_Die448",
+        "ST_WLCSP-63_Die427",
+        "ST_WLCSP-64_Die414",
+        "ST_WLCSP-64_Die427",
+        "ST_WLCSP-64_Die435",
+        "ST_WLCSP-64_Die436",
+        "ST_WLCSP-64_Die441",
+        "ST_WLCSP-64_Die442",
+        "ST_WLCSP-64_Die462",
+        "ST_WLCSP-66_Die411",
+        "ST_WLCSP-66_Die432",
+        "ST_WLCSP-72_Die415",
+        "ST_WLCSP-81_Die415",
+        "ST_WLCSP-81_Die421",
+        "ST_WLCSP-81_Die463",
+        "ST_WLCSP-90_Die413",
+    ]
 
     def __init__(self, xml):
         soup = BeautifulSoup(xml.read_text(), features="xml").find("Mcu")
@@ -556,9 +624,16 @@ class Device:
 
                 if pkg in self._WLCSP_MAP:
                     self.footprint, self.footprint_filters = self._WLCSP_MAP[pkg]
-                else:
+                elif pkg in self._LEGACY_WLCSPs:
                     self.footprint_filters = f"ST*WLCSP*{die}*"
                     self.footprint = f"Package_CSP:{pkg}"
+                else:
+                    tqdm.tqdm.write(
+                        "Missing WLCSP package for "
+                        f"device {self.name}, package {self.package}, die ID {die}"
+                    )
+                    self.footprint_filters = "*"
+                    self.footprint = ""
 
         elif package in self._FOOTPRINT_MAPPING:
             self.footprint, self.footprint_filters = self._FOOTPRINT_MAPPING[
@@ -738,10 +813,14 @@ class Device:
         right = split_groups(pins["port"], r"P.|.*")
 
         # [[1,2,3],[],[],[4,5,6],[7,8,9],[]] ->  [1, 2, 3, None, 4, 5, 6, None, 7, 8, 9]
-        spaced = lambda groups: [  # NOQA: E731
-            e for group in groups for alt in [group, [None]] for e in alt if group
+        spaced = lambda groups: [
+            e
+            for group in groups
+            for alt in [group, [None]]  # NOQA
+            for e in alt
+            if group
         ][:-1]
-        spaced_len = lambda l: len(spaced(l))  # NOQA: E731, E741
+        spaced_len = lambda l: len(spaced(l))  # NOQA
 
         # Balance out pins on left and right sides
         while spaced_len(left) < spaced_len(right[:-1]):
@@ -752,9 +831,9 @@ class Device:
 
         # Calculate the width of the symbol
         # Newstroke at font size 50 mil has characters around 50 mil width.
-        name_width = lambda pins: (  # NOQA: E731
+        name_width = lambda pins: (
             max(len(p.name) * 47 for p in pins if p) if pins else 0
-        )
+        )  # NOQA
 
         spaced_left, spaced_right = spaced(left), spaced(right)
         name_width_sides = name_width(spaced_left + spaced_right)
@@ -1088,16 +1167,16 @@ def cli(
 
         if skip_without_footprint and not dev.footprint:
             tqdm.tqdm.write(
-                f"\033[91mNo footprint for device {dev.name} with ST package name {dev.package}, skipping (--skip-without-footprint).\033[0m"  # NOQA: E501
-            )
+                f"\033[91mNo footprint for device {dev.name} with ST package name {dev.package}, skipping (--skip-without-footprint).\033[0m"
+            )  # NOQA
             continue
 
         datasheet = verify_datasheet(refname, datasheet_base)
         if not datasheet:
             if skip_without_datasheet:
                 tqdm.tqdm.write(
-                    f"\033[91mNo datasheet for device {dev.name}, skipping (--skip-without-datasheet).\033[0m"  # NOQA: E501
-                )
+                    f"\033[91mNo datasheet for device {dev.name}, skipping (--skip-without-datasheet).\033[0m"
+                )  # NOQA
                 continue
             else:
                 tqdm.tqdm.write(
