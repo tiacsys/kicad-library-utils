@@ -9,6 +9,8 @@ base_commit="master"
 target_commit="HEAD"
 repo_dir=""
 output_dir="diffs"
+open_result=false
+
 
 # usage: This function displays the usage information for the script.
 # It provides a brief description of the script's purpose and the
@@ -21,10 +23,11 @@ usage() {
     echo "  -b base_commit      Base commit SHA for the comparison (default: master)"
     echo "  -t target_commit    Target commit SHA for the comparison (default: HEAD)"
     echo "  -o output_dir       Directory to store the output diffs (default: diffs)"
+    echo "  -O                  Open the result in a browser"
 }
 
 # Parse command line arguments
-while getopts "r:b:t:o:" opt; do
+while getopts "r:b:t:o:O" opt; do
     case ${opt} in
         r )
             repo_dir=$OPTARG
@@ -37,6 +40,9 @@ while getopts "r:b:t:o:" opt; do
             ;;
         o )
             output_dir=$OPTARG
+            ;;
+        O)
+            open_result=true
             ;;
         \? )
             usage
@@ -71,3 +77,7 @@ done
 # If there is at least one *.diff, create the index.html
 # The link path must be relative to ../ because index.html will be placed in the "index.html.diffs" directory
 python3 "$klu_dir/html-diff/src/render_index_html.py" "$output_dir"
+
+if [ "$open_result" = true ]; then
+    xdg-open "$output_dir/index.html"
+fi
