@@ -628,14 +628,18 @@ class HTMLDiff:
         def diff_name(new_file) -> Path:
             return self.output / new_file.with_suffix(".html").name
 
-        mod_files = list(new.glob("*.kicad_mod"))
-        mod_files.sort(key=lambda x: x.stem)
+        new_mod_files = set(new.glob("*.kicad_mod"))
+        old_mod_files = set(old.glob("*.kicad_mod"))
 
-        for new_file in mod_files:
-            if not fnmatch.fnmatch(new_file.stem, self.name_glob):
+        all_stems = {f.stem for f in new_mod_files.union(old_mod_files)}
+
+        for stem in sorted(list(all_stems)):
+            if not fnmatch.fnmatch(stem, self.name_glob):
                 continue
 
-            old_file = old / new_file.name
+            new_file = new / f"{stem}.kicad_mod"
+            old_file = old / f"{stem}.kicad_mod"
+
             old_text = old_file.read_text() if old_file.is_file() else ""
             new_text = new_file.read_text() if new_file.is_file() else ""
             changed = old_text != new_text
