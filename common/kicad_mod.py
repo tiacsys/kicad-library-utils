@@ -355,6 +355,12 @@ class KicadMod:
                 except IndexError:
                     rect_dict["width"] = 0
 
+                try:
+                    f = self._getArray(rect, "fill")[0]
+                    rect_dict["fill"] = f[1] in ["solid", "yes"]
+                except IndexError:
+                    rect_dict["fill"] = False
+
                 rects.append(rect_dict)
 
         return rects
@@ -382,6 +388,12 @@ class KicadMod:
                     circle_dict["width"] = a[1]
                 except IndexError:
                     circle_dict["width"] = 0
+
+                try:
+                    f = self._getArray(circle, "fill")[0]
+                    circle_dict["fill"] = f[1] in ["solid", "yes"]
+                except IndexError:
+                    circle_dict["fill"] = False
 
                 circles.append(circle_dict)
 
