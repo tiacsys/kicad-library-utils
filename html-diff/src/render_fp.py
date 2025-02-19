@@ -98,7 +98,7 @@ def render_rect(rect, **style):
     x2, y2 = rect["end"]["x"], rect["end"]["y"]
     x1, x2 = min(x1, x2), max(x1, x2)
     y1, y2 = min(y1, y2), max(y1, y2)
-    w, h = x2 - x1, y1 - y2
+    w, h = abs(x2 - x1), abs(y1 - y2)
     yield (x1, y1, x2, y2), Tag("rect", **style, x=x1, y=y1, width=w, height=h)
 
 
