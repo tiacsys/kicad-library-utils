@@ -18,16 +18,18 @@ open_result=false
 # The function is typically called when the script is executed with
 # incorrect or missing arguments, or when the user requests help.
 usage() {
-    echo "Usage: $0 [-r repo_dir] [-b base_sha] [-t target_sha] [-o output_dir]"
+    echo "Usage: $0 [-r repo_dir] [-b base_sha] [-t target_sha] [-o output_dir] -- [html_diff_args ....]"
     echo "  -r repo_dir         Directory of the repository to compare"
     echo "  -b base_commit      Base commit SHA for the comparison (default: master)"
     echo "  -t target_commit    Target commit SHA for the comparison (default: HEAD)"
     echo "  -o output_dir       Directory to store the output diffs (default: diffs)"
     echo "  -O                  Open the result in a browser"
+    echo ""
+    echo "  html_diff_args       Additional arguments for html_diff.py (e.g. -S /tmp/svg-out-dir)"
 }
 
 # Parse command line arguments
-while getopts "r:b:t:o:O" opt; do
+while getopts "r:b:t:o:O-" opt; do
     case ${opt} in
         r )
             repo_dir=$OPTARG
@@ -44,12 +46,19 @@ while getopts "r:b:t:o:O" opt; do
         O)
             open_result=true
             ;;
+        -) # on --, we're done with our own options
+            break
+            ;;
         \? )
             usage
             exit 1
             ;;
     esac
 done
+
+# Collect additional arguments for html_diff
+shift $((OPTIND -1))
+html_diff_args=("$@")
 
 # Check if all required arguments are provided
 if [ -z "$repo_dir" ] || [ -z "$base_sha" ] || [ -z "$target_sha" ] || [ -z "$output_dir" ]; then
@@ -70,7 +79,7 @@ for change in $changed_objects; do
         # Strip extension and add .diff
         output_subdir="$output_dir/${libname%.*}.diff"
         echo "Diffing: $change to $output_subdir"
-        python3 "$klu_dir/html-diff/src/html_diff.py" -j0 "$base_sha" "$change" -o "$output_subdir"
+        python3 "$klu_dir/html-diff/src/html_diff.py" -j0 "$base_sha" "$change" -o "$output_subdir" "${html_diff_args[@]}"
     fi
 done
 
