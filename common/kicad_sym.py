@@ -348,8 +348,7 @@ class Pin(KicadSymbolBase):
         if self.is_global:
             sx.append("global")
         sx.append(["length", self.length])
-        if self.is_hidden:
-            sx.append("hide")
+        sx.append(["hide", "yes" if self.is_hidden else "no"])
         name_sx: list[Any] = ["name", self.quoted_string(self.name)]
         if self.name_effect:
             name_sx.append(self.name_effect.get_sexpr())
@@ -377,6 +376,7 @@ class Pin(KicadSymbolBase):
 
     @classmethod
     def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> "Pin":
+        is_hidden = False
         is_global = False
         # The first 3 items are pin, type and shape
         if sexpr.pop(0) != "pin":
@@ -388,7 +388,9 @@ class Pin(KicadSymbolBase):
             sexpr.pop(0)
             is_global = True
         # fetch more properties
-        is_hidden = "hide" in sexpr
+        hidearray = _get_array2(sexpr, "hide")
+        if len(hidearray) and "yes" in hidearray[0]:
+            is_hidden = True
         length = _get_value_of(sexpr, "length")
         (posx, posy, rotation) = _parse_at(sexpr)
         (name, name_effect) = cls._parse_name_or_number(sexpr)
@@ -1034,7 +1036,7 @@ class KicadSymbol(KicadSymbolBase):
         if self.pin_names_offset != 0.508:
             pn.append(["offset", self.pin_names_offset])
         if self.hide_pin_names:
-            pn.append("hide")
+            pn.append(["hide", "yes"])
         if len(pn) > 1:
             sx.append(pn)
 
@@ -1044,7 +1046,7 @@ class KicadSymbol(KicadSymbolBase):
         if self.is_power:
             sx.append(["power"])
         if self.hide_pin_numbers:
-            sx.append(["pin_numbers", "hide"])
+            sx.append(["pin_numbers", ["hide", "yes"]])
 
         # add properties
         for prop in self.properties:
