@@ -13,8 +13,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import geometry
 import sexpr
 
-__version__ = "8.0"
-
 
 class KicadFileFormatError(ValueError):
     """any kind of problem discovered while parsing a KiCad file"""
@@ -958,6 +956,39 @@ class Property(KicadSymbolBase):
 
 
 @dataclass
+class KicadEmbeddedFile(KicadSymbolBase):
+    name: str
+    ftype: str
+    compressed_data_base64: str
+    checksum: str
+
+    def get_sexpr(self) -> List[Any]:
+        sx = [
+            "file",
+            ["name", self.quoted_string(self.name)],
+            ["type", self.ftype],
+            ["data", self.compressed_data_base64],
+            ["checksum", self.quoted_string(self.checksum)],
+        ]
+        return sx
+
+    @classmethod
+    def from_file(cls, filename: str) -> Optional["KicadEmbeddedFile"]:
+        # needs implementing :)
+        return None
+
+    @classmethod
+    def from_sexpr(cls, sexpr) -> Optional["KicadEmbeddedFile"]:
+        if sexpr.pop(0) != "file":
+            return None
+        name = _get_value_of(sexpr, "name")
+        ftype = _get_value_of(sexpr, "type")
+        compressed_data_lines = _get_array(sexpr, "data")[0][1:]
+        checksum = _get_value_of(sexpr, "checksum")
+        return KicadEmbeddedFile(name, ftype, compressed_data_lines, checksum)
+
+
+@dataclass
 class KicadSymbol(KicadSymbolBase):
     name: str
     libname: str
@@ -980,6 +1011,8 @@ class KicadSymbol(KicadSymbolBase):
     extends: Optional[str] = None
     unit_count: int = 0
     demorgan_count: int = 0
+    embedded_fonts = False
+    files: List[KicadEmbeddedFile] = field(default_factory=list)
 
     # List of parent symbols, the first element is the direct parent,
     # the last element is the root symbol
@@ -1017,6 +1050,13 @@ class KicadSymbol(KicadSymbolBase):
         for prop in self.properties:
             sx.append(prop.get_sexpr())
 
+        # add embedded files
+        file_expression = []
+        for file in self.files:
+            file_expression.append(file.get_sexpr())
+        if len(file_expression) > 0:
+            sx.append(["files", file_expression])
+
         # add units
         for d in range(0, self.demorgan_count + 1):
             for u in range(0, self.unit_count + 1):
@@ -1037,6 +1077,7 @@ class KicadSymbol(KicadSymbolBase):
                 if len(sx_i) > 2:
                     sx.append(sx_i)
 
+        sx.append(["embedded_fonts", "yes" if self.embedded_fonts else "no"])
         return sx
 
     def get_center_rectangle(
@@ -1235,7 +1276,7 @@ class KicadLibrary(KicadSymbolBase):
     filename: str
     symbols: List[KicadSymbol] = field(default_factory=list)
     generator: str = "kicad-library-utils"
-    version: str = "20231120"
+    version: str = "20241209"
 
     def write(self) -> None:
         with open(self.filename, "w", encoding="utf-8") as lib_file:
@@ -1246,7 +1287,7 @@ class KicadLibrary(KicadSymbolBase):
             "kicad_symbol_lib",
             ["version", self.version],
             ["generator", self.quoted_string(self.generator)],
-            ["generator_version", self.quoted_string(__version__)],
+            ["generator_version", self.quoted_string(self.version)],
         ]
         for sym in self.symbols:
             sx.append(sym.get_sexpr())
@@ -1292,21 +1333,22 @@ class KicadLibrary(KicadSymbolBase):
             raise KicadFileFormatError(
                 f"Problem while parsing the s-expr file: {exc}"
             ) from None
-        sym_list = _get_array(sexpr_data, "symbol", max_level=2)
 
         # Because of the various file format changes in the development of kicad v6 and v7, we want
         # to ensure that this parser is only used with v6 files. Any other version will most likely
         # not work as expected. So just don't load them at all.
         version = _get_value_of(sexpr_data, "version")
-        if str(version) != "20231120":
+        if str(version) != "20241209":
             raise KicadFileFormatError(
-                f'Version of symbol file is "{version}", not "20231120"'
+                f'Version of symbol file is "{version}", not "20241209"'
             )
+        library.generator = _get_value_of(sexpr_data, "generator")
 
         # for tracking derived symbols we need another dict
         symbol_names = {}
 
         # itertate over symbol
+        sym_list = _get_array(sexpr_data, "symbol", max_level=2)
         for item in sym_list:
             item_type = item.pop(0)
             if item_type != "symbol":
@@ -1337,6 +1379,13 @@ class KicadLibrary(KicadSymbolBase):
                         f"Failed to import '{partname}': {exc}"
                     ) from exc
 
+            # get embedded files
+            files_sexpr = _get_value_of(item, "embedded_files")
+            if files_sexpr:
+                files_list = _get_array(files_sexpr, "file")
+                for item in files_list:
+                    symbol.files.append(KicadEmbeddedFile.from_sexpr(item))
+
             # get flags
             symbol.exclude_from_sim = (
                 _get_value_of(item, "exclude_from_sim", "no") == "yes"
@@ -1345,18 +1394,21 @@ class KicadLibrary(KicadSymbolBase):
             symbol.on_board = _get_value_of(item, "on_board", "no") == "yes"
             if _has_value(item, "power"):
                 symbol.is_power = True
+            symbol.embedded_fonts = _get_value_of(item, "embedded_fonts", "no") == "yes"
 
             # get pin-numbers properties
             pin_numbers_info = _get_array2(item, "pin_numbers")
             if pin_numbers_info:
-                if "hide" in pin_numbers_info[0]:
-                    symbol.hide_pin_numbers = True
+                symbol.hide_pin_numbers = (
+                    _get_value_of(pin_numbers_info[0], "hide", "no") == "yes"
+                )
 
             # get pin-name properties
             pin_names_info = _get_array2(item, "pin_names")
             if pin_names_info:
-                if "hide" in pin_names_info[0]:
-                    symbol.hide_pin_names = True
+                symbol.hide_pin_names = (
+                    _get_value_of(pin_names_info[0], "hide", "no") == "yes"
+                )
                 # sometimes the pin_name_offset value does not exist, then use 20mil as default
                 symbol.pin_names_offset = _get_value_of(
                     pin_names_info[0], "offset", 0.508
@@ -1456,7 +1508,6 @@ if __name__ == "__main__":
     if len(sys.argv) >= 2:
         a = KicadLibrary.from_file(sys.argv[1])
         a.generator = "kicad_symbol_editor"
-        a.version = "20200908"
         print(a.get_sexpr())
     else:
         print("pass a .kicad_sym file please")
