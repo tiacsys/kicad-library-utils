@@ -26,6 +26,7 @@ spelling:
 	codespell \
 		--exclude-file "$(SPELLING_EXCLUDE_FILE)" \
 		--ignore-words "$(SPELLING_IGNORE_WORDS_FILE)" \
+		--ignore-regex='[A-Za-z0-9+/]{70,}' \
 		$(patsubst %, --skip="%",$(SPELLING_SKIP_FILENAMES)) \
 		$(SPELLING_PATHS)
 
