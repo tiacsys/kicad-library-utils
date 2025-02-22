@@ -292,19 +292,14 @@ class BatchRenderSymbols(BatchRenderLibrary):
         self._clear_unwanted()
 
     def get_files_for_stem(self, stem):
-        # Why lower(), IDK but it's a kicad-cli thing
-        stem = stem.lower()
-
         if not self.outdir.is_dir():
             return []
 
         if os.path.isfile(self.outdir / f"{stem}.svg"):
             return [self.outdir / f"{stem}.svg"]
 
-        # A little sus in pathological cases, in 8.0 but it applies to
-        # only a small number of symbols (e.g. HDSP-4830)
-        # https://gitlab.com/kicad/code/kicad/-/issues/18929
-        regex = re.compile(f"{re.escape(stem)}(?:_unit|_)?([0-9]+).svg")
+        # Since V9, there's always a uniform unitN suffix
+        regex = re.compile(f"{re.escape(stem)}_unit([0-9]+).svg")
 
         files = []
         for file in self.outdir.iterdir():
