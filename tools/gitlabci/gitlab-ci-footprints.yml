@@ -114,6 +114,8 @@ model:
 visual_diff:
   stage: diffs
   needs: []
+  tags:
+    - saas-linux-medium-amd64
   image: kicad/kicad:9.0
   allow_failure: true
   when: always
