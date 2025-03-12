@@ -4,6 +4,7 @@ Library for processing KiCad's symbol files.
 
 import json
 import math
+import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -1321,6 +1322,12 @@ class KicadLibrary(KicadSymbolBase):
 
         raises KicadFileFormatError in case of problems
         """
+
+        # Check if library exists and set the empty library if not
+        if not Path(filename).is_file():
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            filename = dir_path + "/empty.kicad_sym"
+
         library = KicadLibrary(filename)
 
         # read the s-expression data
