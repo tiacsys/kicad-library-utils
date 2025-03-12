@@ -1326,6 +1326,7 @@ class KicadLibrary(KicadSymbolBase):
         # Check if library exists and set the empty library if not
         if not Path(filename).is_file():
             dir_path = os.path.dirname(os.path.realpath(__file__))
+            print(f"NO FILE FOUND, using {dir_path}/empty.kicad_sym")
             filename = dir_path + "/empty.kicad_sym"
 
         library = KicadLibrary(filename)
