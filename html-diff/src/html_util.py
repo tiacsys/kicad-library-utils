@@ -83,17 +83,18 @@ def diff_cell(val: str, cls: str | None, inner_tag: str | None = None) -> ET.Ele
     if cls:
         cell.set("class", cls)
 
-    if inner_tag == "a":
-        inner = ET.Element("a")
-        inner.text = val
-        inner.set("target", "_blank")
-        inner.set("href", val)
-    elif inner_tag:
-        inner = ET.Element(inner_tag)
-        inner.text = val
-        cell.append(inner)
-    else:
+    if inner_tag is None:
         cell.text = val
+    else:
+        if inner_tag == "a":
+            inner = ET.Element("a")
+            inner.text = val
+            inner.set("target", "_blank")
+            inner.set("href", val)
+        else:
+            inner = ET.Element(inner_tag)
+            inner.text = val
+        cell.append(inner)
 
     return cell
 
