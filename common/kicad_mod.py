@@ -144,6 +144,9 @@ class KicadMod:
         # pads
         self.pads = self._getPads()
 
+        # zones
+        self.zones = self._getZones()
+
         # models
         self.models = self._getModels()
 
@@ -399,20 +402,24 @@ class KicadMod:
 
         return circles
 
+    def _getPts(self, parent):
+        points = []
+        pts = self._getArray(parent, "pts")[0]
+        for point in self._getArray(pts, "xy"):
+            p = {}
+            p["x"] = point[1]
+            p["y"] = point[2]
+            points.append(p)
+
+        return points
+
     def _getPolys(self, layer=None) -> List[Dict[str, Any]]:
         polys = []
         for poly in self._getArray(self.sexpr_data, "fp_poly"):
             poly_dict = {}
             # filter layers, None = all layers
             if self._hasValue(poly, layer) or layer is None:
-                points = []
-                pts = self._getArray(poly, "pts")[0]
-                for point in self._getArray(pts, "xy"):
-                    p = {}
-                    p["x"] = point[1]
-                    p["y"] = point[2]
-                    points.append(p)
-                poly_dict["points"] = points
+                poly_dict["points"] = self._getPts(poly)
 
                 try:
                     a = self._getArray(poly, "layer")[0]
@@ -720,6 +727,26 @@ class KicadMod:
             pads.append(pad_dict)
 
         return pads
+
+    def _getZones(self) -> List[Dict[str, Any]]:
+        zones = []
+        for zone in self._getArray(self.sexpr_data, "zone"):
+            zone_dict = {}
+
+            zone_dict["layers"] = []
+            # layers or layer >:(
+            if arrs := self._getArray(zone, "layers"):
+                zone_dict["layers"] += arrs[0][1:]
+
+            if arrs := self._getArray(zone, "layer"):
+                zone_dict["layers"].append(arrs[0][1])
+
+            polygon = self._getArray(zone, "polygon")[0]
+            zone_dict["points"] = self._getPts(polygon)
+
+            zones.append(zone_dict)
+
+        return zones
 
     def _getModels(self) -> List[Dict[str, Any]]:
         models_array = self._getArray(self.sexpr_data, "model")

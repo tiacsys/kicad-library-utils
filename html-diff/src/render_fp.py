@@ -180,13 +180,22 @@ def render_drill(pad, **style):
         )
 
 
-def render_polygon(polygon, **style):
-    points = polygon.get("points", polygon.get("pts"))  # bad API
-    points = [(pt["x"], pt["y"]) for pt in points]
+def _render_polygon_by_points(pts: list, **style):
+    points = [(pt["x"], pt["y"]) for pt in pts]
     path_data = "M " + " L ".join(f"{x:.6f} {y:.6f}" for x, y in points)
     # Polygons are closed by definition
     path_data += " Z"
-    yield bbox(*points), Tag("path", **style, d=path_data)
+    return bbox(*points), Tag("path", **style, d=path_data)
+
+
+def render_polygon(polygon, **style):
+    points = polygon.get("points", polygon.get("pts"))  # bad API
+    yield _render_polygon_by_points(points, **style)
+
+
+def render_zone(zone, **style):
+    points = zone.get("points")
+    yield _render_polygon_by_points(points, **style)
 
 
 def render_arc(arc, **style):
@@ -340,7 +349,7 @@ def _render_mod_internal(mod):
         (render_text, mod.userText),
         (render_text, [mod.reference, mod.value]),
     ]:
-        # FIXME zone rendering!
+        # Single-layer elements
         for elem in elems:
             for bbox, tag in fun(elem, **elem_style(elem)):  # NOQA: F402
                 yield elem["layer"], bbox, tag
@@ -388,6 +397,14 @@ def _render_mod_internal(mod):
                 continue
 
             for bbox, tag in render_drill(pad, **{"class": f"l-{layer}-f"}):
+                yield layer, bbox, tag
+
+    for zone in mod.zones:
+
+        for layer in zone["layers"]:
+            style = {"class": layerclass(layer, "fill")}
+
+            for bbox, tag in render_zone(zone, **style):
                 yield layer, bbox, tag
 
 
