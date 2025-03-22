@@ -158,7 +158,7 @@ make-fp-mr:
   script:
     # Clone fps
     - export TARGET=`realpath "$CI_BUILDS_DIR"`
-    - git clone --depth 1 "${KICAD_FOOTPRINTS_REPO}" "$TARGET/fps" --branch master
+    - git clone "${KICAD_FOOTPRINTS_REPO}" "$TARGET/fps" --branch master
     # Generate footprints
     - cd scripts
     # Write out the generation results for metric reporting
