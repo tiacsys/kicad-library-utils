@@ -113,7 +113,7 @@ def generate_index_html(directory, prefix):
             if html_files:
                 path = f"{prefix}{sub_dir}/{html_files[0].name}"
                 buttons_html += f"""
-                <a class="library-button" href=\'{path}\'">{sub_dir}</a><br>
+                <a class="library-button" href=\'{path}\'" target="_blank">{sub_dir}</a><br>
                 """
             else:
                 buttons_html += f'<a class="library-button disabled">{sub_dir} (No HTML files)</a><br>'
