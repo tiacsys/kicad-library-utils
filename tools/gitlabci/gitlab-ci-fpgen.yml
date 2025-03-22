@@ -163,7 +163,7 @@ make-fp-mr:
     - cd scripts
     # Write out the generation results for metric reporting
     - export excluded="Battery LEDs_SMD Connector/Connector_TE-Connectivity Connector/Connector_Harwin Crystals_Resonators_Oscillators SMD_2terminal_chip_molded"
-    - time ./generator.py -j0 --output-dir "$TARGET/fps" -x "$excluded"
+    - time ./generator.py -j0 --output-dir "$TARGET/fps" -x $excluded
     - export branchname="gen-mr-${CI_MERGE_REQUEST_IID}"
     - cd "$TARGET/fps"
     - git switch -c "$branchname"
