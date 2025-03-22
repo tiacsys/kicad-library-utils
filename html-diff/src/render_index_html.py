@@ -80,7 +80,11 @@ def generate_index_html(directory, prefix):
     sub_dirs.sort()
 
     if len(sub_dirs) == 0:
-        return "<html><h1>No diff sub-directories found</h1></html>"
+        return """<html>
+    <h1>No diff sub-directories found</h1>
+    <p>This probably means that this change did not produce any changes to the output files.</p>
+<html>
+"""
     if len(sub_dirs) == 1:
         # If there is only one sub-directory
         sub_dir = sub_dirs[0]
