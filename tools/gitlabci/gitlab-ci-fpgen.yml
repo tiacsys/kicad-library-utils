@@ -159,11 +159,11 @@ make-fp-mr:
     # Clone fps
     - export TARGET=`realpath "$CI_BUILDS_DIR"`
     - git clone "${KICAD_FOOTPRINTS_REPO}" "$TARGET/fps" --branch master
-    # Generate footprints
     - cd scripts
-    # Write out the generation results for metric reporting
-    - export excluded="Battery LEDs_SMD Connector/Connector_TE-Connectivity Connector/Connector_Harwin Crystals_Resonators_Oscillators SMD_2terminal_chip_molded"
-    - time ./generator.py -j0 --output-dir "$TARGET/fps" -x $excluded
+    # Set excluded footprints
+    - export excluded="Battery LEDs_SMD Connector/Connector_Harwin Crystals_Resonators_Oscillators SMD_2terminal_chip_molded"
+    # Generate fps in a shell without CI environment variables
+    - env -i HOME="$HOME" bash -l -c "time ./generator.py -j0 --output-dir $TARGET/fps -x $excluded"
     - export branchname="gen-mr-${CI_MERGE_REQUEST_IID}"
     - cd "$TARGET/fps"
     - git switch -c "$branchname"
@@ -171,11 +171,13 @@ make-fp-mr:
     - git config --global user.email "kicad-mr-bot@example.com"
     - git config --global user.name "KiCad MR bot"
     - git add \*.kicad_mod
-    - git commit -a -m "Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID}"
+    - git commit --all
+        --message "${CI_MERGE_REQUEST_TITLE}"
+        --message "Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID}"
     - git push -uf "https://gitlab-ci-token:${MR_TOKEN}@gitlab.com/kicad/libraries/librarians/kicad-footprints-fork.git" "$branchname"
     - export MR_DESCRIPTION="Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
     - export MR_TITLE="Generator MR ${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
-    - gitlab --private-token "${MR_TOKEN}" project-merge-request create --project-id 68268360 --source-branch "$branchname" --target-branch master --allow-maintainer-to-push yes --target-project-id 21601606 --title "$MR_TITLE" --description "$MR_DESCRIPTION"
+    - gitlab --private-token "${MR_TOKEN}" project-merge-request create --project-id 68268360 --source-branch "$branchname" --target-branch master --allow-collaboration true --squash true --remove-source-branch true --target-project-id 21601606 --title "$MR_TITLE" --description "$MR_DESCRIPTION"
     
 
 # Include the 3d-model-generators pipelines
