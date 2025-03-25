@@ -161,7 +161,7 @@ make-fp-mr:
     - git clone "${KICAD_FOOTPRINTS_REPO}" "$TARGET/fps" --branch master
     - cd scripts
     # Set excluded footprints
-    - export excluded="Battery Connector/Connector_Harwin Crystals_Resonators_Oscillators SMD_2terminal_chip_molded"
+    - export excluded="Battery Crystals_Resonators_Oscillators SMD_2terminal_chip_molded"
     # Generate fps in a shell without CI environment variables
     - env -i HOME="$HOME" bash -l -c "time ./generator.py -j0 --output-dir $TARGET/fps -x $excluded"
     - export branchname="gen-mr-${CI_MERGE_REQUEST_IID}"
