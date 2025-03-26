@@ -55,8 +55,8 @@ def render_arc(sym, arc, **style):
     x2, y2 = arc.midx, -arc.midy
     x3, y3 = arc.endx, -arc.endy
 
-    c, r, collinear, large_arc, is_circle = define_arc(
-        (x1, y1), (x2, y2), (x3, y3), True
+    c, r, collinear, large_arc, sweep, is_circle = define_arc(
+        (x1, y1), (x2, y2), (x3, y3)
     )
 
     if is_circle:
@@ -72,10 +72,7 @@ def render_arc(sym, arc, **style):
         )
         return
 
-    large_arc = int(large_arc)
-    sweep = 0
-
-    d = f"M {x1:.6f} {y1:.6f} A {r:.6f} {r:.6f} 0 {large_arc} {sweep} {x3:.6f} {y3:.6f}"
+    d = f"M {x1:.6f} {y1:.6f} A {r:.6f} {r:.6f} 0 {int(large_arc)} {int(sweep)} {x3:.6f} {y3:.6f}"
     # We just approximate the bbox here with that of a circle. Calculating precise arc bboxes is
     # hairy, and unnecessary for our purposes.
     elem_bbox = bbox((c[0] - r, c[1] - r), (c[0] + r, c[1] + r))

@@ -45,7 +45,7 @@ def distance_between(p1, p2):
     return math.sqrt(dx * dx + dy * dy)
 
 
-def define_arc(p1, p2, p3, y_axis_up=False):
+def define_arc(p1, p2, p3):
     """
     Returns the center radius, collinearity and side (large/small) of the circle
     passing the given 3 points.
@@ -59,13 +59,13 @@ def define_arc(p1, p2, p3, y_axis_up=False):
         cx = (x1 + x2) / 2
         cy = (y1 + y2) / 2
         r = distance_between((cx, cy), (x1, y1))
-        return (cx, cy), r, False, False, True
+        return (cx, cy), r, False, False, False, True
 
     # Compute temporary values to help with calculations
     denom = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
 
     if math.isclose(denom, 0):
-        return (x1, y1), 0, True, False, False
+        return (x1, y1), 0, True, False, False, False
 
     # Compute intermediate values
     cx = (
@@ -80,15 +80,20 @@ def define_arc(p1, p2, p3, y_axis_up=False):
         + (x3**2 + y3**2) * (x2 - x1)
     ) / denom
 
-    d = point_line_distance((x1, y1), (x2, y2), (cx, cy))
     r = distance_between((cx, cy), (x1, y1))
+    dc = point_line_distance((x1, y1), (x3, y3), (cx, cy))
+    d2 = point_line_distance((x1, y1), (x3, y3), (x2, y2))
 
-    collinear = abs(d) < 1.0e-6
+    collinear = abs(d2) < 1.0e-6
 
-    cross_product_ends_c = (x3 - cx) * (y1 - cy) - (y3 - cy) * (x1 - cx)
-    large_arc = (cross_product_ends_c > 0) ^ y_axis_up
+    # If center and point 2 lie on the same side of line through point 1 and 3,
+    # we need to draw the large arc, else the small one
+    large_arc = dc * d2 >= 0
 
-    return (cx, cy), r, collinear, large_arc, False
+    # Location of point 2 relative to that line determins CW/CCW direction
+    sweep = d2 > 0
+
+    return (cx, cy), r, collinear, large_arc, sweep, False
 
 
 def bbox(*args):
