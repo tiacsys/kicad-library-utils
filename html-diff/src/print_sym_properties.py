@@ -102,6 +102,54 @@ def _symbol_counts(
     return counts
 
 
+def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProperty]:
+
+    def _extract_number(pin):
+        if pin and pin.number:
+            if pin.number.isdecimal():
+                return (0, int(pin.number))
+            else:
+                return (1, pin.number)
+        else:
+            return (2, "")
+
+    def _mils(mm):
+        return int(mm / (25.4 / 1000))
+
+    def _format_pin(key, pinset):
+        if key not in pinset.keys():
+            return ""
+        pin = pinset[key]
+        altfuncs = ""
+        for func in pin.altfuncs:
+            altfuncs += f"\n'{func.name}' ({func.etype})"
+
+        return f"'{pin.name}' ({pin.etype}), (x:{str(_mils(pin.posx))},y:{str(_mils(pin.posy))}){altfuncs}"
+
+    diffs = []
+    new_pins = (
+        {_extract_number(pin): pin for pin in getattr(new, "pins")} if new else {}
+    )
+    old_pins = (
+        {_extract_number(pin): pin for pin in getattr(old, "pins")} if old else {}
+    )
+
+    pinlist = list(set(list(new_pins.keys()) + list(old_pins.keys())))
+    pinlist.sort()
+
+    for key in pinlist:
+        diffs.append(
+            DiffProperty(
+                key[1],
+                _format_pin(key, old_pins),
+                _format_pin(key, new_pins),
+                PropertyType.NATIVE,
+            )
+        )
+
+    return diffs
+
+
 def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
 
     properties = _symbol_properties(old, new)
@@ -117,6 +165,13 @@ def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
 
     count_table = make_count_table(_symbol_counts(old, new))
     container.append(count_table)
+
+    pins_header = ET.Element("h4")
+    pins_header.text = "Pins:"
+    container.append(pins_header)
+
+    pins_table = make_property_diff_table(_pin_data(old, new))
+    container.append(pins_table)
 
     # Convert the XML container to a string
     out = ET.tostring(container, encoding="unicode", method="html")
