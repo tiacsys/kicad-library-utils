@@ -55,7 +55,7 @@ class KicadMod:
     A class to parse KiCad footprint files (.kicad_mod format)
     """
 
-    SEXPR_BOARD_FILE_VERSION = 20210108
+    SEXPR_BOARD_FILE_VERSION = 20240108
 
     footprint_type: str = "unspecified"
 
