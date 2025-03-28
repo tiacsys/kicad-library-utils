@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 from xml.etree import ElementTree as ET
 
 from html_util import (
@@ -104,12 +105,30 @@ def _symbol_counts(
 
 def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProperty]:
 
+    def _to_sorting_key(n: str) -> tuple:
+
+        # We want to sort pads with multiple name components such that A2 comes after A1 and before A10,
+        # and all the Ax come before all Bx.
+        # Example sort order: "", "0", "1", "2", "10", "A", "A1", "A2", "A10", "A100", "B", "B1"...
+        # To achieve this, we split by name components such that digit sequences stay as individual tokens.
+        # We will later compare lists of tuples, with the list length being the component count.
+
+        # Split the strings into substrings containing digits and those containing everything else.
+        # For example: 'a10.2' => ['a', '10', '.', '2']
+        substrings = re.findall(r"\d+|[^\d]+", n)
+        # To avoid comparing ints to strings, we create tuples with each item and its category number.
+        # Ints sort before strings, so they are category 1, and strings get category 2.
+        # For example: ['a', '10', '.', '2'] => [(2, 'a'), (1, 10), (2, '.'), (1, 2)]
+        return tuple(
+            [
+                (1, int(substr)) if substr.isdigit() else (2, substr)
+                for substr in substrings
+            ]
+        )
+
     def _extract_number(pin):
         if pin and pin.number:
-            if pin.number.isdecimal():
-                return (0, int(pin.number))
-            else:
-                return (1, pin.number)
+            return (1, _to_sorting_key(pin.number), pin.number)
         else:
             return (2, "")
 
@@ -126,7 +145,8 @@ def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProp
 
         return f"'{pin.name}' ({pin.etype}), (x:{str(_mils(pin.posx))},y:{str(_mils(pin.posy))}){altfuncs}"
 
-    diffs = []
+    num_diffs = []
+
     new_pins = (
         {_extract_number(pin): pin for pin in getattr(new, "pins")} if new else {}
     )
@@ -138,16 +158,59 @@ def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProp
     pinlist.sort()
 
     for key in pinlist:
-        diffs.append(
+        num_diffs.append(
             DiffProperty(
-                key[1],
+                key[-1],
                 _format_pin(key, old_pins),
                 _format_pin(key, new_pins),
                 PropertyType.NATIVE,
             )
         )
 
-    return diffs
+    name_diffs = []
+    new_pin_names = {}
+    if new:
+        for pin in getattr(new, "pins"):
+            if pin.name not in new_pin_names.keys():
+                new_pin_names[pin.name] = [(_extract_number(pin), pin)]
+            else:
+                new_pin_names[pin.name].append((_extract_number(pin), pin))
+
+    old_pin_names = {}
+    if old:
+        for pin in getattr(old, "pins"):
+            if pin.name not in old_pin_names.keys():
+                old_pin_names[pin.name] = [(_extract_number(pin), pin)]
+            else:
+                old_pin_names[pin.name].append((_extract_number(pin), pin))
+
+    namelist = list(set(list(new_pin_names.keys()) + list(old_pin_names.keys())))
+    namelist.sort()
+
+    def _format_namelist(key, pinset):
+        if key not in pinset.keys():
+            return ""
+        pinlist = pinset[key]
+        pinlist.sort()
+        pin_description = "\n".join(
+            [
+                f"'{pin[-1].number}' ({pin[-1].etype}), (x:{str(_mils(pin[-1].posx))},y:{str(_mils(pin[-1].posy))})"
+                for pin in pinlist
+            ]
+        )
+        return pin_description
+
+    for key in namelist:
+        name_diffs.append(
+            DiffProperty(
+                key,
+                _format_namelist(key, old_pin_names),
+                _format_namelist(key, new_pin_names),
+                PropertyType.NATIVE,
+            )
+        )
+
+    return num_diffs, name_diffs
 
 
 def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
@@ -170,8 +233,16 @@ def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
     pins_header.text = "Pins:"
     container.append(pins_header)
 
-    pins_table = make_property_diff_table(_pin_data(old, new))
+    pin_data = _pin_data(old, new)
+    pins_table = make_property_diff_table(pin_data[0])
     container.append(pins_table)
+
+    pins_header = ET.Element("h4")
+    pins_header.text = "Pin names:"
+    container.append(pins_header)
+
+    pin_names_table = make_property_diff_table(pin_data[1])
+    container.append(pin_names_table)
 
     # Convert the XML container to a string
     out = ET.tostring(container, encoding="unicode", method="html")
