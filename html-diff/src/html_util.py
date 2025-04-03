@@ -3,6 +3,7 @@ HTML utility functions for html-diff
 """
 
 import enum
+import re
 from xml.etree import ElementTree as ET
 
 
@@ -84,7 +85,23 @@ def diff_cell(val: str, cls: str | None, inner_tag: str | None = None) -> ET.Ele
         cell.set("class", cls)
 
     if inner_tag is None:
-        cell.text = val
+
+        # look for URLS anywhere in the text
+        url_pattern = re.compile(r"(https?://[^\s]+)")
+
+        # Split text around URLs
+        parts = url_pattern.split(val)
+        for part in parts:
+            if url_pattern.fullmatch(part):
+                # Create a link element for URLs
+                link = ET.SubElement(cell, "a", attrib={"href": part})
+                link.text = part
+            else:
+                # Add regular text (create tail text if needed)
+                if len(cell) > 0:
+                    cell[-1].tail = (cell[-1].tail or "") + part
+                else:
+                    cell.text = (cell.text or "") + part
     else:
         if inner_tag == "a":
             inner = ET.Element("a")
@@ -102,6 +119,7 @@ def diff_cell(val: str, cls: str | None, inner_tag: str | None = None) -> ET.Ele
 def make_property_diff_table(properties: list[DiffProperty]) -> ET.Element:
 
     table = ET.Element("table")
+    table.attrib["id"] = "properties-table"
     table.append(header_row(["Name", "Old Value", "New Value"]))
 
     for prop in properties:
@@ -113,6 +131,7 @@ def make_property_diff_table(properties: list[DiffProperty]) -> ET.Element:
             cls = "prop-same"
 
         if prop.prop_type == PropertyType.DATASHEET:
+            row.attrib["class"] = "datasheet"
             row.append(diff_cell(prop.name, None, "strong"))
             row.append(diff_cell(prop.old, cls, "a"))
             row.append(diff_cell(prop.new, cls, "a"))

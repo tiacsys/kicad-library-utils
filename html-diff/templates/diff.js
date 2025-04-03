@@ -466,6 +466,36 @@ document.getElementById('index-button').addEventListener('click', event => {
     document.getElementById('index').classList.toggle('index-bt-toggle');
 });
 
+
+function findDatasheet() {
+    const propTable = document.getElementById('properties-table');
+
+    // Find the link in the third col (the newer part)
+    let datasheetLink = propTable.querySelector('td:nth-child(3) a');
+
+    if (!datasheetLink) {
+        // Try the second col
+        datasheetLink = propTable.querySelector('td:nth-child(2) a');
+    }
+
+    return datasheetLink;
+}
+
+
+const datasheet = findDatasheet();
+
+if (datasheet) {
+
+    document.getElementById('datasheet-button').addEventListener('click', event => {
+
+        // Open the link in a new tab
+        window.open(datasheet.href, '_blank');
+    } );
+} else {
+    document.getElementById('datasheet-button').disabled = true;
+    document.getElementById('datasheet-button').title = "No datasheet found (d)";
+}
+
 // listen for all keydown events
 document.getElementById('body').addEventListener('keydown', event => {
     let eId = null;
@@ -494,6 +524,12 @@ document.getElementById('body').addEventListener('keydown', event => {
                 break;
             case "v":
                 eId = "btn-visual-diff";
+                break;
+            case "d":
+                eId = "datasheet-button";
+                break;
+            case "i":
+                eId = "index-button";
                 break;
         }
     }

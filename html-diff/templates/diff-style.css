@@ -61,10 +61,16 @@ body {
     margin-left: 10px;
     margin-right: 10px;
     border-radius: 5px;
+    border: none;
 }
 
 .button:hover, .button:active {
     background-color: #3d8bfd;
+}
+
+.button:disabled {
+    background-color: #505050;
+    color: #979797;
 }
 
 .index a.unchanged {
