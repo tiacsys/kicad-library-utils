@@ -137,6 +137,6 @@ def get_resolver(path1, path2, file_filter=None):
     if os.path.isdir(path1) and os.path.isdir(path2):
         return DirectoryFileResolver(path1, path2, file_filter=file_filter)
     elif os.path.isfile(path1) and os.path.isfile(path2):
-        return DirectFileResolver(path1, path2, file_filer=file_filter)
+        return DirectFileResolver(path1, path2, file_filter=file_filter)
 
     raise ValueError(f"Not sure how to resolve the paths given: {path1}, {path2}")
