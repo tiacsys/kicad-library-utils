@@ -70,7 +70,7 @@ class DirectFileResolver(FileResolver):
             path1 = [f for f in path1 if file_filter(f)]
             path2 = [f for f in path2 if file_filter(f)]
 
-        self._files = list(ResolvedFilePair(path1, path2, path2))
+        self._files = [ResolvedFilePair(p[0], p[1], p[1]) for p in zip(path1, path2)]
 
     @property
     def files(self) -> list[ResolvedFilePair]:
