@@ -8,13 +8,11 @@ if [ -v CI_JOB_TOKEN ]; then
 fi
 
 
-# unfortunately the URL where the assets are deployed differs depending on who runs the pipeline
-# there are two cases, the CI can run in the project context, or in the contributors context
-# we use the schema for a 'dynamic' URL from the manual
+# Set the URL for where the deployment goes.
+# We use the schema for a 'dynamic' URL from the manual
 # https://docs.gitlab.com/ee/ci/environments/#set-a-dynamic-environment-url
-if [ "$CI_PROJECT_ROOT_NAMESPACE" == "kicad" ]; then
-  DYNAMIC_ENVIRONMENT_URL="https://$CI_PROJECT_ROOT_NAMESPACE.$CI_PAGES_DOMAIN/-/libraries/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/diffs/index.html"
-else
-  DYNAMIC_ENVIRONMENT_URL="https://$CI_PROJECT_ROOT_NAMESPACE.$CI_PAGES_DOMAIN/-/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/diffs/index.html"
-fi
+# Trim the root namespace from the project path:
+#    - contributor-name/kicad-footprints -> kicad-footpprints
+#    - kicad/libraries/libarians-internal/kicad-footprints -> libraries/librarians-internal/kicad-footprints
+DYNAMIC_ENVIRONMENT_URL="https://$CI_PROJECT_ROOT_NAMESPACE.$CI_PAGES_DOMAIN/-/${CI_PROJECT_PATH#${CI_PROJECT_ROOT_NAMESPACE}/}/-/jobs/$CI_JOB_ID/artifacts/diffs/index.html"
 echo "DYNAMIC_ENVIRONMENT_URL=$DYNAMIC_ENVIRONMENT_URL" >> deploy.env
