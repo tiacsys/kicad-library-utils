@@ -24,7 +24,7 @@ git config --global user.name "KiCad MR bot"
 git add \*.step
 git add \*.wrl
 git commit --all --message "${CI_MERGE_REQUEST_TITLE}" --message "Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID}"
-git push -uf "https://gitlab-ci-token:${MR_3D_TOKEN}@gitlab.com/kicad/libraries/librarians/kicad-packages3d-fork.git" "$branchname"
+git push -uf "https://gitlab-ci-token:${MR_3D_TOKEN}@gitlab.com/kicad/libraries/librarian-internal/kicad-packages3d-fork.git" "$branchname"
 export MR_DESCRIPTION="Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
 export MR_TITLE="Generator MR ${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
 gitlab --private-token "${MR_3D_TOKEN}" project-merge-request create --project-id 68922623 --source-branch "$branchname" --target-branch master --allow-collaboration true --squash true --remove-source-branch true --target-project-id 21604637 --title "$MR_TITLE" --description "$MR_DESCRIPTION"

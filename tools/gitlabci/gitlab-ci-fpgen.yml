@@ -172,7 +172,7 @@ make-fp-mr:
     - git commit --all
         --message "${CI_MERGE_REQUEST_TITLE}"
         --message "Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID}"
-    - git push -uf "https://gitlab-ci-token:${MR_TOKEN}@gitlab.com/kicad/libraries/librarians/kicad-footprints-fork.git" "$branchname"
+    - git push -uf "https://gitlab-ci-token:${MR_TOKEN}@gitlab.com/kicad/libraries/librarian-internal/kicad-footprints-fork.git" "$branchname"
     - export MR_DESCRIPTION="Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
     - export MR_TITLE="Generator MR ${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
     - gitlab --private-token "${MR_TOKEN}" project-merge-request create --project-id 68268360 --source-branch "$branchname" --target-branch master --allow-collaboration true --squash true --remove-source-branch true --target-project-id 21601606 --title "$MR_TITLE" --description "$MR_DESCRIPTION"
