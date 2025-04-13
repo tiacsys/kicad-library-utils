@@ -178,6 +178,29 @@ make-fp-mr:
     - gitlab --private-token "${MR_TOKEN}" project-merge-request create --project-id 68268360 --source-branch "$branchname" --target-branch master --allow-collaboration true --squash true --remove-source-branch true --target-project-id 21601606 --title "$MR_TITLE" --description "$MR_DESCRIPTION"
     
 
+make-3d-mr:
+  stage: Footprint Generate
+  needs: []
+  rules:
+    - when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  tags:
+    - saas-linux-medium-amd64
+  allow_failure: true
+  image: python:3.12
+  before_script:
+    - python --version
+    - python -m pip install --upgrade pip
+    - pip install .[3d] dictdiffer python-gitlab
+  script:
+    - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git config --global --add safe.directory $(realpath .)
+    - source $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/common.sh
+    - echo "Attempting to create output MR"
+    - $CI_BUILDS_DIR/kicad-library-utils/tools/create_3d_mr.sh
+    
+
 # Include the 3d-model-generators pipelines
 include:
   - remote: 'https://gitlab.com/kicad/libraries/kicad-library-utils/-/raw/master/tools/gitlabci/gitlab-ci-3dgen.yml'
