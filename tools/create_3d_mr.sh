@@ -1,14 +1,6 @@
 #!/bin/bash
 
-if [ -z $1 ]; then
-  TARGET_SHA="HEAD"
-else
-  TARGET_SHA=$1
-fi
-
-if [ -z $BASE_SHA ]; then
-  BASE_SHA="$TARGET_SHA~1"
-fi
+source $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/common.sh
 
 export BUILDTARGET=`realpath "$CI_BUILDS_DIR"`
 echo "Cloning 3d model repo"
