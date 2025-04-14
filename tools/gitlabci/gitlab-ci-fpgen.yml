@@ -196,6 +196,7 @@ make-3d-mr:
     - apt-get update -q -y
     - apt-get install -y libgl1-mesa-glx git fontconfig
   script:
+    - source ${KICAD_LIBRARY_UTILS}/tools/gitlabci/common.sh
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)
