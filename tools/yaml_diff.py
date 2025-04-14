@@ -35,9 +35,13 @@ def compare_yamls(file1: str, file2: str):
                 else:
                     changes.add(diff[1])
 
-            # for changes, dictdiffer returns ('change', 'key.subkey', value)
+            # for changes, dictdiffer returns ('change', 'key.subkey', (prev_value,new_value))
+            # if the key contains periods, it returns ('change', ['key', subkey], (prev_value,new_value))
             elif diff[0] == "change":
-                keyname = diff[1].split(".")[0]
+                if isinstance(diff[1], list):
+                    keyname = diff[1][0]
+                else:
+                    keyname = diff[1].split(".")[0]
                 changes.add(keyname)
         return additions, changes, deletions
     else:
