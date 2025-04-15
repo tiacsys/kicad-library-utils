@@ -18,20 +18,23 @@ def compare_yamls(file1: str, file2: str):
         changes = set()
         deletions = set()
         for diff in dictdiffer.diff(data1_dict, data2_dict):
-            # for added keys, dictdiffer returns ('add', 'key', [('subkey',values) )
+            # for added keys, dictdiffer returns ('add', 'key', [('subkey',values), ('subkey', values)] )
             # for yamls with top-level keys, the key is empty and the subkey is the part number
             # for yamls with non-top-level keys, the key is the part number
             if diff[0] == "add":
                 if diff[1] == "":
-                    # extract key name from subkey tuple in form (_. _, [(key, _), _])
-                    additions.add(diff[2][0][0])
+                    for entry in diff[2]:
+                        # extract key name from subkey tuple in form (_. _, [(key, _), (key, _), ...])
+                        additions.add(entry[0])
                 else:
                     changes.add(diff[1])
 
             # same structure here as for additions
             elif diff[0] == "remove":
                 if diff[1] == "":
-                    deletions.add(diff[2][0][0])
+                    for entry in diff[2]:
+                        # extract key name from subkey tuple in form (_. _, [(key, _), (key, _), ...])
+                        deletions.add(entry[0])
                 else:
                     changes.add(diff[1])
 
