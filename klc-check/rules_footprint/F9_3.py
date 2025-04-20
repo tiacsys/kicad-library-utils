@@ -134,10 +134,10 @@ class Rule(KLCRule):
         model_ext = fn[-1]
 
         # Allowed model types
-        extensions = {"wrl"}
+        extensions = {"step", "wrl"}
 
         if model_ext.lower() not in extensions:
-            self.error("Model is incompatible format (must be WRL file)")
+            self.error("Model is incompatible format (must be STEP or WRL file)")
             self.model3D_wrongFiletype = True
             self.needsFixMore = True
             return True
