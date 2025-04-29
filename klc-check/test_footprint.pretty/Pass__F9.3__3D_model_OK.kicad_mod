@@ -122,7 +122,7 @@
 		(remove_unused_layers no)
 		(uuid "1301256c-a819-41f4-9d09-65b61d5b3b82")
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F9.3__3D_model_OK.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F9.3__3D_model_OK.step"
 		(offset
 			(xyz 0 0 0)
 		)

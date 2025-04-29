@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "59b62a1b-1923-49bf-a6e1-7c03f6b01714")
 	)
-	(model "${KISYS3DMOD}/test.3dshapes/Fail__F5.1__REFDES-size-too-small.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__REFDES-size-too-small.step"
 		(offset
 			(xyz 0 0 0)
 		)

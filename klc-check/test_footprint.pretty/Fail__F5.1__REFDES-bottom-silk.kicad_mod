@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "779fb81a-b687-43bf-ad94-f5439f83718d")
 	)
-	(model "${KISYS3DMOD}/test.3dshapes/Fail__F5.1__REFDES-bottom-silk.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__REFDES-bottom-silk.step"
 		(offset
 			(xyz 0 0 0)
 		)

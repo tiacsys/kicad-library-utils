@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "32ca0684-c178-4169-9f65-6bff3a71dac8")
 	)
-	(model "${KISYS3DMOD}/test.3dshapes/Fail__F5.1__REFDES-silk-too-thin.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__REFDES-silk-too-thin.step"
 		(offset
 			(xyz 0 0 0)
 		)

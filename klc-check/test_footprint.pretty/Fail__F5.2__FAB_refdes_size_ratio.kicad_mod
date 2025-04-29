@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "7b8e06e7-e209-4953-af67-191e2faff68d")
 	)
-	(model "${KISYS3DMOD}/test.3dshapes/Fail__F5.2__FAB_refdes_size_ratio.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.2__FAB_refdes_size_ratio.step"
 		(offset
 			(xyz 0 0 0)
 		)

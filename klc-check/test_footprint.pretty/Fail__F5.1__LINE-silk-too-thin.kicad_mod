@@ -194,7 +194,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "fa6d6883-d372-462d-a276-644e5d3754e9")
 	)
-	(model "${KISYS3DMOD}/test.3dshapes/Fail__F5.1__LINE-silk-too-thin.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__LINE-silk-too-thin.step"
 		(offset
 			(xyz 0 0 0)
 		)

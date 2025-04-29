@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "c4b7807e-6220-4482-961b-754e49acdd52")
 	)
-	(model "${KISYS3DMOD}/test.3dshapes/Fail__F5.1__REFDES-extra-asterisk.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__REFDES-extra-asterisk.step"
 		(offset
 			(xyz 0 0 0)
 		)

@@ -475,7 +475,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "2e4b869c-f859-4570-b939-e02e0793da3b")
 	)
-	(model "${KICAD7_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F5.3__ARC_courtyard.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F5.3__ARC_courtyard.step"
 		(offset
 			(xyz 0 0 0)
 		)

@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "bdc479d1-6291-4c44-a4bc-e321c21d03e1")
 	)
-	(model "${KISYS3DMOD}/test.3dshapes/Fail__F5.2__FAB_outline_too_thin.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.2__FAB_outline_too_thin.step"
 		(offset
 			(xyz 0 0 0)
 		)

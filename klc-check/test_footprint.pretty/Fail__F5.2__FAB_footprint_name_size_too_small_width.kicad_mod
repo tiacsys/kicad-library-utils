@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "931b9006-1fef-46af-9ed8-095020460481")
 	)
-	(model "${KISYS3DMOD}/test.3dshapes/Fail__F5.2__FAB_footprint_name_size_too_small_width.wrl"
+	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.2__FAB_footprint_name_size_too_small_width.step"
 		(offset
 			(xyz 0 0 0)
 		)

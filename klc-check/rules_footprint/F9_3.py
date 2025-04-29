@@ -134,10 +134,10 @@ class Rule(KLCRule):
         model_ext = fn[-1]
 
         # Allowed model types
-        extensions = {"step", "wrl"}
+        extensions = {"step"}
 
         if model_ext.lower() not in extensions:
-            self.error("Model is incompatible format (must be STEP or WRL file)")
+            self.error("Model is incompatible format (must be STEP file)")
             self.model3D_wrongFiletype = True
             self.needsFixMore = True
             return True
@@ -224,7 +224,7 @@ class Rule(KLCRule):
         fp_name = self.module.name
         fp_name_no_suffixes = re.sub(self.SUFFIX_RE, "", fp_name)
         self.model3D_expectedDir = SYSMOD_PREFIX + fp_dir + "/"
-        self.model3D_expectedName = fp_name_no_suffixes + ".wrl"
+        self.model3D_expectedName = fp_name_no_suffixes + ".step"
         self.model3D_expectedFullPath = (
             self.model3D_expectedDir + self.model3D_expectedName
         )
