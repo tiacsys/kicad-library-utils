@@ -348,10 +348,7 @@ if __name__ == "__main__":
     parser.add_argument("-j", "--multiprocess", help="use parallel processing")
     parser.add_argument(
         "--footprints",
-        help=(
-            "Path to footprint libraries (.pretty dirs). Specify with e.g."
-            ' "~/kicad/footprints/"'
-        ),
+        help="Path to footprint library dir. Usually same path as KICADx_FOOTPRINT_DIR in KiCad settings.",
     )
     args = parser.parse_args()
 
