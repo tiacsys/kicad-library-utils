@@ -21,6 +21,7 @@
 import argparse
 import json
 import math
+import os
 import pathlib
 import re
 import subprocess
@@ -262,11 +263,10 @@ def make_gallery(config, footprints):
         print("Warning: Non valid footprints found")
         return
 
-    footprint_png = tempfile.NamedTemporaryFile(suffix=".png")
-    gallery_png = tempfile.NamedTemporaryFile(suffix=".png")
-    pcb_file = tempfile.NamedTemporaryFile(suffix=".kicad_pcb")
-
-    footprint_start_pos = pcb_file.write(BLANK_PCB.encode())
+    footprint_png = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    gallery_png = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    pcb_file = tempfile.NamedTemporaryFile(suffix=".kicad_pcb", delete=False)
+    pcb_file.close()
 
     footprint_im = Image.new("RGBA", (10, 10))
     footprint_im.save(footprint_png.name)
@@ -292,9 +292,10 @@ def make_gallery(config, footprints):
                 f"[{footprint_index + 1}/{len(footprints)}] {footprint.get_filename()}"
             )
 
-        pcb_file.write(footprint.text)
-        pcb_file.write(b")\n")
-        pcb_file.file.flush()
+        with open(pcb_file.name, "wb") as f:
+            f.write(BLANK_PCB.encode())
+            f.write(footprint.text)
+            f.write(b")\n")
 
         kicad_cli_args = [
             "kicad-cli",
@@ -354,9 +355,6 @@ def make_gallery(config, footprints):
         if config["viewer"] and footprint_index and footprint_index % 3 == 0:
             gallery_im.save(gallery_png.name)
 
-        pcb_file.seek(footprint_start_pos)
-        pcb_file.truncate()
-
     gallery_im.save(gallery_png.name)
 
     if config["gallery_output_path"]:
@@ -365,8 +363,11 @@ def make_gallery(config, footprints):
         print(f"Temporary gallery image: {gallery_png.name}")
         input("Press Enter to exit...")
     gallery_im.close()
-    pcb_file.close()
+    gallery_png.close()
     footprint_png.close()
+    os.unlink(gallery_png.name)
+    os.unlink(footprint_png.name)
+    os.unlink(pcb_file.name)
 
 
 def get_params(config_params, params_path):
