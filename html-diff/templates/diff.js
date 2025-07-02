@@ -328,12 +328,24 @@ function refreshImages() {
     dragLayerView.refreshImages();
 }
 
+
+function checkboxForLayer(layer) {
+    const checkbox = document.getElementById(`layer-sel-${layer}`);
+    return checkbox;
+}
+
+
 const layerSelDiv = document.getElementById("layer-sel");
 const layerDrawer = document.getElementById("layer-drawer");
 let layerSelCheckboxes = {};
+
+/**
+ * Refresh the group checkboxes for layer sets based on the current state of the
+ * individual layer checkboxes.
+ */
 function refreshLayerSetCheckboxes() {
     for (const [name, layerSet] of Object.entries(layerSets)) {
-        const checkbox = document.getElementById(`layer-sel-${name}`);
+        const checkbox = checkboxForLayer(name);
         const checked = layerSet.filter(layer => layerSelCheckboxes[layer].checked);
         if (checked.length == 0) {
             checkbox.checked = false;
@@ -349,13 +361,42 @@ function refreshLayerSetCheckboxes() {
     refreshImages();
 }
 
+/**
+ * Persist the current layer selection to localStorage.
+ */
+function persistLayerSelection() {
+    const layerSelection = {};
+    for (const layerCb of Object.values(layerSelCheckboxes)) {
+        layerSelection[layerCb.id] = layerCb.checked;
+    }
+    localStorage.setItem('layerCbSelection', JSON.stringify(layerSelection));
+}
+
+/**
+ * Attempt to load the layer selection from localStorage.
+ */
+function loadLayerSelection() {
+    const layerSelection = localStorage.getItem('layerCbSelection');
+    if (layerSelection) {
+        const parsedSelection = JSON.parse(layerSelection);
+        for (const [layerId, checked] of Object.entries(parsedSelection)) {
+            const checkbox = document.getElementById(layerId);
+            if (checkbox) {
+                checkbox.checked = checked;
+            }
+        }
+    }
+    refreshLayerSetCheckboxes();
+}
+
 for (const [name, layerSet] of Object.entries(layerSets)) {
-    const checkbox = document.getElementById(`layer-sel-${name}`);
+    const checkbox = checkboxForLayer(name);
     checkbox.addEventListener('change', event => {
         for (let layer of layerSet) {
             layerSelCheckboxes[layer].checked = checkbox.checked;
         }
         refreshLayerSetCheckboxes();
+        persistLayerSelection();
     });
 }
 
@@ -374,8 +415,11 @@ for (layer of kicadLayers) {
     layerSelCheckboxes[layer] = input;
     input.addEventListener('change', event => {
         refreshLayerSetCheckboxes();
+        persistLayerSelection();
     });
 }
+
+loadLayerSelection();
 
 const unit_sel = document.getElementById('unit-sel');
 const unitButtons = unit_sel.querySelectorAll('.unit-button');
