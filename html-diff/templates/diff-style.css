@@ -184,13 +184,14 @@ div.index-self {
     align-items: stretch;
     background-color: #404040;
     color: white;
-    display: none;
 }
 
 #layer-drawer {
     font-family: monospace;
     font-size: 10pt;
     padding-left: 5px;
+    overflow-y: auto;
+    min-width: min-content;
 }
 
 #layer-drawer > h4 {
@@ -215,6 +216,10 @@ div.index-self {
     width: 1em;
     height: 1em;
     flex-grow: 0;
+}
+
+#layer-drawer.hidden {
+    display: none;
 }
 
 #layers-button {

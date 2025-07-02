@@ -489,16 +489,10 @@ setUnit(0);
 refreshLayerSetCheckboxes();
 
 if (enableLayers) {
-    const layersButton = document.getElementById("btn-layer-view");
-    layersButton.style = "display: initial";
-    let layerDrawerOpen = true;
-    layerDrawer.style = "display: initial";
-    layersButton.addEventListener("click", event => {
-        layerDrawerOpen = !layerDrawerOpen;
-        layerDrawer.style = layerDrawerOpen ? "display: initial" : "display: none";
-    });
+    document.getElementById('btn-layer-view').style = 'display: initial';
 } else {
     document.getElementById('btn-layer-view').style = 'display: none';
+    document.getElementById('layer-drawer').classList.add('hidden');
 }
 
 if (svg_ref.length > 0) {
