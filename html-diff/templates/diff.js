@@ -389,34 +389,64 @@ function loadLayerSelection() {
     refreshLayerSetCheckboxes();
 }
 
-for (const [name, layerSet] of Object.entries(layerSets)) {
-    const checkbox = checkboxForLayer(name);
-    checkbox.addEventListener('change', event => {
-        for (let layer of layerSet) {
-            layerSelCheckboxes[layer].checked = checkbox.checked;
+
+function onLayerCbClick(event, layers) {
+    // Ctrl click: turn this layer on and turn off all others
+    if (event.ctrlKey) {
+        for (const [layerName, layerCb] of Object.entries(layerSelCheckboxes)) {
+            if (layers.includes(layerName)) {
+                layerCb.checked = true;
+            }
+            else
+            {
+                layerCb.checked = false;
+            }
         }
-        refreshLayerSetCheckboxes();
-        persistLayerSelection();
-    });
+    }
+    else
+    {
+        const checked = event.target.checked;
+        for(const layerName of layers) {
+            const layerCb = layerSelCheckboxes[layerName];
+            layerCb.checked = checked;
+        }
+    }
 }
 
-for (layer of kicadLayers) {
-    let div = document.createElement("div");
-    let input = document.createElement("input");
+// Separate change handler to click handler to catch changes that are not caused by clicks
+function onLayerCbChange(event) {
+    refreshLayerSetCheckboxes();
+    persistLayerSelection();
+}
+
+
+for (const [name, layerSet] of Object.entries(layerSets)) {
+    const checkbox = checkboxForLayer(name);
+    checkbox.addEventListener('click', event => {
+        onLayerCbClick(event, layerSet);
+    });
+    checkbox.addEventListener('change', onLayerCbChange);
+    checkbox.title = `Ctrl+click to select only this layer set.`;
+}
+
+for (const layer of kicadLayers) {
+    const div = document.createElement("div");
+    const input = document.createElement("input");
     input.id = `layer-sel-${layer}`;
     input.type = "checkbox";
     input.checked = true;
-    let label = document.createElement("label");
+    const label = document.createElement("label");
     label.setAttribute("for", input.id);
     label.appendChild(document.createTextNode(layer.replace("_", ".")));
     div.appendChild(input);
     div.appendChild(label);
     layerSelDiv.appendChild(div);
     layerSelCheckboxes[layer] = input;
-    input.addEventListener('change', event => {
-        refreshLayerSetCheckboxes();
-        persistLayerSelection();
+    input.addEventListener('click', event => {
+        onLayerCbClick(event, [layer]);
     });
+    input.addEventListener('change', onLayerCbChange);
+    input.title = `Ctrl+click to select only this layer.`;
 }
 
 loadLayerSelection();
