@@ -512,6 +512,7 @@ if (svg_ref.length > 0) {
     document.getElementById('btn-render').style = 'display: none';
 }
 
+
 function updateIndexLinkHashes() {
     const newHash = window.location.hash;
 
@@ -529,7 +530,21 @@ function updateIndexLinkHashes() {
         }
     }
 
-    // Index pane links
+    // Enable the layer drawer if the view can use it
+    const hasLayerDrawer = enableLayers && ['#visual-diff', '#layer-view'].includes(newHash);
+    const layerDrawer = document.getElementById('layer-drawer');
+    layerDrawer.classList.toggle('hidden', !hasLayerDrawer);
+
+    // Highlight the active sidebar button
+    const sidebarButtons = document.querySelectorAll('.sidebar > a');
+    sidebarButtons.forEach(btn => btn.classList.remove("selected"));
+
+    const activeBtn = document.querySelector(`.sidebar > a[href="${newHash}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add("selected");
+    }
+
+    // Update index pane links
     const indexList = document.getElementById('index');
     for (const link of indexList.querySelectorAll('a')) {
         updateHrefHash(link);

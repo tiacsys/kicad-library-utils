@@ -285,6 +285,10 @@ div.index-self {
     background-color: #707070;
 }
 
+.sidebar > a.selected {
+    background-color: #585858;
+}
+
 .content > div {
     display: none;
 }
