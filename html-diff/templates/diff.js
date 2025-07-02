@@ -1,7 +1,16 @@
-const kicadLayers = [ "Names", "Hole_Plated", "Hole_Nonplated", "F_Cu", "B_Cu", "F_Adhes", "B_Adhes", "F_Paste",
-    "B_Paste", "F_SilkS", "B_SilkS", "F_Mask", "B_Mask", "Dwgs_User", "Cmts_User", "Eco1_User",
-    "Eco2_User", "Edge_Cuts", "Margin", "F_CrtYd", "B_CrtYd", "F_Fab", "B_Fab", "User_1", "User_2",
-    "User_3", "User_4", "User_5", "User_6", "User_7", "User_8", "User_9" ];
+const kicadLayers = [
+    "Names", "Hole_Plated", "Hole_Nonplated",
+    "F_Cu", "B_Cu",
+    "F_Fab", "B_Fab",
+    "F_SilkS", "B_SilkS",
+    "F_Paste", "B_Paste",
+    "F_Mask", "B_Mask",
+    "F_CrtYd", "B_CrtYd",
+    "F_Adhes", "B_Adhes",
+    "Dwgs_User", "Cmts_User",
+    "Eco1_User", "Eco2_User",
+    "Edge_Cuts", "Margin",
+    "User_1", "User_2", "User_3", "User_4", "User_5", "User_6", "User_7", "User_8", "User_9" ];
 
 let layerSets = {
     all: kicadLayers,
