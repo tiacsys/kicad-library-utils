@@ -147,12 +147,8 @@ def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProp
 
     num_diffs = []
 
-    new_pins = (
-        {_extract_number(pin): pin for pin in getattr(new, "pins")} if new else {}
-    )
-    old_pins = (
-        {_extract_number(pin): pin for pin in getattr(old, "pins")} if old else {}
-    )
+    new_pins = {_extract_number(pin): pin for pin in new.pins} if new else {}
+    old_pins = {_extract_number(pin): pin for pin in old.pins} if old else {}
 
     pinlist = list(set(list(new_pins.keys()) + list(old_pins.keys())))
     pinlist.sort()
@@ -222,18 +218,24 @@ def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
     prop_table = make_property_diff_table(properties)
     container.append(prop_table)
 
+    # From here, we compare resolved root symbols, otherwise inherited
+    # symbols will show 0 and indicate no differences, even when a changed
+    # root symbol does have differences.
+    new_root = new.get_root_symbol()
+    old_root = old.get_root_symbol()
+
     count_header = ET.Element("h4")
     count_header.text = "Primitive counts:"
     container.append(count_header)
 
-    count_table = make_count_table(_symbol_counts(old, new))
+    count_table = make_count_table(_symbol_counts(old_root, new_root))
     container.append(count_table)
 
     pins_header = ET.Element("h4")
     pins_header.text = "Pins:"
     container.append(pins_header)
 
-    pin_data = _pin_data(old, new)
+    pin_data = _pin_data(old_root, new_root)
     pins_table = make_property_diff_table(pin_data[0])
     container.append(pins_table)
 
