@@ -221,8 +221,8 @@ def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
     # From here, we compare resolved root symbols, otherwise inherited
     # symbols will show 0 and indicate no differences, even when a changed
     # root symbol does have differences.
-    new_root = new.get_root_symbol()
-    old_root = old.get_root_symbol()
+    new_root = new.get_root_symbol() if new else None
+    old_root = old.get_root_symbol() if old else None
 
     count_header = ET.Element("h4")
     count_header.text = "Primitive counts:"
