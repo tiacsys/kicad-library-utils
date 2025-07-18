@@ -160,11 +160,14 @@ make-fp-mr:
     - export TARGET=`realpath "$CI_BUILDS_DIR"`
     - git clone "${KICAD_FOOTPRINTS_REPO}" "$TARGET/fps" --branch master
     - cd scripts
+    # Clear all existing generated footprints (this allows auto-MRs to handle moves and deletions)
+    - git grep --name-only -E "\(generator\s+\"kicad-footprint-generator\"\)" -- "*.kicad_mod" | xargs -d"\n" rm
     # Generate fps in a shell without CI environment variables
     - env -i HOME="$HOME" bash -l -c "time ./generator.py -j0 --output-dir $TARGET/fps"
     - export branchname="gen-mr-${CI_MERGE_REQUEST_IID}"
     - cd "$TARGET/fps"
     - git switch -c "$branchname"
+    # Delete generated footprints we don't want to include in the MR
     - rm -r Connector_Test.pretty test_output
     - git config --global user.email "kicad-mr-bot@example.com"
     - git config --global user.name "KiCad MR bot"
@@ -176,7 +179,7 @@ make-fp-mr:
     - export MR_DESCRIPTION="Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
     - export MR_TITLE="Generator MR ${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
     - gitlab --private-token "${MR_TOKEN}" project-merge-request create --project-id 68268360 --source-branch "$branchname" --target-branch master --allow-collaboration true --squash true --remove-source-branch true --target-project-id 21601606 --title "$MR_TITLE" --description "$MR_DESCRIPTION"
-    
+
 
 make-3d-mr:
   stage: Footprint Generate
@@ -201,7 +204,7 @@ make-3d-mr:
     - source $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/common.sh
     - echo "Attempting to create output MR"
     - $CI_BUILDS_DIR/kicad-library-utils/tools/create_3d_mr.sh
-    
+
 
 # Include the 3d-model-generators pipelines
 include:
