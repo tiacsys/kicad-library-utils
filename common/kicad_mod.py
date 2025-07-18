@@ -715,6 +715,17 @@ class KicadMod:
                             e = self._getArray(primitive, "end")
                             if e:
                                 p["end"] = {"x": e[0][1], "y": e[0][2]}
+                        elif primitive[0] == "gr_rect":
+                            # Read the rectangle's start
+                            p["start"] = {}
+                            s = self._getArray(primitive, "start")
+                            if s:
+                                p["start"] = {"x": s[0][1], "y": s[0][2]}
+                            # Read the rectangle's end
+                            p["end"] = {}
+                            e = self._getArray(primitive, "end")
+                            if e:
+                                p["end"] = {"x": e[0][1], "y": e[0][2]}
 
                         try:
                             a = self._getArray(primitive, "fill")[0]
