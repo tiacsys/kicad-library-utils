@@ -11,6 +11,7 @@ import string
 import subprocess
 import sys
 import tempfile
+import textwrap
 import traceback
 import warnings
 from dataclasses import dataclass
@@ -19,7 +20,10 @@ from typing import Optional
 
 import wsdiff
 from pygments import token
+from pygments.formatters import HtmlFormatter
 from pygments.lexer import RegexLexer
+# For the dark theme
+from witchhazel import WitchHazelStyle
 
 try:
     # Try importing kicad_mod to figure out whether the kicad-library-utils stuff is in path
@@ -70,6 +74,25 @@ class SexprLexer(RegexLexer):
             (r'([^()"\s]+)(?=[)\s])', token.Name),
         ]
     }
+
+
+def _construct_syntax_css() -> str:
+    """
+    Constructs some suitable light/dark mode CSS for the diff syntax highlighting.
+    """
+    light_css = HtmlFormatter(classprefix="wsd-", style="xcode").get_style_defs()
+    dark_css = HtmlFormatter(classprefix="wsd-", style=WitchHazelStyle).get_style_defs()
+
+    syntax_css = textwrap.dedent(
+        f"""@media print, (prefers-color-scheme: light) {{
+            {light_css}
+        }}
+
+        @media (prefers-color-scheme: dark) {{
+            {dark_css}
+        }}"""
+    )
+    return syntax_css
 
 
 def html_stacktrace(fun):
@@ -542,7 +565,7 @@ class HTMLDiff:
             enable_layers="true" if enable_layers else "false",
             hide_text_in_diff="true" if hide_text_in_diff else "false",
             code_diff_css=wsdiff.MAIN_CSS,
-            diff_syntax_css=wsdiff.PYGMENTS_CSS,
+            diff_syntax_css=_construct_syntax_css(),
             prev_button=button("<", prev_diff, _id="nav-bt-prev"),
             next_button=button(">", next_diff, _id="nav-bt-next"),
             diff_index=index,
