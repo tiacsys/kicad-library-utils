@@ -187,7 +187,11 @@ def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProp
         if key not in pinset.keys():
             return ""
         pinlist = pinset[key]
-        pinlist.sort()
+
+        # Sort only by the sorting key, lists of Pins cannot be sorted
+        # and would crash if two keys are equal (e.g. same pins, different body styles)
+        pinlist.sort(key=lambda x: x[0])
+
         pin_description = "\n".join(
             [
                 f"'{pin[-1].number}' ({pin[-1].etype}), (x:{str(_mils(pin[-1].posx))},y:{str(_mils(pin[-1].posy))})"
