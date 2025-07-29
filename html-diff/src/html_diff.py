@@ -22,7 +22,6 @@ import wsdiff
 from pygments import token
 from pygments.formatters import HtmlFormatter
 from pygments.lexer import RegexLexer
-# For the dark theme
 from witchhazel import WitchHazelStyle
 
 try:

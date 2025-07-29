@@ -1,8 +1,51 @@
+
+/*
+ * Note: variables like --c-fg-primary come from the wsdiff CSS,
+ * So we define different prefixes to avoid conflicts.
+ */
+@media (prefers-color-scheme: light) {
+    html {
+        --c-vd-bg-primary: #ffffff;
+        --c-vd-fg-primary: #000000;
+        --c-vd-bg-auxiliary: #f8f8f8;
+        --c-vd-fg-auxiliary: #a0a0a0;
+        --c-vd-border-line: #e0e0e0;
+        --c-vd-fg-header-row: #000000;
+        --c-vd-bg-header-row: #a0a0a0;
+        --c-vd-unvisited-link: #0000ee;
+        --c-vd-visited-link: #800080;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    html {
+        --c-vd-bg-primary: #010409;
+        --c-vd-fg-primary: #a0a0a0;
+        --c-vd-bg-auxiliary: #0d1117;
+        --c-vd-fg-auxiliary: #f0f6fc;
+        --c-border-line: #3d444d;
+        --c-vd-fg-header-row: #ffffff;
+        --c-vd-bg-header-row: #303030;
+        --c-vd-unvisited-link: #98c8ff;
+        --c-vd-visited-link: #c888f8;
+    }
+}
+
 html, body {
     height: 100%;
+    color: var(--c-vd-fg-primary);
     margin: 0;
     padding: 0;
     font-family: sans-serif;
+}
+
+a {
+    color: var(--c-vd-unvisited-link);
+    text-decoration: none;
+}
+
+a:visited {
+    color: var(--c-vd-visited-link);
 }
 
 body {
@@ -49,6 +92,10 @@ body {
     align-items: center;
     padding: 0;
     margin: 0;
+}
+
+.control-buttons > a {
+    color: white;
 }
 
 .button {
@@ -277,13 +324,13 @@ div.index-self {
     text-align: right;
 }
 
-
 #metadata tr:nth-child(even) {
-    background-color: #d0d0d0;
+    background-color: var(--c-vd-bg-auxiliary);
 }
 
 #metadata tr:first-child {
-    background-color: #a0a0a0;
+    background-color: var(--c-vd-bg-header-row);
+    color: var(--c-vd-fg-header-row);
 }
 
 #metadata td.prop-same {
