@@ -383,12 +383,21 @@ def make_gallery_page(
             ",".join(map(str, config["pcb_ori"])),
             "--pan",
             ",".join(map(str, config["pcb_pan"])),
-            "-o",
-            footprint_png.name,
-            pcb_file.name,
         ]
-        if config["raytrace"]:
+
+        if config["render_quality"]:
+            kicad_cli_args.append("--quality")
+            kicad_cli_args.append(config["render_quality"])
+        if config["render_preset"]:
+            kicad_cli_args.append("--preset")
+            kicad_cli_args.append(config["render_preset"])
+        if config["render_floor"]:
             kicad_cli_args.append("--floor")
+
+        kicad_cli_args.append("-o")
+        kicad_cli_args.append(footprint_png.name)
+        kicad_cli_args.append(pcb_file.name)
+
         render_process_output = subprocess.run(kicad_cli_args, capture_output=True)
         if render_process_output.returncode != 0:
             raise ValueError(f"Can't render footprint: {footprint.get_filename()}")
@@ -553,7 +562,13 @@ def main():
         help="include only footprints with existing 3D model",
     )
     args_parser.add_argument(
-        "--raytrace", action=argparse.BooleanOptionalAction, help="use raytracing"
+        "--render-quality", help="render quality (options: basic, high, user)"
+    )
+    args_parser.add_argument("--render-preset", help="render preset")
+    args_parser.add_argument(
+        "--render-floor",
+        action=argparse.BooleanOptionalAction,
+        help="render floor shadows",
     )
     args_parser.add_argument(
         "--viewer", help="application used for viewing during generation"
@@ -577,7 +592,9 @@ def main():
     config["pcb_pan"] = args.pan
     config["only_with_params"] = args.with_params
     config["only_with_model"] = args.with_model
-    config["raytrace"] = args.raytrace
+    config["render_quality"] = args.render_quality
+    config["render_preset"] = args.render_preset
+    config["render_floor"] = args.render_floor
     config["viewer"] = args.viewer
 
     if config["directory_output_path"] and not config["directory_output_path"].is_dir():
