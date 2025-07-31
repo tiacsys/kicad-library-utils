@@ -26,6 +26,7 @@ import pathlib
 import re
 import subprocess
 import tempfile
+from concurrent.futures import ProcessPoolExecutor
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -310,12 +311,12 @@ def get_footprints_from_model_generator(
     return footprints
 
 
-def draw_footprint_title(config, footprint, footprint_im):
+def draw_footprint_title(config, footprint_title: str, footprint_im):
     line_max = 25
     lines_max = 2
     stroke = 4
 
-    title = footprint.get_title().split("\n")
+    title = footprint_title.split("\n")
     lines = []
 
     for line_index, line in enumerate(title):
@@ -346,7 +347,11 @@ def draw_footprint_title(config, footprint, footprint_im):
 
 
 def make_gallery_page(
-    config, footprints, footprints_offset, footprint_png, composed_png, pcb_file
+    config,
+    footprints,
+    footprints_offset: int,
+    tmp_files_dir: pathlib.Path,
+    composed_png: pathlib.Path,
 ):
     assert footprints
     footprints_chunk = footprints[
@@ -363,47 +368,57 @@ def make_gallery_page(
     )
     composed_im = None
 
-    for footprint_index, footprint in enumerate(footprints_chunk):
-        with open(pcb_file.name, "wb") as f:
-            f.write(BLANK_PCB.encode())
-            f.write(footprint.get_text(config))
-            f.write(b")\n")
+    # Gather footprint information in here
+    footprint_infos = {}
 
-        kicad_cli_args = [
-            "kicad-cli",
-            "pcb",
-            "render",
-            "--width",
-            str(config["img_w"]),
-            "--height",
-            str(config["img_h"]),
-            "--zoom",
-            str(config["pcb_zoom"]),
-            "--rotate",
-            ",".join(map(str, config["pcb_ori"])),
-            "--pan",
-            ",".join(map(str, config["pcb_pan"])),
-        ]
+    with ProcessPoolExecutor() as executor:
 
-        if config["render_quality"]:
-            kicad_cli_args.append("--quality")
-            kicad_cli_args.append(config["render_quality"])
-        if config["render_preset"]:
-            kicad_cli_args.append("--preset")
-            kicad_cli_args.append(config["render_preset"])
-        if config["render_floor"]:
-            kicad_cli_args.append("--floor")
+        futures = []
 
-        kicad_cli_args.append("-o")
-        kicad_cli_args.append(footprint_png.name)
-        kicad_cli_args.append(pcb_file.name)
+        for footprint_index, footprint in enumerate(footprints_chunk):
+            # Construct the arguments for rendering the footprint
+            render_one_fp_args = (
+                config,
+                footprint,
+                pathlib.Path(tmp_files_dir),
+            )
+            future = executor.submit(render_one_footprint, *render_one_fp_args)
 
-        render_process_output = subprocess.run(kicad_cli_args, capture_output=True)
-        if render_process_output.returncode != 0:
-            raise ValueError(f"Can't render footprint: {footprint.get_filename()}")
+            footprint_infos[footprint] = {
+                "index_in_chunk": footprint_index,
+            }
 
-        footprint_im = Image.open(footprint_png.name)
-        draw_footprint_title(config, footprint, footprint_im)
+            futures.append((future, footprint))
+
+        # Wait for futures to complete and gather results
+        for future, footprint in futures:
+            try:
+                output_png = future.result()
+                if config["show_progress"]:
+                    index = (
+                        footprints_offset
+                        + footprint_infos[footprint]["index_in_chunk"]
+                        + 1
+                    )
+                    print(f"[{index}/{len(footprints)}] {footprint.get_title()}")
+
+                # Append the result information
+                footprint_infos[footprint]["output_png"] = output_png
+            except ValueError as e:
+                print(f"Error rendering footprint: {e}")
+                return
+
+    sorted_footprints = sorted(
+        footprint_infos.items(), key=lambda fp: fp[1]["index_in_chunk"]
+    )
+
+    # Iterate the footprints and paste into the composed image
+    for footprint, footprint_info in sorted_footprints:
+
+        footprint_im = Image.open(footprint_info["output_png"])
+        footprint_index = footprint_info["index_in_chunk"]
+
+        draw_footprint_title(config, footprint.get_title(), footprint_im)
 
         if config["should_make_composed"]:
             if not composed_im:
@@ -414,7 +429,7 @@ def make_gallery_page(
                         footprint_im.size[1] * composed_rows,
                     ),
                 )
-                composed_im.save(composed_png.name)
+                composed_im.save(composed_png)
 
             col = footprint_index % composed_cols
             row = footprint_index // composed_cols
@@ -424,10 +439,10 @@ def make_gallery_page(
 
             if config["viewer"]:
                 if footprint_index % 3 == 0:
-                    composed_im.save(composed_png.name)
+                    composed_im.save(composed_png)
 
                 if page_index == 0 and footprint_index == 0:
-                    subprocess.Popen([config["viewer"], composed_png.name])
+                    subprocess.Popen([config["viewer"], composed_png])
 
         if config["directory_output_path"]:
             footprint_im.save(
@@ -436,15 +451,8 @@ def make_gallery_page(
 
         footprint_im.close()
 
-        if config["show_progress"]:
-            print(
-                f"[{footprint_index + footprints_offset + 1}/{len(footprints)}] {footprint.get_filename()}"
-            )
-
-        footprint_index += 1
-
     if config["should_make_composed"]:
-        composed_im.save(composed_png.name)
+        composed_im.save(composed_png)
 
         if config["composed_output_path"]:
             path = config["composed_output_path"]
@@ -457,7 +465,59 @@ def make_gallery_page(
         composed_im.close()
 
 
-def make_gallery(config, footprints, footprint_png, composed_png, pcb_file):
+def render_one_footprint(
+    config, footprint: Footprint, output_dir: pathlib.Path
+) -> pathlib.Path:
+
+    footprint_png = output_dir / f"{footprint.get_title()}.png"
+    pcb_file = output_dir / f"{footprint.get_title()}.kicad_pcb"
+
+    with open(pcb_file, "wb") as f:
+        f.write(BLANK_PCB.encode())
+        f.write(footprint.get_text(config))
+        f.write(b")\n")
+
+    kicad_cli_args = [
+        "kicad-cli",
+        "pcb",
+        "render",
+        "--width",
+        str(config["img_w"]),
+        "--height",
+        str(config["img_h"]),
+        "--zoom",
+        str(config["pcb_zoom"]),
+        "--rotate",
+        ",".join(map(str, config["pcb_ori"])),
+        "--pan",
+        ",".join(map(str, config["pcb_pan"])),
+    ]
+
+    if config["render_quality"]:
+        kicad_cli_args.append("--quality")
+        kicad_cli_args.append(config["render_quality"])
+    if config["render_preset"]:
+        kicad_cli_args.append("--preset")
+        kicad_cli_args.append(config["render_preset"])
+    if config["render_floor"]:
+        kicad_cli_args.append("--floor")
+
+    kicad_cli_args.append("-o")
+    kicad_cli_args.append(footprint_png)
+    kicad_cli_args.append(pcb_file)
+
+    render_process_output = subprocess.run(kicad_cli_args, capture_output=True)
+    if render_process_output.returncode != 0:
+        raise ValueError(
+            f"Can't render footprint: {footprint.get_filename()}\n"
+            f"{render_process_output.stderr.decode()}"
+        )
+
+    return footprint_png
+
+
+def make_gallery(config, footprints, tmp_files_dir: pathlib.Path, composed_png):
+
     if not footprints:
         print("Warning: No footprints found")
         return
@@ -466,7 +526,7 @@ def make_gallery(config, footprints, footprint_png, composed_png, pcb_file):
 
     while footprints_offset < len(footprints):
         make_gallery_page(
-            config, footprints, footprints_offset, footprint_png, composed_png, pcb_file
+            config, footprints, footprints_offset, tmp_files_dir, composed_png
         )
         footprints_offset += config["max_per_page"]
 
@@ -640,22 +700,22 @@ def main():
             max_size = max(max_size, footprint.get_size(config))
         config["pcb_size"] = max_size
 
-    footprint_png = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    tmp_files_dir = tempfile.TemporaryDirectory(prefix="footprint_pngs", delete=False)
     composed_png = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-    pcb_file = tempfile.NamedTemporaryFile(suffix=".kicad_pcb", delete=False)
-    pcb_file.close()
 
     try:
-        make_gallery(config, footprints, footprint_png, composed_png, pcb_file)
+        make_gallery(
+            config,
+            footprints,
+            pathlib.Path(tmp_files_dir.name),
+            pathlib.Path(composed_png.name),
+        )
     except KeyboardInterrupt:
         print()
     finally:
-        footprint_png.close()
+        tmp_files_dir.cleanup()
         composed_png.close()
-        pcb_file.close()
-        os.unlink(footprint_png.name)
         os.unlink(composed_png.name)
-        os.unlink(pcb_file.name)
 
 
 if __name__ == "__main__":
