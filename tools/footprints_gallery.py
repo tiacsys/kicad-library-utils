@@ -72,6 +72,7 @@ KICAD_3D_VIEWER_CONFIG = """
 }
 """
 
+
 class Footprint:
     def __init__(self, entry, params):
         self.pathlib_entry = entry
@@ -390,6 +391,7 @@ def make_gallery_page(
     # Gather footprint information in here
     footprint_infos = {}
 
+    print("Rendering:")
     with ProcessPoolExecutor() as executor:
 
         futures = []
@@ -427,6 +429,12 @@ def make_gallery_page(
                 print(f"Error rendering footprint: {e}")
                 return
 
+    if config["show_progress"]:
+        if config["should_make_composed"]:
+            print("Composing...")
+        else:
+            print("Saving...")
+
     sorted_footprints = sorted(
         footprint_infos.items(), key=lambda fp: fp[1]["index_in_chunk"]
     )
@@ -439,6 +447,10 @@ def make_gallery_page(
 
         draw_footprint_title(config, footprint.get_title(), footprint_im)
 
+        if config["show_progress"]:
+            index = footprints_offset + footprint_infos[footprint]["index_in_chunk"] + 1
+            print(f"[{index}/{len(footprints)}] {footprint.get_title()}")
+
         if config["should_make_composed"]:
             if not composed_im:
                 composed_im = Image.new(
@@ -448,20 +460,12 @@ def make_gallery_page(
                         footprint_im.size[1] * composed_rows,
                     ),
                 )
-                composed_im.save(composed_png)
 
             col = footprint_index % composed_cols
             row = footprint_index // composed_cols
             composed_im.paste(
                 footprint_im, [footprint_im.size[0] * col, footprint_im.size[1] * row]
             )
-
-            if config["viewer"]:
-                if footprint_index % 3 == 0:
-                    composed_im.save(composed_png)
-
-                if page_index == 0 and footprint_index == 0:
-                    subprocess.Popen([config["viewer"], composed_png])
 
         if config["directory_output_path"]:
             footprint_im.save(
@@ -470,9 +474,8 @@ def make_gallery_page(
 
         footprint_im.close()
 
+    # Save composed image
     if config["should_make_composed"]:
-        composed_im.save(composed_png)
-
         if config["composed_output_path"]:
             path = config["composed_output_path"]
             try:
@@ -480,6 +483,14 @@ def make_gallery_page(
             except TypeError:
                 pass
             composed_im.save(path)
+        else:
+            path = str(composed_png)
+
+        if config["viewer"]:
+            if not config["composed_output_path"]:
+                composed_im.save(str(composed_png))
+
+            subprocess.Popen([config["viewer"], path])
 
         composed_im.close()
 
@@ -530,7 +541,12 @@ def render_one_footprint(
     else:
         kicad_cli_env = None
 
-    kicad_cli_proc = subprocess.Popen(kicad_cli_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=kicad_cli_env)
+    kicad_cli_proc = subprocess.Popen(
+        kicad_cli_args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=kicad_cli_env,
+    )
     kicad_cli_returncode = kicad_cli_proc.wait()
     if kicad_cli_returncode != 0:
         raise ValueError(
@@ -555,10 +571,9 @@ def make_gallery(config, footprints, tmp_files_dir: pathlib.Path, composed_png):
         )
         footprints_offset += config["max_per_page"]
 
-    if config["should_make_composed"]:
-        if not config["composed_output_path"]:
-            print(f"Temporary composed image: {composed_png.name}")
-            input("Press Enter to exit...")
+    if config["should_make_composed"] and not config["composed_output_path"]:
+        print(f"Temporary composed image: {composed_png.name}")
+        input("Press Enter to exit...")
 
 
 def get_params(config_params, params_path):
@@ -582,7 +597,9 @@ def main():
     config = {}
 
     args_parser = argparse.ArgumentParser()
-    args_parser.add_argument("footprint", help="Footprint file or directory.", nargs="+")
+    args_parser.add_argument(
+        "footprint", help="Footprint file or directory.", nargs="+"
+    )
     args_parser.add_argument("-p", "--params", help="Customs JSON params file.")
     args_parser.add_argument("-g", "--generator", help="Model generator's YAML file.")
     args_parser.add_argument(
@@ -609,7 +626,9 @@ def main():
     )
     args_parser.add_argument("--font-size", type=float, default="20", help="Font size.")
     args_parser.add_argument("--width", type=int, default=300, help="Sub-image width.")
-    args_parser.add_argument("--height", type=int, default=300, help="Sub-image height.")
+    args_parser.add_argument(
+        "--height", type=int, default=300, help="Sub-image height."
+    )
     args_parser.add_argument(
         "--max-per-page", type=int, help="Maximum footprints per page."
     )
@@ -631,7 +650,10 @@ def main():
         "--zoom", type=float, default="0.95", help="Camera zoom amount."
     )
     args_parser.add_argument(
-        "--orientation", type=vector3, default="[310, 0, 45]", help="Camera orientation."
+        "--orientation",
+        type=vector3,
+        default="[310, 0, 45]",
+        help="Camera orientation.",
     )
     args_parser.add_argument(
         "--pan", type=vector3, default="[0, -1.5, 0]", help="Camera pan."
@@ -649,7 +671,10 @@ def main():
     args_parser.add_argument(
         "--render-quality", help="Render quality. (options: basic, high, user)"
     )
-    args_parser.add_argument("--render-preset", help="Render preset (options: empty, ...). See '--temp-home'.")
+    args_parser.add_argument(
+        "--render-preset",
+        help="Render preset (options: empty, ...). See '--temp-home'.",
+    )
     args_parser.add_argument(
         "--render-floor",
         action=argparse.BooleanOptionalAction,
@@ -658,7 +683,7 @@ def main():
     args_parser.add_argument(
         "--use-temp-home",
         action=argparse.BooleanOptionalAction,
-        help="Use a temporary home/config directory for KiCad instead the user home/config directory. This is required for '--preset empty'."
+        help="Use a temporary home/config directory for KiCad instead the user home/config directory. This is required for '--preset empty'.",
     )
     args_parser.add_argument(
         "--viewer", help="Application used for viewing during generation."
@@ -731,12 +756,18 @@ def main():
             max_size = max(max_size, footprint.get_size(config))
         config["pcb_size"] = max_size
 
-    tmp_files_dir = tempfile.TemporaryDirectory(prefix="footprints_gallery-", delete=False)
-    composed_png = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    tmp_files_dir = tempfile.TemporaryDirectory(
+        prefix="footprints_gallery-", delete=False
+    )
+    composed_png = tempfile.NamedTemporaryFile(
+        prefix="footprints_gallery-", suffix=".png", delete=False
+    )
 
     if config["use_temp_home"]:
         kicad_home = tmp_files_dir.name
-        kicad_3d_viewer_config_path = pathlib.Path(kicad_home) / ".config" / "kicad" / "9.0" / "3d_viewer.json"
+        kicad_3d_viewer_config_path = (
+            pathlib.Path(kicad_home) / ".config" / "kicad" / "9.0" / "3d_viewer.json"
+        )
         kicad_3d_viewer_config_path.parent.mkdir(parents=True, exist_ok=True)
 
         with kicad_3d_viewer_config_path.open("w") as f:
