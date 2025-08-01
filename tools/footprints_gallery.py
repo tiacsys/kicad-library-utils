@@ -52,6 +52,25 @@ BLANK_PCB = """
 \t)
 """
 
+KICAD_3D_VIEWER_CONFIG = """
+{
+  "layer_presets": [
+    {
+      "name": "empty",
+      "layers": [
+        "th_models",
+        "smd_models"
+      ],
+      "colors": [
+        {
+          "color": "rgb(191, 156, 59)",
+          "layer": "copper"
+        }
+      ]
+    }
+  ]
+}
+"""
 
 class Footprint:
     def __init__(self, entry, params):
@@ -466,11 +485,11 @@ def make_gallery_page(
 
 
 def render_one_footprint(
-    config, footprint: Footprint, output_dir: pathlib.Path
+    config, footprint: Footprint, tmp_files_dir: pathlib.Path
 ) -> pathlib.Path:
 
-    footprint_png = output_dir / f"{footprint.get_title()}.png"
-    pcb_file = output_dir / f"{footprint.get_title()}.kicad_pcb"
+    footprint_png = tmp_files_dir / f"{footprint.get_title()}.png"
+    pcb_file = tmp_files_dir / f"{footprint.get_title()}.kicad_pcb"
 
     with open(pcb_file, "wb") as f:
         f.write(BLANK_PCB.encode())
@@ -506,11 +525,17 @@ def render_one_footprint(
     kicad_cli_args.append(footprint_png)
     kicad_cli_args.append(pcb_file)
 
-    render_process_output = subprocess.run(kicad_cli_args, capture_output=True)
-    if render_process_output.returncode != 0:
+    if config["use_temp_home"]:
+        kicad_cli_env = {"HOME": str(tmp_files_dir)}
+    else:
+        kicad_cli_env = None
+
+    kicad_cli_proc = subprocess.Popen(kicad_cli_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=kicad_cli_env)
+    kicad_cli_returncode = kicad_cli_proc.wait()
+    if kicad_cli_returncode != 0:
         raise ValueError(
             f"Can't render footprint: {footprint.get_filename()}\n"
-            f"{render_process_output.stderr.decode()}"
+            f"{kicad_cli_returncode.stderr.decode()}"
         )
 
     return footprint_png
@@ -557,81 +582,86 @@ def main():
     config = {}
 
     args_parser = argparse.ArgumentParser()
-    args_parser.add_argument("footprint", help="footprint file or directory", nargs="+")
-    args_parser.add_argument("-p", "--params", help="customs JSON params file")
-    args_parser.add_argument("-g", "--generator", help="model generator's YAML file")
+    args_parser.add_argument("footprint", help="Footprint file or directory.", nargs="+")
+    args_parser.add_argument("-p", "--params", help="Customs JSON params file.")
+    args_parser.add_argument("-g", "--generator", help="Model generator's YAML file.")
     args_parser.add_argument(
-        "-c", "--composed-output", help="composed PNG image output"
+        "-c", "--composed-output", help="Composed PNG image output."
     )
     args_parser.add_argument(
         "-d",
         "--directory-output",
         type=pathlib.Path,
-        help="individual PNG images output directory",
+        help="Individual PNG images output directory.",
     )
     args_parser.add_argument(
         "--show-progress",
         action=argparse.BooleanOptionalAction,
-        help="show generation progress",
+        help="Show generation progress.",
     )
     args_parser.add_argument(
-        "--models", default="/usr/share/kicad/3dmodels", help="3D models directory"
+        "--models", default="/usr/share/kicad/3dmodels", help="3D models directory."
     )
     args_parser.add_argument(
         "--font-file",
         default="./fonts/Roboto/RobotoCondensed-Regular.ttf",
-        help="font file",
+        help="Font file.",
     )
-    args_parser.add_argument("--font-size", type=float, default="20", help="font size")
-    args_parser.add_argument("--width", type=int, default=300, help="sub-image width")
-    args_parser.add_argument("--height", type=int, default=300, help="sub-image height")
+    args_parser.add_argument("--font-size", type=float, default="20", help="Font size.")
+    args_parser.add_argument("--width", type=int, default=300, help="Sub-image width.")
+    args_parser.add_argument("--height", type=int, default=300, help="Sub-image height.")
     args_parser.add_argument(
-        "--max-per-page", type=int, help="maximum footprints per page"
+        "--max-per-page", type=int, help="Maximum footprints per page."
     )
     args_parser.add_argument(
-        "--cols", type=int, default=6, help="composed image columns count"
+        "--cols", type=int, default=6, help="Composed image columns count."
     )
     args_parser.add_argument(
         "--pcb-shape",
         choices=["circle", "rect"],
         default="circle",
-        help="PCB shape type",
+        help="PCB shape type.",
     )
     args_parser.add_argument(
         "--pcb-size",
         default="auto",
-        help="PCB size, 'auto', or 'max'",
+        help="PCB size, 'auto', or 'max'.",
     )
     args_parser.add_argument(
-        "--zoom", type=float, default="0.95", help="camera zoom amount"
+        "--zoom", type=float, default="0.95", help="Camera zoom amount."
     )
     args_parser.add_argument(
-        "--orientation", type=vector3, default="[310, 0, 45]", help="camera orientation"
+        "--orientation", type=vector3, default="[310, 0, 45]", help="Camera orientation."
     )
     args_parser.add_argument(
-        "--pan", type=vector3, default="[0, -1.5, 0]", help="camera pan"
+        "--pan", type=vector3, default="[0, -1.5, 0]", help="Camera pan."
     )
     args_parser.add_argument(
         "--with-params",
         action=argparse.BooleanOptionalAction,
-        help="include only footprints with existing custom JSON parameters",
+        help="Include only footprints with existing custom JSON parameters.",
     )
     args_parser.add_argument(
         "--with-model",
         action=argparse.BooleanOptionalAction,
-        help="include only footprints with existing 3D model",
+        help="Include only footprints with existing 3D model.",
     )
     args_parser.add_argument(
-        "--render-quality", help="render quality (options: basic, high, user)"
+        "--render-quality", help="Render quality. (options: basic, high, user)"
     )
-    args_parser.add_argument("--render-preset", help="render preset")
+    args_parser.add_argument("--render-preset", help="Render preset (options: empty, ...). See '--temp-home'.")
     args_parser.add_argument(
         "--render-floor",
         action=argparse.BooleanOptionalAction,
-        help="render floor shadows",
+        help="Render floor shadows.",
     )
     args_parser.add_argument(
-        "--viewer", help="application used for viewing during generation"
+        "--use-temp-home",
+        action=argparse.BooleanOptionalAction,
+        help="Use a temporary home/config directory for KiCad instead the user home/config directory. This is required for '--preset empty'."
+    )
+    args_parser.add_argument(
+        "--viewer", help="Application used for viewing during generation."
     )
     args = args_parser.parse_args()
 
@@ -655,6 +685,7 @@ def main():
     config["render_quality"] = args.render_quality
     config["render_preset"] = args.render_preset
     config["render_floor"] = args.render_floor
+    config["use_temp_home"] = args.use_temp_home
     config["viewer"] = args.viewer
 
     if config["directory_output_path"] and not config["directory_output_path"].is_dir():
@@ -700,8 +731,16 @@ def main():
             max_size = max(max_size, footprint.get_size(config))
         config["pcb_size"] = max_size
 
-    tmp_files_dir = tempfile.TemporaryDirectory(prefix="footprint_pngs", delete=False)
+    tmp_files_dir = tempfile.TemporaryDirectory(prefix="footprints_gallery-", delete=False)
     composed_png = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+
+    if config["use_temp_home"]:
+        kicad_home = tmp_files_dir.name
+        kicad_3d_viewer_config_path = pathlib.Path(kicad_home) / ".config" / "kicad" / "9.0" / "3d_viewer.json"
+        kicad_3d_viewer_config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with kicad_3d_viewer_config_path.open("w") as f:
+            f.write(KICAD_3D_VIEWER_CONFIG)
 
     try:
         make_gallery(
