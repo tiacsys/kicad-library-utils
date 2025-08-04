@@ -366,135 +366,6 @@ def draw_footprint_title(config, footprint_title: str, footprint_im):
         )
 
 
-def make_gallery_page(
-    config,
-    footprints,
-    footprints_offset: int,
-    tmp_files_dir: pathlib.Path,
-    composed_png: pathlib.Path,
-):
-    assert footprints
-    footprints_chunk = footprints[
-        footprints_offset : footprints_offset + config["max_per_page"]
-    ]
-    assert footprints_chunk
-    page_index = footprints_offset // config["max_per_page"]
-
-    composed_cols = min(config["composed_cols"], len(footprints_chunk))
-    composed_rows = (
-        len(footprints_chunk) // composed_cols + 1
-        if len(footprints_chunk) % composed_cols
-        else len(footprints_chunk) // composed_cols
-    )
-    composed_im = None
-
-    # Gather footprint information in here
-    footprint_infos = {}
-
-    print("Rendering:")
-    with ProcessPoolExecutor() as executor:
-
-        futures = []
-
-        for footprint_index, footprint in enumerate(footprints_chunk):
-            # Construct the arguments for rendering the footprint
-            render_one_fp_args = (
-                config,
-                footprint,
-                pathlib.Path(tmp_files_dir),
-            )
-            future = executor.submit(render_one_footprint, *render_one_fp_args)
-
-            footprint_infos[footprint] = {
-                "index_in_chunk": footprint_index,
-            }
-
-            futures.append((future, footprint))
-
-        # Wait for futures to complete and gather results
-        for future, footprint in futures:
-            try:
-                output_png = future.result()
-                if config["show_progress"]:
-                    index = (
-                        footprints_offset
-                        + footprint_infos[footprint]["index_in_chunk"]
-                        + 1
-                    )
-                    print(f"[{index}/{len(footprints)}] {footprint.get_title()}")
-
-                # Append the result information
-                footprint_infos[footprint]["output_png"] = output_png
-            except ValueError as e:
-                print(f"Error rendering footprint: {e}")
-                return
-
-    if config["show_progress"]:
-        if config["should_make_composed"]:
-            print("Composing...")
-        else:
-            print("Saving...")
-
-    sorted_footprints = sorted(
-        footprint_infos.items(), key=lambda fp: fp[1]["index_in_chunk"]
-    )
-
-    # Iterate the footprints and paste into the composed image
-    for footprint, footprint_info in sorted_footprints:
-
-        footprint_im = Image.open(footprint_info["output_png"])
-        footprint_index = footprint_info["index_in_chunk"]
-
-        draw_footprint_title(config, footprint.get_title(), footprint_im)
-
-        if config["show_progress"]:
-            index = footprints_offset + footprint_infos[footprint]["index_in_chunk"] + 1
-            print(f"[{index}/{len(footprints)}] {footprint.get_title()}")
-
-        if config["should_make_composed"]:
-            if not composed_im:
-                composed_im = Image.new(
-                    "RGBA",
-                    (
-                        footprint_im.size[0] * composed_cols,
-                        footprint_im.size[1] * composed_rows,
-                    ),
-                )
-
-            col = footprint_index % composed_cols
-            row = footprint_index // composed_cols
-            composed_im.paste(
-                footprint_im, [footprint_im.size[0] * col, footprint_im.size[1] * row]
-            )
-
-        if config["directory_output_path"]:
-            footprint_im.save(
-                config["directory_output_path"] / f"{footprint.get_title()}.png"
-            )
-
-        footprint_im.close()
-
-    # Save composed image
-    if config["should_make_composed"]:
-        if config["composed_output_path"]:
-            path = config["composed_output_path"]
-            try:
-                path = path % (page_index + 1)
-            except TypeError:
-                pass
-            composed_im.save(path)
-        else:
-            path = str(composed_png)
-
-        if config["viewer"]:
-            if not config["composed_output_path"]:
-                composed_im.save(str(composed_png))
-
-            subprocess.Popen([config["viewer"], path])
-
-        composed_im.close()
-
-
 def render_one_footprint(
     config, footprint: Footprint, tmp_files_dir: pathlib.Path
 ) -> pathlib.Path:
@@ -554,11 +425,110 @@ def render_one_footprint(
             f"{kicad_cli_returncode.stderr.decode()}"
         )
 
-    return footprint_png
+    footprint_im = Image.open(footprint_png)
+    draw_footprint_title(config, footprint.get_title(), footprint_im)
+
+    return footprint_im
+
+
+def render_footprints(
+    config,
+    footprints,
+    footprints_offset: int,
+    footprints_total: int,
+    tmp_files_dir: pathlib.Path,
+):
+    # Gather footprint information in here
+    footprint_infos = {}
+
+    if config["show_progress"]:
+        print("Rendering:")
+
+    with ProcessPoolExecutor() as executor:
+
+        futures = []
+
+        for footprint_index, footprint in enumerate(footprints):
+            # Construct the arguments for rendering the footprint
+            render_one_fp_args = (
+                config,
+                footprint,
+                pathlib.Path(tmp_files_dir),
+            )
+            future = executor.submit(render_one_footprint, *render_one_fp_args)
+
+            footprint_infos[footprint] = {
+                "index_in_chunk": footprint_index,
+            }
+
+            futures.append((future, footprint))
+
+        # Wait for futures to complete and gather results
+        for future, footprint in futures:
+            try:
+                footprint_im = future.result()
+
+                if config["show_progress"]:
+                    index = (
+                        footprints_offset + footprint_infos[footprint]["index_in_chunk"]
+                    )
+                    print(f"[{index + 1}/{footprints_total}] {footprint.get_title()}")
+
+                # Append the result information
+                footprint_infos[footprint]["im"] = footprint_im
+            except ValueError as e:
+                print(f"Error rendering footprint: {e}")
+
+    return footprint_infos
+
+
+def make_composed_gallery_page(config, footprint_infos) -> Image:
+    if config["show_progress"]:
+        print("Composing...")
+
+    sorted_footprints = sorted(
+        footprint_infos.items(), key=lambda fp: fp[1]["index_in_chunk"]
+    )
+
+    composed_cols = min(config["composed_cols"], len(sorted_footprints))
+    composed_rows = (
+        len(sorted_footprints) // composed_cols + 1
+        if len(sorted_footprints) % composed_cols
+        else len(sorted_footprints) // composed_cols
+    )
+
+    footprint_im_size = sorted_footprints[0][1]["im"].size
+    composed_im = Image.new(
+        "RGBA",
+        (
+            footprint_im_size[0] * composed_cols,
+            footprint_im_size[1] * composed_rows,
+        ),
+    )
+
+    # Iterate the footprints and paste into the composed image
+    for footprint, footprint_info in sorted_footprints:
+        footprint_im = footprint_info["im"]
+        footprint_index = footprint_info["index_in_chunk"]
+
+        col = footprint_index % composed_cols
+        row = footprint_index // composed_cols
+        composed_im.paste(
+            footprint_im, [footprint_im.size[0] * col, footprint_im.size[1] * row]
+        )
+
+    return composed_im
+
+
+def save_footprint_pngs(config, footprint_infos):
+    for footprint, footprint_info in footprint_infos.items():
+        footprint_im = footprint_info["im"]
+        footprint_im.save(
+            config["directory_output_path"] / f"{footprint.get_title()}.png"
+        )
 
 
 def make_gallery(config, footprints, tmp_files_dir: pathlib.Path, composed_png):
-
     if not footprints:
         print("Warning: No footprints found")
         return
@@ -566,11 +536,39 @@ def make_gallery(config, footprints, tmp_files_dir: pathlib.Path, composed_png):
     footprints_offset = 0
 
     while footprints_offset < len(footprints):
-        make_gallery_page(
-            config, footprints, footprints_offset, tmp_files_dir, composed_png
-        )
-        footprints_offset += config["max_per_page"]
+        page_index = footprints_offset // config["max_per_page"]
 
+        footprints_offset_end = footprints_offset + config["max_per_page"]
+        footprints_chunk = footprints[footprints_offset:footprints_offset_end]
+        footprint_infos = render_footprints(
+            config, footprints_chunk, footprints_offset, len(footprints), tmp_files_dir
+        )
+
+        if config["directory_output_path"]:
+            save_footprint_pngs(config, footprint_infos)
+
+        if config["should_make_composed"]:
+            composed_im = make_composed_gallery_page(config, footprint_infos)
+
+            # Save composed image
+            if config["composed_output_path"]:
+                composed_path = config["composed_output_path"]
+                try:
+                    composed_path = composed_path % (page_index + 1)
+                except TypeError:
+                    pass
+            else:
+                composed_path = str(composed_png)
+
+            composed_im.save(composed_path)
+
+            # Show composed image
+            if config["viewer"]:
+                subprocess.Popen([config["viewer"], composed_path])
+
+        footprints_offset = footprints_offset_end
+
+    # If composed images are only temporary, wait before cleaning:
     if config["should_make_composed"] and not config["composed_output_path"]:
         print(f"Temporary composed image: {composed_png.name}")
         input("Press Enter to exit...")
@@ -683,7 +681,10 @@ def main():
     args_parser.add_argument(
         "--use-temp-home",
         action=argparse.BooleanOptionalAction,
-        help="Use a temporary home/config directory for KiCad instead the user home/config directory. This is required for '--preset empty'.",
+        help=(
+            "Use a temporary home/config directory for KiCad instead the user home/config directory. "
+            "This is required for '--preset empty'."
+        ),
     )
     args_parser.add_argument(
         "--viewer", help="Application used for viewing during generation."
@@ -713,10 +714,8 @@ def main():
     config["use_temp_home"] = args.use_temp_home
     config["viewer"] = args.viewer
 
-    if config["directory_output_path"] and not config["directory_output_path"].is_dir():
-        raise ValueError(
-            f"Directory output argument is not an existing directory: {config['directory_output_path']}"
-        )
+    if config["directory_output_path"]:
+        config["directory_output_path"].mkdir(parents=True, exist_ok=True)
 
     config["should_make_composed"] = (
         config["viewer"]
