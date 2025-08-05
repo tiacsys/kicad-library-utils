@@ -101,20 +101,20 @@ Box_Headers:
     - .model
 
 #
-# Button_Switch_Nidec
+# Button_Switch_Rotary
 #
-Button_Switch_Nidec:
+Button_Switch_Rotary:
   variables:
-    library: Button_Switch_Nidec
+    library: Button_Switch_Rotary
   extends:
     - .model
 
 #
-# Button_Switch_Tactile_SMD_THT
+# Button_Switch_Tactile
 #
-Button_Switch_Tactile_SMD_THT:
+Button_Switch_Tactile:
   variables:
-    library: Button_Switch_Tactile_SMD_THT
+    library: Button_Switch_Tactile
   extends:
     - .model
 
@@ -151,15 +151,6 @@ C_Trimmer:
 Capacitor_THT:
   variables:
     library: Capacitor_THT
-  extends:
-    - .model
-
-#
-# Connector_Stocko
-#
-Connector_Stocko:
-  variables:
-    library: Connector_Stocko
   extends:
     - .model
 
@@ -217,6 +208,15 @@ Connector_PinHeader:
   extends:
     - .model
   timeout: 3 hours
+
+#
+# Connector_Stocko
+#
+Connector_Stocko:
+  variables:
+    library: Connector_Stocko
+  extends:
+    - .model
 
 #
 # Connector_USB
