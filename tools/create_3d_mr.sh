@@ -15,7 +15,6 @@ git status
 git config --global user.email "kicad-mr-bot@example.com"
 git config --global user.name "KiCad MR bot"
 git add \*.step
-git add \*.wrl
 git commit --all --message "${CI_MERGE_REQUEST_TITLE}" --message "Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID}"
 git push -uf "https://gitlab-ci-token:${MR_3D_TOKEN}@gitlab.com/kicad/libraries/librarian-internal/kicad-packages3d-fork.git" "$branchname"
 export MR_DESCRIPTION="Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
