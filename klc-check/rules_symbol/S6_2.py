@@ -354,7 +354,7 @@ class Rule(KLCRule):
             "low-dropout" in all_tokens and "regulator" in all_subtokens
         ):
             self.warning(
-                "Metadata contains 'LDO', please add 'low-dropout-regulator' to the keywords"
+                "Metadata contains 'LDO', please add 'low-dropout' and 'regulator' to the keywords"
             )
             _return = True
 
