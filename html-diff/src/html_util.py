@@ -25,8 +25,9 @@ class DiffProperty:
     Class that represents some property of a symbol that night change.
     """
 
-    old: str | None
-    new: str | None
+    name: str
+    _old: str | None
+    _new: str | None
     prop_type: PropertyType
 
     def __init__(
