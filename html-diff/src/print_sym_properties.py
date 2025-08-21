@@ -4,10 +4,12 @@ import re
 from xml.etree import ElementTree as ET
 
 from html_util import (
+    DiffMultiProperty,
     DiffProperty,
     PropertyType,
     make_count_table,
     make_property_diff_table,
+    make_property_multidiff_table,
 )
 from kicad_sym import KicadSymbol, Property
 
@@ -103,7 +105,9 @@ def _symbol_counts(
     return counts
 
 
-def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProperty]:
+def _pin_data(
+    old: KicadSymbol | None, new: KicadSymbol | None
+) -> list[DiffMultiProperty]:
 
     def _to_sorting_key(n: str) -> tuple:
 
@@ -143,7 +147,10 @@ def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProp
         for func in pin.altfuncs:
             altfuncs += f"\n'{func.name}' ({func.etype})"
 
-        return f"'{pin.name}' ({pin.etype}), (x:{str(_mils(pin.posx))},y:{str(_mils(pin.posy))}){altfuncs}"
+        return [
+            f"'{pin.name}' ({pin.etype}){altfuncs}",
+            f"x:{str(_mils(pin.posx))},y:{str(_mils(pin.posy))}",
+        ]
 
     num_diffs = []
 
@@ -155,7 +162,7 @@ def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProp
 
     for key in pinlist:
         num_diffs.append(
-            DiffProperty(
+            DiffMultiProperty(
                 key[-1],
                 _format_pin(key, old_pins),
                 _format_pin(key, new_pins),
@@ -193,16 +200,19 @@ def _pin_data(old: KicadSymbol | None, new: KicadSymbol | None) -> list[DiffProp
         pinlist.sort(key=lambda x: x[0])
 
         pin_description = "\n".join(
+            [f"'{pin[-1].number}' ({pin[-1].etype})" for pin in pinlist]
+        )
+        pin_pos = "\n".join(
             [
-                f"'{pin[-1].number}' ({pin[-1].etype}), (x:{str(_mils(pin[-1].posx))},y:{str(_mils(pin[-1].posy))})"
+                f"x:{str(_mils(pin[-1].posx))},y:{str(_mils(pin[-1].posy))}"
                 for pin in pinlist
             ]
         )
-        return pin_description
+        return [pin_description, pin_pos]
 
     for key in namelist:
         name_diffs.append(
-            DiffProperty(
+            DiffMultiProperty(
                 key,
                 _format_namelist(key, old_pin_names),
                 _format_namelist(key, new_pin_names),
@@ -239,15 +249,16 @@ def format_properties(old: KicadSymbol | None, new: KicadSymbol | None) -> str:
     pins_header.text = "Pins:"
     container.append(pins_header)
 
+    multidiff_hdrs = ["Value", "Pos"]
     pin_data = _pin_data(old_root, new_root)
-    pins_table = make_property_diff_table(pin_data[0])
+    pins_table = make_property_multidiff_table(pin_data[0], multidiff_hdrs)
     container.append(pins_table)
 
     pins_header = ET.Element("h4")
     pins_header.text = "Pin names:"
     container.append(pins_header)
 
-    pin_names_table = make_property_diff_table(pin_data[1])
+    pin_names_table = make_property_multidiff_table(pin_data[1], multidiff_hdrs)
     container.append(pin_names_table)
 
     # Convert the XML container to a string

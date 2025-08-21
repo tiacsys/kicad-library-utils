@@ -4,6 +4,7 @@ HTML utility functions for html-diff
 
 import enum
 import re
+from itertools import zip_longest
 from xml.etree import ElementTree as ET
 
 
@@ -75,6 +76,35 @@ class DiffProperty:
     @property
     def new(self) -> str:
         return self._new if self._new is not None else ""
+
+
+class DiffMultiProperty:
+    """
+    Class that represents multiple properties of a symbol that might change together or separately.
+    """
+
+    name: str
+    old_new: list[tuple[str, str]] | None
+    prop_type: PropertyType
+
+    def __init__(
+        self,
+        name: str,
+        old: list[str] | None,
+        new: list[str] | None,
+        prop_type: PropertyType,
+    ):
+        """
+        :param name: The name of the property
+        :param old: The old value of the property, or none if the old property is not present
+        :param new: The new value of the property, or none if the new property is not present
+        :param prop_type: The type of the property
+        """
+
+        self.old_new = list(zip_longest(old, new))
+
+        self.name = name
+        self.prop_type = prop_type
 
 
 def heading(tag: str, text: str) -> ET.Element:
@@ -160,6 +190,40 @@ def make_property_diff_table(properties: list[DiffProperty]) -> ET.Element:
         row.append(diff_cell(prop.old, cls, prop.prop_type.get_html_value_tag()))
         row.append(diff_cell(prop.new, cls, prop.prop_type.get_html_value_tag()))
 
+        table.append(row)
+
+    return table
+
+
+def make_property_multidiff_table(
+    properties: list[DiffMultiProperty], headers: list[str]
+) -> ET.Element:
+
+    table = ET.Element("table")
+    table.attrib["id"] = "properties-table"
+    table.append(
+        header_row(
+            ["Name"] + [f"Old {h}" for h in headers] + [f"New {h}" for h in headers]
+        )
+    )
+
+    for prop in properties:
+
+        row = ET.Element("tr")
+        new_els = []
+
+        if prop.prop_type == PropertyType.DATASHEET:
+            row.attrib["class"] = "datasheet"
+
+        row.append(diff_cell(prop.name, None, prop.prop_type.get_html_header_tag()))
+
+        for old, new in prop.old_new:
+            cls = "prop-same" if old == new else None
+
+            row.append(diff_cell(old, cls, prop.prop_type.get_html_value_tag()))
+            new_els.append(diff_cell(new, cls, prop.prop_type.get_html_value_tag()))
+
+        row.extend(new_els)
         table.append(row)
 
     return table
