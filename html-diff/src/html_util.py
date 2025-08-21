@@ -19,6 +19,28 @@ class PropertyType(enum.Enum):
     # Some "internal" data not directly entered as strings
     NATIVE = enum.auto()
 
+    """
+    Which HTML tag type should be used for the first cell in the table (Name/Type)?
+    """
+
+    def get_html_header_tag(self) -> str:
+        if self == PropertyType.FIELD:
+            return "pre"
+
+        return "strong"
+
+    """
+    Which HTML tag type should be used for cells containing the old/new values?
+    """
+
+    def get_html_value_tag(self) -> str | None:
+        if self == PropertyType.DATASHEET:
+            return "a"
+        elif self == PropertyType.FIELD:
+            return "pre"
+
+        return None
+
 
 class DiffProperty:
     """
@@ -133,21 +155,10 @@ def make_property_diff_table(properties: list[DiffProperty]) -> ET.Element:
 
         if prop.prop_type == PropertyType.DATASHEET:
             row.attrib["class"] = "datasheet"
-            row.append(diff_cell(prop.name, None, "strong"))
-            row.append(diff_cell(prop.old, cls, "a"))
-            row.append(diff_cell(prop.new, cls, "a"))
 
-        elif prop.prop_type == PropertyType.FIELD:
-            row.append(diff_cell(prop.name, None, "pre"))
-            row.append(diff_cell(prop.old, cls, "pre"))
-            row.append(diff_cell(prop.new, cls, "pre"))
-
-        elif prop.prop_type == PropertyType.NATIVE:
-            row.append(diff_cell(prop.name, None, "strong"))
-            row.append(diff_cell(prop.old, cls))
-            row.append(diff_cell(prop.new, cls))
-        else:
-            raise ValueError(f"Unknown property type {prop.prop_type}")
+        row.append(diff_cell(prop.name, None, prop.prop_type.get_html_header_tag()))
+        row.append(diff_cell(prop.old, cls, prop.prop_type.get_html_value_tag()))
+        row.append(diff_cell(prop.new, cls, prop.prop_type.get_html_value_tag()))
 
         table.append(row)
 
