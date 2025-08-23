@@ -1070,7 +1070,7 @@ class KicadSymbol(KicadSymbolBase):
                     + self.circles
                     + self.texts
                     + self.rectangles
-                    + self.bezier
+                    + self.beziers
                     + self.polylines
                     + sorted(self.pins, key=lambda pin: pin.number)
                 ):
