@@ -88,22 +88,22 @@ class DirectoryFileResolver(FileResolver):
         if not os.path.isdir(path1) or not os.path.isdir(path2):
             raise ValueError("Both paths must be directories")
 
-        # Iterate over the files in some directory, obeying the filter
+        # Iterate over the files in some directory
         def list_files(path):
             if not recursive:
                 for file in os.listdir(path):
-                    if file_filter is None or file_filter(file):
-                        yield os.path.join(path, file)
+                    yield os.path.join(path, file)
             else:
                 for root, _, files in os.walk(path):
                     for file in files:
-                        if file_filter is None or file_filter(file):
-                            yield os.path.join(root, file)
+                        yield os.path.join(root, file)
 
         # for files yielded from a directory, get the relative path
         def get_relative_path(path):
             for f in list_files(path):
-                yield os.path.relpath(f, path)
+                rel_path = os.path.relpath(f, path)
+                if file_filter is None or file_filter(rel_path):
+                    yield rel_path
 
         rel_paths = set()
 
@@ -129,14 +129,84 @@ class DirectoryFileResolver(FileResolver):
         return self._files
 
 
-def get_resolver(path1, path2, file_filter=None):
+class GitIndexResolver(FileResolver):
+    """
+    This is a class that resolves files changed (but not yet committed)
+    in a Git repository
+    """
+
+    def __init__(self, repo, file_filter=None):
+        self.repo = repo
+
+        import tempfile
+
+        # Note: The git module is imported here and not at the top
+        # level for this module, because it's an external library, and
+        # this module could be used without it too.
+        import git
+
+        self.repo = git.Repo(repo)
+        self.repo_diffs = self.repo.index.diff(None)
+        self.file_filter = file_filter
+
+        # Lives until the resolver is deleted
+        self.temp_dir = tempfile.TemporaryDirectory(prefix="kicad-library-utils-")
+
+    @property
+    def files(self):
+
+        files = []
+
+        for diff in self.repo_diffs:
+            if not diff.a_path:
+                continue
+
+            if diff.a_path != diff.b_path:
+                continue
+
+            assert diff.change_type in ["M", "D"]
+
+            rel_path = diff.a_path
+
+            if self.file_filter is not None:
+                if not self.file_filter(Path(rel_path)):
+                    continue
+
+            self.repo.index.checkout(rel_path, prefix=f"{self.temp_dir.name}{os.sep}")
+
+            temp_file = os.path.join(self.temp_dir.name, rel_path)
+            curr_file = os.path.join(self.repo.working_tree_dir, rel_path)
+            files.append(ResolvedFilePair(temp_file, curr_file, rel_path))
+
+        return files
+
+
+def get_resolver(path1: Path, path2=None, file_filter=None):
     """
     Construct a resolver based on the paths given.
     """
 
-    if os.path.isdir(path1) and os.path.isdir(path2):
-        return DirectoryFileResolver(path1, path2, file_filter=file_filter)
-    elif os.path.isfile(path1) and os.path.isfile(path2):
-        return DirectFileResolver(path1, path2, file_filter=file_filter)
+    path1 = Path(path1)
 
-    raise ValueError(f"Not sure how to resolve the paths given: {path1}, {path2}")
+    if not path1.exists():
+        raise ValueError(f"Path doesn't exist: {path1}")
+
+    if path2 is not None:
+        path2 = Path(path2)
+
+        if not path2.exists():
+            raise ValueError(f"Path doesn't exist: {path2}")
+
+        if path1.is_dir() and path2.is_dir():
+            return DirectoryFileResolver(path1, path2, file_filter=file_filter)
+
+        if path1.is_file() and path2.is_file():
+            return DirectFileResolver(path1, path2, file_filter=file_filter)
+    else:
+        if path1.is_dir() and (path1 / ".git").is_dir():
+            return GitIndexResolver(path1, file_filter=file_filter)
+
+    raise ValueError(
+        f"Two directories, two files, or a local git repository must be provided: {path1}"
+        + ("" if path2 is None else f", {path2}")
+    )
