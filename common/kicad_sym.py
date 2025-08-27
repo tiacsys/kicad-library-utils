@@ -1459,6 +1459,10 @@ class KicadLibrary(KicadSymbolBase):
                 symbol.unit_count = max(unit_idx, symbol.unit_count)
                 symbol.demorgan_count = max(demorgan_idx, symbol.demorgan_count)
 
+                unit_name = _get_array2(unit_data, "unit_name")
+                if unit_name:
+                    symbol.unit_names[unit_idx] = unit_name[0][1]
+
                 # extract pins and graphical items
                 for pin in _get_array(unit_data, "pin"):
                     try:
