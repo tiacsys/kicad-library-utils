@@ -62,6 +62,9 @@
             </a>
             <div id="unit-sel">
                 <span>Unit</span>
+                {% for unit in unit_names %}
+                <button class="unit-button" data-unit="{{ loop.index0 }}">{{ unit }}</button>
+                {% endfor %}
             </div>
             <div class="spacer"></div>
             <button id="layers-button" class="button tool" href="">Layers</button>

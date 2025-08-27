@@ -129,6 +129,27 @@ def js_str_list(l):  # NOQA: E741
     return "[" + ", ".join(js_template_strs) + "]"
 
 
+def get_unit_suffix(unit_num: int) -> str:
+    """
+    Get the suffix: A, B, ..., Z, AA, AB, ...
+
+    Unit num is 1-based like unit indexes in KiCad
+    """
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    unit_num -= 1  # convert to 0-based
+
+    if unit_num < 0:
+        raise ValueError("Unit number must be non-negative")
+
+    suffix = ""
+    while unit_num >= 0:
+        suffix = alphabet[unit_num % 26] + suffix
+        unit_num = unit_num // 26 - 1
+
+    return suffix
+
+
 def temporary_symbol_library(symbol_lines: list[str]) -> str:
     if symbol_lines and not symbol_lines[0].strip().startswith("(symbol"):
         warnings.warn(
@@ -552,6 +573,7 @@ class HTMLDiff:
         prev_diff: str,
         enable_layers,
         hide_text_in_diff,
+        unit_names=[],
         **kwargs,
     ):
 
@@ -560,6 +582,7 @@ class HTMLDiff:
         return j2env.get_template("diff.html").render(
             page_title=f"diff: {part_name} in {lib_name}",
             part_name=part_name,
+            unit_names=unit_names,
             source_revisions=self.source_revisions,
             enable_layers="true" if enable_layers else "false",
             hide_text_in_diff="true" if hide_text_in_diff else "false",
@@ -916,6 +939,19 @@ class HTMLDiff:
 
         prop_table = print_sym_properties.format_properties(old_sym, new_sym)
 
+        unit_names: list[str] = []
+        for unit in range(new_sym.unit_count):
+            unit_name = new_sym.unit_names.get(unit + 1)
+            unit_suffix = get_unit_suffix(unit + 1)
+
+            if unit_name is not None:
+                # Still show the suffix as this may be useful when looking at ref-des
+                unit_name = f"{unit_suffix}: {unit_name}"
+            else:
+                unit_name = f"Unit {unit_suffix}"
+
+            unit_names.append(unit_name)
+
         sym_diff_info.out_file.write_text(
             self._format_html_diff(
                 lib_name=symlib_diff_info.new_lib_stem,
@@ -930,6 +966,7 @@ class HTMLDiff:
                 old_svg=js_str_list(svgs_old),
                 new_svg=js_str_list(svgs_new),
                 reference_svg=js_str_list(screenshots_content),
+                unit_names=unit_names,
             )
         )
 

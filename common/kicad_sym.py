@@ -1016,7 +1016,11 @@ class KicadSymbol(KicadSymbolBase):
     demorgan_count: int = 0
     embedded_fonts = False
     files: List[KicadEmbeddedFile] = field(default_factory=list)
-    unit_names: dict = field(default_factory=dict)
+    unit_names: dict[int, str | None] = field(default_factory=dict)
+    """
+    A dictionary mapping unit numbers (int, 1-indexed) to unit names (str).
+    None values indicate that the unit has no specific name.
+    """
 
     # List of parent symbols, the first element is the direct parent,
     # the last element is the root symbol

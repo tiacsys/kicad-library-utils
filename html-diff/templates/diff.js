@@ -377,18 +377,14 @@ for (layer of kicadLayers) {
     });
 }
 
-let unitButtons = [];
 const unit_sel = document.getElementById('unit-sel');
-if (svg_new.length > 1) {
+const unitButtons = unit_sel.querySelectorAll('.unit-button');
+
+if (unitButtons.length > 1) {
     /* Create unit selection list */
-    for (let u=0; u<svg_new.length; u++) {
-        const button = document.createElement('button');
-        const index = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(u);
-        button.id = `unit-btn-${u}`;
-        button.appendChild(document.createTextNode(`Unit ${index}`));
+    for (const button of unitButtons) {
+        const u = parseInt(button.getAttribute('data-unit'));
         button.addEventListener('click', event => setUnit(u));
-        unit_sel.appendChild(button);
-        unitButtons.push(button);
     }
 } else {
     unit_sel.style = 'display: none';
@@ -399,7 +395,8 @@ function setUnit(newUnit) {
     dragRender.setImagesVisible([newUnit]);
     dragLayerView.setImagesVisible([newUnit]);
     dragDiff.setImagesVisible([newUnit, svg_new.length+newUnit]);
-    if (svg_new.length > 1) {
+
+    if (unitButtons.length > 1) {
         unitButtons.forEach(btn => btn.classList.remove('selected'));
         unitButtons[newUnit].classList.add('selected');
     }
