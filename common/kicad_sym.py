@@ -1038,25 +1038,31 @@ class KicadSymbol(KicadSymbolBase):
         if self.extends:
             sx.append(["extends", self.quoted_string(self.extends)])
 
-        pn: list[Any] = ["pin_names"]
-        if self.pin_names_offset != 0.508:
-            pn.append(["offset", self.pin_names_offset])
-        if self.hide_pin_names:
-            pn.append(["hide", "yes"])
-        if len(pn) > 1:
-            sx.append(pn)
+        if not self.extends:
+            pn: list[Any] = ["pin_names"]
+            if self.pin_names_offset != 0.508:
+                pn.append(["offset", self.pin_names_offset])
+            if self.hide_pin_names:
+                pn.append(["hide", "yes"])
+            if len(pn) > 1:
+                sx.append(pn)
 
-        sx.append(["exclude_from_sim", "yes" if self.exclude_from_sim else "no"])
-        sx.append(["in_bom", "yes" if self.in_bom else "no"])
-        sx.append(["on_board", "yes" if self.on_board else "no"])
-        if self.is_power:
-            sx.append(["power"])
-        if self.hide_pin_numbers:
-            sx.append(["pin_numbers", ["hide", "yes"]])
+            sx.append(["exclude_from_sim", "yes" if self.exclude_from_sim else "no"])
+            sx.append(["in_bom", "yes" if self.in_bom else "no"])
+            sx.append(["on_board", "yes" if self.on_board else "no"])
+            if self.is_power:
+                sx.append(["power"])
+            if self.hide_pin_numbers:
+                sx.append(["pin_numbers", ["hide", "yes"]])
 
         # add properties
         for prop in self.properties:
             sx.append(prop.get_sexpr())
+
+        if self.extends:
+            # if the symbol extends another one, we do not add any graphical elements
+            # or pins, those are all inherited from the parent symbol
+            return sx
 
         # add embedded files
         file_expression = []
