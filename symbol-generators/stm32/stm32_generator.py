@@ -378,24 +378,24 @@ class Device:
     }
     _WLCSP_MAP = {
         "ST_WLCSP-100_Die495": (
-            "Package_CSP:ST_WLCSP-100_4.40x4.38mm_Layout10x10_P0.4mm_Offcenter",
-            "ST*WLCSP*4.40x4.38mm*Layout10x10*P0.4mm*Offcenter*",
+            "Package_CSP:ST_WLCSP-100_4.4x4.38mm_Layout10x10_P0.4mm_Offcenter",
+            "ST*WLCSP*4.4x4.38mm*Layout10x10*P0.4mm*Offcenter*",
         ),  # NOQA
         "ST_WLCSP-100_Die471": (
             "Package_CSP:ST_WLCSP-100_4.437x4.456mm_Layout10x10_P0.4mm",
             "ST*WLCSP*4.437x4.456mm*Layout10x10*P0.4mm*",
         ),  # NOQA
         "ST_WLCSP-99_Die415": (
-            "Package_CSP:ST_WLCSP-99_4.42x3.77mm_Layout9x11_P0.35mm",
-            "ST*WLCSP*4.42x3.77mm*Layout9x11*P0.35mm*",
+            "Package_CSP:ST_WLCSP-99_4.42x3.77mm_Layout11x9_P0.35mm",
+            "ST*WLCSP*4.42x3.77mm*Layout11x9*P0.35mm*",
         ),  # NOQA
         "ST_WLCSP-115_Die483": (
-            "Package_CSP:ST_WLCSP-115_3.73x4.15mm_P0.35mm_Stagger",
-            "ST*WLCSP*3.73x4.15mm*P0.35mm*Stagger*",
+            "Package_CSP:ST_WLCSP-115_3.73x4.15mm_Layout11x21_P0.35mm_Stagger",
+            "ST*WLCSP*3.73x4.15mm*Layout11x21*P0.35mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-115_Die461": (
-            "Package_CSP:ST_WLCSP-115_4.63x4.15mm_P0.4mm_Stagger",
-            "ST*WLCSP*4.63x4.15mm*P0.4mm*Stagger*",
+            "Package_CSP:ST_WLCSP-115_4.63x4.15mm_Layout21x11_P0.4mm_Stagger",
+            "ST*WLCSP*4.63x4.15mm*Layout21x11*P0.4mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-132_Die480": (
             "Package_CSP:ST_WLCSP-132_4.57x4.37mm_Layout12x11_P0.35mm",
@@ -406,12 +406,12 @@ class Device:
             "ST*WLCSP*4.96x4.64mm*Layout13x12*P0.35mm*",
         ),  # NOQA
         "ST_WLCSP-18_Die466": (
-            "Package_CSP:ST_WLCSP-18_1.86x2.14mm_P0.4mm_Stagger",
-            "ST*WLCSP*1.86x2.14mm*P0.4mm*Stagger*",
+            "Package_CSP:ST_WLCSP-18_1.86x2.14mm_Layout7x5_P0.4mm_Stagger",
+            "ST*WLCSP*1.86x2.14mm*Layout7x5*P0.4mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-25_Die460": (
-            "Package_CSP:ST_WLCSP-25_2.30x2.48mm_Layout5x5_P0.4mm",
-            "ST*WLCSP*2.30x2.48mm*Layout5x5*P0.4mm*",
+            "Package_CSP:ST_WLCSP-25_2.3x2.48mm_Layout5x5_P0.4mm",
+            "ST*WLCSP*2.3x2.48mm*Layout5x5*P0.4mm*",
         ),  # NOQA
         "ST_WLCSP-36_Die464": (
             "Package_CSP:ST_WLCSP-36_2.58x3.07mm_Layout6x6_P0.4mm",
@@ -434,64 +434,64 @@ class Device:
             "ST*WLCSP*4.36x4.07mm*Layout9x9*P0.4mm*",
         ),  # NOQA
         "ST_WLCSP-20_Die456": (
-            "Package_CSP:ST_WLCSP-20_1.94x2.40mm_Layout4x5_P0.4mm",
-            "ST*WLCSP*1.94x2.40mm*Layout4x5*P0.4mm*",
+            "Package_CSP:ST_WLCSP-20_1.94x2.4mm_Layout4x5_P0.4mm",
+            "ST*WLCSP*1.94x2.4mm*Layout4x5*P0.4mm*",
         ),  # NOQA
         "ST_WLCSP-49_Die494": (
-            "Package_CSP:ST_WLCSP-49_3.30x3.38mm_Layout7x7_P0.4mm_Offcenter",
-            "ST*WLCSP*3.30x3.38mm*Layout7x7*P0.4mm*Offcenter*",
+            "Package_CSP:ST_WLCSP-49_3.3x3.38mm_Layout7x7_P0.4mm_Offcenter",
+            "ST*WLCSP*3.3x3.38mm*Layout7x7*P0.4mm*Offcenter*",
         ),  # NOQA
         "ST_WLCSP-52_Die467": (
-            "Package_CSP:ST_WLCSP-52_3.09x3.15mm_P0.4mm_Stagger",
-            "ST*WLCSP*3.09x3.15mm*P0.4mm*Stagger*",
+            "Package_CSP:ST_WLCSP-52_3.09x3.15mm_Layout13x8_P0.4mm_Stagger",
+            "ST*WLCSP*3.09x3.15mm*Layout13x8*P0.4mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-90_Die482": (
-            "Package_CSP:ST_WLCSP-90_4.20x3.95mm_P0.4mm_Stagger",
-            "ST*WLCSP*4.20x3.95mm*P0.4mm*Stagger*",
+            "Package_CSP:ST_WLCSP-90_4.2x3.95mm_Layout18x10_P0.4mm_Stagger",
+            "ST*WLCSP*4.2x3.95mm*Layout18x10*P0.4mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-12_Die443": (
-            "Package_CSP:ST_WLCSP-12_1.70x1.42mm_P0.35mm_Stagger",
-            "ST*WLCSP*1.70x1.42mm*P0.35mm*Stagger*",
+            "Package_CSP:ST_WLCSP-12_1.7x1.42mm_Layout4x6_P0.35mm_Stagger",
+            "ST*WLCSP*1.7x1.42mm*Layout4x6*P0.35mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-25_Die474": (
             "Package_CSP:ST_WLCSP-25_2.33x2.24mm_Layout5x5_P0.4mm",
             "ST*WLCSP*2.33x2.24mm*Layout5x5*P0.4mm*",
         ),  # NOQA
         "ST_WLCSP-80_Die484": (
-            "Package_CSP:ST_WLCSP-80_3.50x3.27mm_P0.35mm_Stagger",
-            "ST*WLCSP*3.50x3.27mm*P0.35mm*Stagger*",
+            "Package_CSP:ST_WLCSP-80_3.5x3.27mm_Layout10x16_P0.35mm_Stagger_Offcenter",
+            "ST*WLCSP*3.5x3.27mm*Layout10x16*P0.35mm*Stagger*Offcenter*",
         ),  # NOQA
         "ST_WLCSP-208_Die481": (
-            "Package_CSP:ST_WLCSP-208_5.38x5.47mm_P0.35mm_Stagger",
-            "ST*WLCSP*5.38x5.47mm*P0.35mm*Stagger*",
+            "Package_CSP:ST_WLCSP-208_5.38x5.47mm_Layout26x16_P0.35mm_Stagger",
+            "ST*WLCSP*5.38x5.47mm*Layout26x16*P0.35mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-150_Die481": (
-            "Package_CSP:ST_WLCSP-150_5.38x5.47mm_P0.4m_Stagger",
-            "ST*WLCSP*5.38x5.47mm*P0.4m*Stagger*",
+            "Package_CSP:ST_WLCSP-150_5.38x5.47mm_Layout13x23_P0.4mm_Stagger",
+            "ST*WLCSP*5.38x5.47mm*Layout13x23*P0.4mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-56_Die455": (
-            "Package_CSP:ST_WLCSP-56_3.38x3.38mm_P0.4m_Stagger",
-            "ST*WLCSP*3.38x3.38mm*P0.4m*Stagger*",
+            "Package_CSP:ST_WLCSP-56_3.38x3.38mm_Layout14x8_P0.4mm_Stagger",
+            "ST*WLCSP*3.38x3.38mm*Layout14x8*P0.4mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-72_Die455": (
-            "Package_CSP:ST_WLCSP-72_3.38x3.38mm_P0.35m_Stagger",
-            "ST*WLCSP*3.38x3.38mm*P0.35m*Stagger*",
+            "Package_CSP:ST_WLCSP-72_3.38x3.38mm_Layout16x9_P0.35mm_Stagger",
+            "ST*WLCSP*3.38x3.38mm*Layout16x9*P0.35mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-42_Die489": (
-            "Package_CSP:ST_WLCSP-42_2.93mmx2.82_P0.40mm_Stagger",
-            "ST*WLCSP*2.93mmx2.82*P0.40mm*Stagger*",
+            "Package_CSP:ST_WLCSP-42_2.93x2.82mm_Layout12x7_P0.4mm_Stagger",
+            "ST*WLCSP*2.93x2.82mm*Layout12x7*P0.4mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-101_Die485": (
-            "Package_CSP:ST_WLCSP-101_3.86x3.79mm_P0.35mm_Stagger",
-            "ST*WLCSP*3.86x3.79mm*P0.35mm*Stagger*",
+            "Package_CSP:ST_WLCSP-101_3.86x3.79mm_Layout11x9_P0.35mm_Stagger",
+            "ST*WLCSP*3.86x3.79mm*Layout11x9*P0.35mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-27_Die459": (
-            "Package_CSP:ST_WLCSP-27_2.34x2.55mm_P0.40mm_Stagger",
-            "ST*WLCSP*2.34x2.55mm*P0.40mm*Stagger*",
+            "Package_CSP:ST_WLCSP-27_2.34x2.55mm_Layout9x6_P0.4mm_Stagger",
+            "ST*WLCSP*2.34x2.55mm*Layout9x6*P0.4mm*Stagger*",
         ),  # NOQA
         "ST_WLCSP-208_Die476": (
-            "Package_CSP:ST_WLCSP-208_5.8x5.6mm_P0.35_Stagger",
-            "ST*WLCSP*5.8x5.6mm*P0.35*Stagger*",
+            "Package_CSP:ST_WLCSP-208_5.8x5.6mm_Layout26x16_P0.35mm_Stagger",
+            "ST*WLCSP*5.8x5.6mm*Layout26x16*P0.35mm*Stagger*",
         ),  # NOQA
     }
 
