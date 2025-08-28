@@ -813,14 +813,17 @@ class Device:
         right = split_groups(pins["port"], r"P.|.*")
 
         # [[1,2,3],[],[],[4,5,6],[7,8,9],[]] ->  [1, 2, 3, None, 4, 5, 6, None, 7, 8, 9]
-        spaced = lambda groups: [
-            e
-            for group in groups
-            for alt in [group, [None]]  # NOQA
-            for e in alt
-            if group
-        ][:-1]
-        spaced_len = lambda l: len(spaced(l))  # NOQA
+        def spaced(groups) -> list:
+            return [
+                e
+                for group in groups
+                for alt in [group, [None]]
+                for e in alt
+                if group
+            ][:-1]  # fmt: skip
+
+        def spaced_len(lst) -> int:
+            return len(spaced(lst))
 
         # Balance out pins on left and right sides
         while spaced_len(left) < spaced_len(right[:-1]):
@@ -831,9 +834,8 @@ class Device:
 
         # Calculate the width of the symbol
         # Newstroke at font size 50 mil has characters around 50 mil width.
-        name_width = lambda pins: (
-            max(len(p.name) * 47 for p in pins if p) if pins else 0
-        )  # NOQA
+        def name_width(pins) -> int:
+            return max(len(p.name) * 47 for p in pins if p) if pins else 0
 
         spaced_left, spaced_right = spaced(left), spaced(right)
         name_width_sides = name_width(spaced_left + spaced_right)
@@ -1167,8 +1169,10 @@ def cli(
 
         if skip_without_footprint and not dev.footprint:
             tqdm.tqdm.write(
-                f"\033[91mNo footprint for device {dev.name} with ST package name {dev.package}, skipping (--skip-without-footprint).\033[0m"
-            )  # NOQA
+                f"\033[91mNo footprint for device {dev.name} "
+                f"with ST package name {dev.package}, "
+                f"skipping (--skip-without-footprint).\033[0m"
+            )
             continue
 
         datasheet = verify_datasheet(refname, datasheet_base)
