@@ -940,17 +940,22 @@ class HTMLDiff:
         prop_table = print_sym_properties.format_properties(old_sym, new_sym)
 
         unit_names: list[str] = []
-        for unit in range(new_sym.unit_count):
-            unit_name = new_sym.unit_names.get(unit + 1)
-            unit_suffix = get_unit_suffix(unit + 1)
 
-            if unit_name is not None:
-                # Still show the suffix as this may be useful when looking at ref-des
-                unit_name = f"{unit_suffix}: {unit_name}"
-            else:
-                unit_name = f"Unit {unit_suffix}"
+        # Currently, matching units between old and new is not done.
+        # That's quite tricky as units can be added, removed or reordered.
+        # For now, just show the unit names of the new symbol.
+        if new_sym is not None:
+            for unit in range(new_sym.unit_count):
+                unit_name = new_sym.unit_names.get(unit + 1)
+                unit_suffix = get_unit_suffix(unit + 1)
 
-            unit_names.append(unit_name)
+                if unit_name is not None:
+                    # Still show the suffix as this may be useful when looking at ref-des
+                    unit_name = f"{unit_suffix}: {unit_name}"
+                else:
+                    unit_name = f"Unit {unit_suffix}"
+
+                unit_names.append(unit_name)
 
         sym_diff_info.out_file.write_text(
             self._format_html_diff(
