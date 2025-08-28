@@ -957,8 +957,10 @@ def cli(
         url_cache_dict = json.loads(url_cache.read_text())
 
         @atexit.register
-        def save_url_cache():
-            url_cache.write_text(json.dumps(url_cache_dict))
+        def save_url_cache() -> None:
+            # Sort by key for stabler diffs
+            sorted_cache = dict(sorted(url_cache_dict.items()))
+            url_cache.write_text(json.dumps(sorted_cache, indent=2))
 
     else:
         url_cache = {}
