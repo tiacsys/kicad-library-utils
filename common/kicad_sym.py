@@ -349,7 +349,11 @@ class Pin(KicadSymbolBase):
         if self.is_global:
             sx.append("global")
         sx.append(["length", self.length])
-        sx.append(["hide", "yes" if self.is_hidden else "no"])
+
+        # hide is default no
+        if self.is_hidden:
+            sx.append(["hide", "yes"])
+
         name_sx: list[Any] = ["name", self.quoted_string(self.name)]
         if self.name_effect:
             name_sx.append(self.name_effect.get_sexpr())
@@ -358,7 +362,11 @@ class Pin(KicadSymbolBase):
         if self.number_effect:
             number_sx.append(self.number_effect.get_sexpr())
         sx.append(number_sx)
-        for altfn in self.altfuncs:
+
+        # alternates are sorted by name in KiCad
+        alt_funcs = sorted(self.altfuncs, key=lambda af: af.name)
+
+        for altfn in alt_funcs:
             sx.append(altfn.get_sexpr())
 
         return sx
@@ -1071,6 +1079,24 @@ class KicadSymbol(KicadSymbolBase):
         if len(file_expression) > 0:
             sx.append(["files", file_expression])
 
+        def pin_sort_key(pin: Pin) -> tuple:
+            # This is a bit fiddly, and the comments in KiCad seems wrong
+            # Pins are sorted by:
+            #   pin position (y first, then x) in SCH_ITEM::compare
+            # then by pin-specific values:
+            #   pin number (as integer if possible, otherwise as string)
+            #   ...
+            return (
+                pin.posx,
+                -pin.posy,
+                pin.number,
+                pin.length,
+                pin.rotation,
+                pin.shape,
+                pin.etype,
+                pin.is_hidden,
+            )
+
         # add units
         for d in range(0, self.demorgan_count + 1):
             for u in range(0, self.unit_count + 1):
@@ -1082,7 +1108,7 @@ class KicadSymbol(KicadSymbolBase):
                     + self.rectangles
                     + self.beziers
                     + self.polylines
-                    + sorted(self.pins, key=lambda pin: pin.number)
+                    + sorted(self.pins, key=pin_sort_key)
                 ):
                     if pin.is_unit(u, d):
                         unit_elements.append(pin.get_sexpr())
@@ -1295,7 +1321,7 @@ class KicadLibrary(KicadSymbolBase):
     """
 
     filename: str
-    symbols: List[KicadSymbol] = field(default_factory=list)
+    symbols: list[KicadSymbol] = field(default_factory=list)
     generator: str = "kicad-library-utils"
     version: str = "20241209"
 
@@ -1310,9 +1336,28 @@ class KicadLibrary(KicadSymbolBase):
             ["generator", self.quoted_string(self.generator)],
             ["generator_version", self.quoted_string(self.version)],
         ]
-        for sym in self.symbols:
+
+        def sym_order_key(sym: KicadSymbol) -> int:
+            """
+            This is an ordering key function that returns a tuple used for sorting symbols.
+            Hopefully this is the same order as KiCad does it in SCH_IO_KICAD_SEXPR_LIB_CACHE::Save
+            """
+            # Sort by ascending inheritance depth (root symbols first), then by name
+            return (self.get_symbol_inheritance_depth(sym), sym.name)
+
+        ordered_symbols = sorted(self.symbols, key=sym_order_key)
+
+        for sym in ordered_symbols:
             sx.append(sym.get_sexpr())
         return sexpr.build_sexp(sx)
+
+    def get_symbol_inheritance_depth(self, symbol: KicadSymbol) -> int:
+        depth = 0
+        current = symbol
+        while current.extends is not None:
+            depth += 1
+            current = self.get_symbol(current.extends)
+        return depth
 
     def check_extends_order(self):
         """
@@ -1526,7 +1571,7 @@ class KicadLibrary(KicadSymbolBase):
 
         return library
 
-    def get_symbol(self, name: str) -> Optional[KicadSymbol]:
+    def get_symbol(self, name: str) -> KicadSymbol | None:
         """
         Get the symbol with the given name in the library, or None if not found.
         """
