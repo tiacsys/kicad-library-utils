@@ -1467,8 +1467,8 @@ class KicadLibrary(KicadSymbolBase):
             files_sexpr = _get_value_of(item, "embedded_files")
             if files_sexpr:
                 files_list = _get_array(files_sexpr, "file")
-                for item in files_list:
-                    symbol.files.append(KicadEmbeddedFile.from_sexpr(item))
+                for file in files_list:
+                    symbol.files.append(KicadEmbeddedFile.from_sexpr(file))
 
             # get flags
             symbol.exclude_from_sim = (
