@@ -51,6 +51,18 @@ DISALLOWED_FILLER_TOKENS = frozenset(
     ]
 )
 
+ALLOWED_FIELDS = frozenset(
+    [
+        "Reference",
+        "Value",
+        "Datasheet",
+        "Description",
+        "Footprint",
+        "ki_keywords",
+        "ki_fp_filters",
+    ]
+)
+
 
 class Rule(KLCRule):
     """Symbol fields and metadata filled out as required"""
@@ -181,6 +193,36 @@ class Rule(KLCRule):
                     )
                     fail = True
 
+        return fail
+
+    def checkExtraFields(self) -> bool:
+        fail = False
+
+        # iterate over all fields
+        for field in self.component.properties:
+            if field.name not in ALLOWED_FIELDS and not field.is_private():
+                self.warning(f"Found a unexpected property with the name {field.name}")
+                fail = True
+
+        return fail
+
+    def checkPrivateFields(self) -> bool:
+        fail = False
+
+        # iterate over all fields
+        for field in self.component.properties:
+            # in this check we only care about private fields
+            if not field.is_private():
+                continue
+
+            # so far we only have one check for private fields
+            # which is that they are not allowed unless they start with the "KLC_" prefix
+            if not field.name.startswith("KLC_"):
+                self.warning(
+                    "Private fields are not allowed unless they start with the KLC_ prefix."
+                )
+                self.warningExtra(f'Found "{field.name}" with value "{field.value}"')
+                fail = True
         return fail
 
     def checkDescription(self) -> bool:
@@ -393,9 +435,6 @@ class Rule(KLCRule):
             return _result
 
     def check(self) -> bool:
-        # Check for extra fields. How? TODO
-        extraFields = False
-
         return any(
             [
                 self.checkReference(),
@@ -404,7 +443,8 @@ class Rule(KLCRule):
                 self.checkDatasheet(),
                 self.checkDescription(),
                 self.checkKeywords(),
-                extraFields,
+                self.checkPrivateFields(),
+                self.checkExtraFields(),
             ]
         )
 

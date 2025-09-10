@@ -929,6 +929,7 @@ class Property(KicadSymbolBase):
     posy: float = 0.0
     rotation: float = 0.0
     effects: Optional[TextEffect] = None
+    private: bool = False
 
     def __post_init__(self):
         # There is some weird thing going on with the instance creation of effect.
@@ -938,7 +939,7 @@ class Property(KicadSymbolBase):
 
     def get_sexpr(self) -> List[Any]:
         sx = [
-            "property",
+            "property private" if self.private else "property",
             self.quoted_string(self.name),
             self.quoted_string(self.value),
         ]
@@ -955,15 +956,25 @@ class Property(KicadSymbolBase):
         if rot in VALID_ROTATIONS:
             self.rotation = rot
 
+    def is_private(self):
+        return self.private
+
     @classmethod
     def from_sexpr(cls, sexpr, unit: int = 0) -> Optional["Property"]:
         if sexpr.pop(0) != "property":
             return None
+        # the first item in this list could be 'private', so if it is, we need to pop the 'name' again
+        # example:  (property private "KLC_S4.2" "VDD33_{LDO} is a internal LDO"
+        # vs.       (property "KLC_S4.2" "VDD33_{LDO} is a internal LDO"
+        private = False
         name = sexpr.pop(0)
+        if name == "private":
+            private = True
+            name = sexpr.pop(0)
         value = sexpr.pop(0)
         (posx, posy, rotation) = _parse_at(sexpr)
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
-        return Property(name, value, posx, posy, rotation, effects)
+        return Property(name, value, posx, posy, rotation, effects, private)
 
 
 @dataclass
