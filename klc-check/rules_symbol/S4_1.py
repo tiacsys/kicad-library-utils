@@ -98,7 +98,7 @@ class Rule(KLCRule):
 
         return len(self.violating_pins) > 0
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
         # no need to check pins on a derived symbols
         if self.component.extends is not None:
             return False

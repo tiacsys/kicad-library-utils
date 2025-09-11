@@ -92,7 +92,7 @@ class Rule(KLCRule):
                 self.errorExtra(pinString(pin))
                 seen_error_names.add(pin.name)
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
         # no need to check pins on a derived symbols
         if self.component.extends is not None:
             return False

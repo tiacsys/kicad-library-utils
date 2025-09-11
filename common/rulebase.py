@@ -199,7 +199,7 @@ class KLCRuleBase:
     def success(self, msg: str) -> None:
         self.logEntries.append(KLCRuleLogItem(Severity.SUCCESS, msg))
 
-    def check(self, component) -> None:
+    def check(self, component, exception=None) -> None:
         raise NotImplementedError("The check method must be implemented")
 
     def fix(self, component) -> None:

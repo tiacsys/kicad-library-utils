@@ -5,7 +5,7 @@ from rules_symbol.rule import KLCRule
 class Rule(KLCRule):
     """Pin name position offset"""
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
         # no need to check this for a derived symbols
         if self.component.extends is not None:
             return False

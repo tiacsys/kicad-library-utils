@@ -5,6 +5,8 @@ before_script:
   - apt-get install -y make
   - python3 -V
   - pip install -r requirements.txt
+  - pip install pytest
+  - pip install pyyaml
 
 symbol_rulechecker:
   rules:

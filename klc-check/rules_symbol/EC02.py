@@ -17,7 +17,7 @@ class Rule(KLCRule):
         self.recommended_fp_pos: Dict[str, float] = {}
         self.recommended_fp_alignment: str = ""
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:

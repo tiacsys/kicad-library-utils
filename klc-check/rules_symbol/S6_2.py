@@ -434,7 +434,11 @@ class Rule(KLCRule):
 
             return _result
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
+        # Check for extra fields. How? TODO
+
+        # extraFields = False
+
         return any(
             [
                 self.checkReference(),

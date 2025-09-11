@@ -6,7 +6,7 @@ from rules_symbol.rule import KLCRule
 class Rule(KLCRule):
     """Only standard characters are used for naming libraries and components"""
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
 
         allowed = string.digits + string.ascii_letters + "_-.+,"
 

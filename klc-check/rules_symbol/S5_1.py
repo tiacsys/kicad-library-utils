@@ -8,7 +8,7 @@ from rules_symbol.rule import KLCRule
 class Rule(KLCRule):
     """Symbols with a default footprint link to a valid footprint file"""
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
         fail = False
 
         # get footprint from properties

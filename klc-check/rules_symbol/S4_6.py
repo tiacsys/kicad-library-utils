@@ -79,7 +79,7 @@ class Rule(KLCRule):
 
         return self.invisible_errors or self.type_errors or self.power_invisible_errors
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:

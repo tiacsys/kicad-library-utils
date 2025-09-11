@@ -22,7 +22,7 @@ if common not in sys.path:
 import junit
 from kicad_sym import KicadFileFormatError, KicadLibrary
 from print_color import PrintColor
-from rulebase import Verbosity, logError
+from rulebase import Severity, Verbosity, logError
 from rules_symbol import get_all_symbol_rules
 from rules_symbol.rule import KLCRule
 
@@ -33,6 +33,7 @@ class SymbolCheck:
         selected_rules: Optional[List[str]] = None,
         excluded_rules: Optional[List[str]] = None,
         verbosity: Verbosity = Verbosity.NONE,
+        disable_exceptions: bool = False,
         footprints=None,
         use_color: bool = True,
         no_warnings: bool = False,
@@ -42,6 +43,7 @@ class SymbolCheck:
         self.footprints = footprints
         self.printer = PrintColor(use_color=use_color)
         self.verbosity: Verbosity = verbosity
+        self.disable_exceptions: bool = disable_exceptions
         self.metrics: List[str] = []
         self.no_warnings: bool = no_warnings
         self.log: bool = log
@@ -106,9 +108,27 @@ class SymbolCheck:
             rule.footprints_dir = self.footprints
             rule = rule(symbol)
 
+            # check if there is an exception for this rule
+            klc_rule_re = re.compile(r"(KLC_)([^_]+)_*(.?)$")
+            exception_notes = ""
+            exceptions_map = []
+
+            if not self.disable_exceptions:
+
+                for p in symbol.properties:
+                    mateches = klc_rule_re.match(p.name)
+                    if mateches is None:
+                        mateches = []
+                    else:
+                        mateches = mateches.groups()
+
+                    if len(mateches) > 0 and mateches[1] == rule.name:
+                        exceptions_map += mateches
+                        exception_notes += mateches[2] + ": " + str(p.value) + "; "
+
             if self.verbosity.value > Verbosity.HIGH.value:
                 self.printer.white("Checking rule " + rule.name)
-            rule.check()
+            rule.check(exception=exceptions_map)
 
             if self.no_warnings and not rule.hasErrors():
                 continue
@@ -122,9 +142,25 @@ class SymbolCheck:
                     )
                     first = False
 
-                self.printer.yellow(
-                    "Violating " + rule.name + " - " + rule.url, indentation=2
-                )
+                # Check for exception and print if wanted
+                if len(exceptions_map) > 0:
+
+                    exceptionMsg = (
+                        f"Exception {symbol.libname}:{symbol.name}, "
+                        + f"Rule: {rule.name} - {rule.url}, "
+                        + f"Note: {exception_notes}"
+                    )
+
+                    self.printer.yellow(exceptionMsg, indentation=2)
+
+                    junit_case.add_result(
+                        Severity.INFO, junit.JUnitResult(exceptionMsg)
+                    )
+
+                else:
+                    self.printer.yellow(
+                        "Violating " + rule.name + " - " + rule.url, indentation=2
+                    )
 
                 junit.add_klc_rule_results(junit_case, rule)
                 rule.printOutput(self.printer, self.verbosity)
@@ -233,6 +269,7 @@ def worker(
     selected_rules,
     excluded_rules,
     verbosity: Verbosity,
+    disable_exceptions,
     footprints,
     args,
     i=0,
@@ -242,6 +279,7 @@ def worker(
         selected_rules,
         excluded_rules,
         verbosity,
+        disable_exceptions,
         footprints,
         not args.nocolor,
         no_warnings=args.nowarnings,
@@ -317,6 +355,12 @@ if __name__ == "__main__":
         action="count",
     )
     parser.add_argument(
+        "-x",
+        "--disable_exceptions",
+        help=("Enable exceptions output. -x shows brief information"),
+        action="store_true",
+    )
+    parser.add_argument(
         "-s",
         "--silent",
         help="skip output for symbols passing all checks",
@@ -369,6 +413,11 @@ if __name__ == "__main__":
         verbosity = Verbosity(args.verbose)
     KLCRule.verbosity = verbosity
 
+    # Set disable_exceptions globally
+    disable_exceptions = False
+    if args.disable_exceptions:
+        disable_exceptions = args.disable_exceptions
+
     # check if a footprints dir was passed
     footprints = args.footprints
 
@@ -413,6 +462,7 @@ if __name__ == "__main__":
                 selected_rules,
                 excluded_rules,
                 verbosity,
+                disable_exceptions,
                 footprints,
                 args,
                 i,

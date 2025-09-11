@@ -15,7 +15,7 @@ class Rule(KLCRule):
         self.fixNoFootprint: bool = False
         self.fixWrongRef: bool = False
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
         fail = False
 
         if self.component.is_power_symbol():

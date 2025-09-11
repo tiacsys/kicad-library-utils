@@ -14,6 +14,7 @@ if common not in sys.path:
 from rulebase import Severity
 
 SeverityToStr = {
+    Severity.INFO: "Info",
     Severity.ERROR: "Errors",
     Severity.WARNING: "Warnings",
 }
@@ -130,7 +131,9 @@ class JUnitReport:
                         )
 
                         failure_type = (
-                            "FAILURE" if severity == Severity.ERROR else "WARNING"
+                            "FAILURE"
+                            if severity == Severity.ERROR
+                            else "WARNING" if severity == Severity.WARNING else "Info"
                         )
 
                         # we remove duplicates, while preserving the order of the list,

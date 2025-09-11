@@ -7,7 +7,7 @@ from rules_symbol.rule import KLCRule
 class Rule(KLCRule):
     """Origin is centered on the middle of the symbol"""
 
-    def check(self) -> bool:
+    def check(self, exception=None) -> bool:
         """
         Calculate the 'bounds' of the symbol based on rectangle (if only a
         single filled rectangle is present) or on pin positions.
