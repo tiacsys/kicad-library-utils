@@ -55,12 +55,12 @@ class SymbolCheck:
         # build a list of rules to work with
         self.rules: List[KLCRule] = []
 
-        for rule_name, rule in get_all_symbol_rules().items():
+        for rule_name, checkRule in get_all_symbol_rules().items():
             if selected_rules is None or rule_name in selected_rules:
                 if excluded_rules is not None and rule_name in excluded_rules:
                     pass
                 else:
-                    self.rules.append(rule.Rule)
+                    self.rules.append(checkRule.Rule)
 
     def do_unittest(self, symbol) -> Tuple[int, int]:
         error_count = 0
@@ -71,21 +71,21 @@ class SymbolCheck:
         unittest_result = m.group(1)
         unittest_rule = m.group(2)
         unittest_descrp = m.group(3)  # noqa: F841
-        for rule in self.rules:
-            rule.footprints_dir = self.footprints
-            rule = rule(symbol)
-            if unittest_rule == rule.name:
-                rule.check()
-                if unittest_result == "Fail" and rule.errorCount == 0:
+        for checkRule in self.rules:
+            checkRule.footprints_dir = self.footprints
+            checkRule = checkRule(symbol)
+            if unittest_rule == checkRule.name:
+                checkRule.check()
+                if unittest_result == "Fail" and checkRule.errorCount == 0:
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
                     continue
-                if unittest_result == "Warn" and rule.warningCount() == 0:
+                if unittest_result == "Warn" and checkRule.warningCount() == 0:
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
                     continue
                 if unittest_result == "Pass" and (
-                    rule.warningCount() != 0 or rule.errorCount != 0
+                    checkRule.warningCount() != 0 or checkRule.errorCount != 0
                 ):
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
@@ -104,11 +104,11 @@ class SymbolCheck:
         junit_case = junit.JunitTestCase(name=f"{symbol.libname}:{symbol.name}")
         self.junit_cases.append(junit_case)
 
-        for rule in self.rules:
-            rule.footprints_dir = self.footprints
-            rule = rule(symbol)
+        for checkRule in self.rules:
+            checkRule.footprints_dir = self.footprints
+            checkRule = checkRule(symbol)
 
-            # check if there is an exception for this rule
+            # check if there is an exception for this checkRule
             klc_rule_re = re.compile(r"(KLC_)([^_]+)_*(.?)$")
             exception_notes = ""
             exceptions_map = []
@@ -122,18 +122,18 @@ class SymbolCheck:
                     else:
                         mateches = mateches.groups()
 
-                    if len(mateches) > 0 and mateches[1] == rule.name:
+                    if len(mateches) > 0 and mateches[1] == checkRule.name:
                         exceptions_map += mateches
                         exception_notes += mateches[2] + ": " + str(p.value) + "; "
 
             if self.verbosity.value > Verbosity.HIGH.value:
-                self.printer.white("Checking rule " + rule.name)
-            rule.check(exception=exceptions_map)
+                self.printer.white("Checking checkRule " + checkRule.name)
+            checkRule.check(exception=exceptions_map)
 
-            if self.no_warnings and not rule.hasErrors():
+            if self.no_warnings and not checkRule.hasErrors():
                 continue
 
-            if rule.hasOutput():
+            if checkRule.hasOutput():
                 if first:
                     self.printer.green(
                         "Checking symbol '{lib}:{sym}':".format(
@@ -147,7 +147,7 @@ class SymbolCheck:
 
                     exceptionMsg = (
                         f"Exception {symbol.libname}:{symbol.name}, "
-                        + f"Rule: {rule.name} - {rule.url}, "
+                        + f"Rule: {checkRule.name} - {checkRule.url}, "
                         + f"Note: {exception_notes}"
                     )
 
@@ -159,19 +159,20 @@ class SymbolCheck:
 
                 else:
                     self.printer.yellow(
-                        "Violating " + rule.name + " - " + rule.url, indentation=2
+                        "Violating " + checkRule.name + " - " + checkRule.url,
+                        indentation=2,
                     )
 
-                junit.add_klc_rule_results(junit_case, rule)
-                rule.printOutput(self.printer, self.verbosity)
+                junit.add_klc_rule_results(junit_case, checkRule)
+                checkRule.printOutput(self.printer, self.verbosity)
 
-            if rule.hasErrors():
+            if checkRule.hasErrors():
                 if self.log:
-                    logError(self.log, rule.name, symbol.libname, symbol.name)
+                    logError(self.log, checkRule.name, symbol.libname, symbol.name)
 
             # increment the number of violations
-            symbol_error_count += rule.errorCount
-            symbol_warning_count += rule.warningCount()
+            symbol_error_count += checkRule.errorCount
+            symbol_warning_count += checkRule.warningCount()
 
         # No messages?
         if first:
@@ -325,9 +326,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-r",
-        "--rule",
+        "--checkRule",
         help=(
-            "Select a particular rule (or rules) to check against (default = all"
+            "Select a particular checkRule (or rules) to check against (default = all"
             ' rules). Use comma separated values to select multiple rules. e.g. "-r'
             ' S3.1,EC02"'
         ),
@@ -336,7 +337,7 @@ if __name__ == "__main__":
         "-e",
         "--exclude",
         help=(
-            "Exclude a particular rule (or rules) to check against. Use comma separated"
+            "Exclude a particular checkRule (or rules) to check against. Use comma separated"
             ' values to select multiple rules. e.g. "-e S3.1,EC02"'
         ),
     )
@@ -397,8 +398,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #
-    if args.rule:
-        selected_rules = args.rule.split(",")
+    if args.checkRule:
+        selected_rules = args.checkRule.split(",")
     else:
         selected_rules = None
 
