@@ -157,7 +157,6 @@ sym_check = check_symbol.SymbolCheck(
     None,
     args.exclude,
     Verbosity(2),
-    False,
     args.footprint_directory,
     False if args.nocolor else True,
     silent=False,
