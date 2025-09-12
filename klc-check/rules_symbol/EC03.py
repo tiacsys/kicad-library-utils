@@ -16,7 +16,7 @@ class Rule(KLCRule):
         # Thus, we never return an error.
         return False
 
-    def check(self, exception=None):
+    def check(self):
         # no need to check pins of a derived symbol
         if self.component.extends is not None:
             return False

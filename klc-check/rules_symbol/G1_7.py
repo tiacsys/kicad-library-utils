@@ -15,7 +15,7 @@ class Rule(KLCRule):
 
         self.lib_error: bool = False
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
         # Only perform this check on linux systems (i.e. Travis)
         # Windows automatically checks out with CR+LF line endings
         if "linux" in platform.platform().lower():

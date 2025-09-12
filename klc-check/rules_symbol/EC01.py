@@ -261,7 +261,7 @@ class Rule(KLCRule):
                             f"({t2.text}' at {t2.pos}"
                         )
 
-    def check(self, exception=None):
+    def check(self):
         """
         Proceeds the checking of the rule.
         """

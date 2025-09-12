@@ -94,6 +94,7 @@ class KLCRule(KLCRuleBase):
 
         super().__init__()
 
+        self.component_name = f"{module.name}"
         self.module: KicadMod = module
         self.args = args
         self.needsFixMore: bool = False

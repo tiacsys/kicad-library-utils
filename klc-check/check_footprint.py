@@ -76,20 +76,20 @@ def do_unittest(footprint, rules, metrics) -> Tuple[int, int]:
     unittest_result = m.group(1)
     unittest_rule = m.group(2)
     unittest_descrp = m.group(3)  # noqa: F841
-    for rule in rules:
-        rule = rule(footprint, args)
+    for rule_class in rules:
+        rule = rule_class(footprint, args)
         if unittest_rule == rule.name:
             rule.check()
-            if unittest_result == "Fail" and rule.errorCount == 0:
+            if unittest_result == "Fail" and rule.error_count == 0:
                 printer.red("Test '{foot}' failed".format(foot=footprint.name))
                 error_count += 1
                 continue
-            if unittest_result == "Warn" and rule.warningCount() == 0:
+            if unittest_result == "Warn" and rule.warning_count == 0:
                 printer.red("Test '{foot}' failed".format(foot=footprint.name))
                 error_count += 1
                 continue
             if unittest_result == "Pass" and (
-                rule.warningCount() != 0 or rule.errorCount != 0
+                rule.warning_count != 0 or rule.error_count != 0
             ):
                 printer.red("Test '{foot}' failed".format(foot=footprint.name))
                 error_count += 1
@@ -108,22 +108,22 @@ def do_rulecheck(
     wc = 0
     first = True
 
-    for rule in rules:
+    for index, rule in enumerate(rules):
         rule = rule(module, args)
-        if verbosity.value > Verbosity.HIGH.value:
-            printer.white("Checking rule " + rule.name)
+
+        # run the actual check
         rule.check()
 
         # count errors
-        if rule.hasErrors():
-            ec += rule.errorCount
+        if rule.hasErrors:
+            ec += rule.error_count
         if rule.hasWarnings:
-            wc += rule.warningCount()
+            wc += rule.warning_count
 
-        if args.nowarnings and not rule.hasErrors():
+        if args.nowarnings and not rule.hasErrors:
             continue
 
-        if rule.hasOutput():
+        if rule.hasOutput:
             if first:
                 printer.green("Checking footprint '{fp}':".format(fp=module.name))
                 first = False
@@ -133,7 +133,7 @@ def do_rulecheck(
             junit.add_klc_rule_results(junit_case, rule)
             rule.printOutput(printer, verbosity)
 
-        if rule.hasErrors():
+        if rule.hasErrors:
             if args.log:
                 lib_name = os.path.basename(os.path.dirname(module.filename)).replace(
                     ".pretty", ""
@@ -196,7 +196,7 @@ parser.add_argument(
     "--verbose",
     help=(
         "Enable verbose output. -v shows brief information, -vv shows complete"
-        " information"
+        " information, -vvv shows debug"
     ),
     action="count",
 )

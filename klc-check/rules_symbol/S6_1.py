@@ -27,7 +27,7 @@ class Rule(KLCRule):
 
         return fail
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
 
         return any([self.checkRD()])
 

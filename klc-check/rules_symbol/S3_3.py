@@ -13,7 +13,7 @@ class Rule(KLCRule):
 
         self.center_rect_polyline: Optional[Polyline] = None
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:

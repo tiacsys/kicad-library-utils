@@ -131,7 +131,7 @@ class Rule(KLCRule):
 
         return len(self.inversion_errors) > 0
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:

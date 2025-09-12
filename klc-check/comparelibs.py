@@ -160,7 +160,6 @@ sym_check = check_symbol.SymbolCheck(
     disable_exceptions=False,
     footprints=args.footprint_directory,
     use_color=False if args.nocolor else True,
-    silent=False,
 )
 
 

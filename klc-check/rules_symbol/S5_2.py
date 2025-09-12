@@ -64,7 +64,7 @@ class Rule(KLCRule):
                     " escaped with '?' or '*'.".format(fp_filter=fp_filter)
                 )
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         """

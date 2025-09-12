@@ -434,7 +434,7 @@ class Rule(KLCRule):
 
             return _result
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
         # Check for extra fields. How? TODO
 
         # extraFields = False

@@ -35,6 +35,8 @@ class KLCRule(KLCRuleBase):
 
     verbosity: Verbosity = Verbosity.NONE
 
-    def __init__(self, component: KicadSymbol):
+    def __init__(self, symbol: KicadSymbol):
         super().__init__()
-        self.component: KicadSymbol = component
+        self.component: KicadSymbol = symbol
+        self.component_name = f"{symbol.libname}:{symbol.name}"
+        self.parse_exceptions(filter(lambda x: x.is_private(), symbol.properties))

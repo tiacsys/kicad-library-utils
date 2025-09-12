@@ -13,7 +13,7 @@ class Rule(KLCRule):
         self.violating_pins: List[Pin] = []
         self.violating_properties: List[Property] = []
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
         """
         Proceeds the checking of the rule.
         The following variables will be accessible after checking:

@@ -4,7 +4,7 @@ from rules_symbol.rule import KLCRule
 class Rule(KLCRule):
     """Symbols don't contain embedded files"""
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
         if self.component.embedded_fonts:
             self.error("The checkbox 'embed fonts' must be unchecked.")
             return True

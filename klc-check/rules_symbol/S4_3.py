@@ -34,7 +34,7 @@ class Rule(KLCRule):
                 min_pin_number = min(p.number_int, min_pin_number)
         return min_pin_number
 
-    def check(self, exception=None) -> bool:
+    def check(self) -> bool:
         # no need to check this for a derived symbols
         if self.component.extends is not None:
             return False

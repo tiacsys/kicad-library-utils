@@ -37,7 +37,6 @@ class SymbolCheck:
         footprints=None,
         use_color: bool = True,
         no_warnings: bool = False,
-        silent: bool = False,
         log: bool = False,
     ):
         self.footprints = footprints
@@ -47,7 +46,6 @@ class SymbolCheck:
         self.metrics: List[str] = []
         self.no_warnings: bool = no_warnings
         self.log: bool = log
-        self.silent: bool = silent
         self.error_count: int = 0
         self.warning_count: int = 0
         self.junit_cases = []
@@ -74,18 +72,22 @@ class SymbolCheck:
         for rule_class in self.rules:
             rule_class.footprints_dir = self.footprints
             rule = rule_class(symbol)
+            rule.disable_exceptions = disable_exceptions
             if unittest_rule == rule.name:
+                # check if there is an exception for this rule
+                rule.parse_exceptions(symbol.properties)
                 rule.check()
-                if unittest_result == "Fail" and rule.errorCount == 0:
+                rule.apply_exceptions()
+                if unittest_result == "Fail" and rule.error_count == 0:
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
                     continue
-                if unittest_result == "Warn" and rule.warningCount() == 0:
+                if unittest_result == "Warn" and rule.warning_count == 0:
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
                     continue
                 if unittest_result == "Pass" and (
-                    rule.warningCount() != 0 or rule.errorCount != 0
+                    rule.warning_count != 0 or rule.error_count != 0
                 ):
                     self.printer.red("Test '{sym}' failed".format(sym=symbol.name))
                     error_count += 1
@@ -99,88 +101,48 @@ class SymbolCheck:
     def do_rulecheck(self, symbol) -> Tuple[int, int]:
         symbol_error_count = 0
         symbol_warning_count = 0
-        first = True
 
         junit_case = junit.JunitTestCase(name=f"{symbol.libname}:{symbol.name}")
         self.junit_cases.append(junit_case)
 
-        for rule_class in self.rules:
+        for index, rule_class in enumerate(self.rules):
             rule_class.footprints_dir = self.footprints
             rule = rule_class(symbol)
+            rule.disable_exceptions = self.disable_exceptions
 
             # check if there is an exception for this rule
-            klc_rule_re = re.compile(r"(KLC_)([^_]+)_*(.?)$")
-            exception_notes = ""
-            exceptions_map = []
+            for exception_note in rule.exception_notes:
+                # add them to the junit reporter
+                # we don't need to print anything, the rulebase will take care of this
+                junit_case.add_result(Severity.INFO, junit.JUnitResult(exception_note))
 
-            if not self.disable_exceptions:
+            # now run the actual check
+            rule.check()
 
-                for p in symbol.properties:
-                    mateches = klc_rule_re.match(p.name)
-                    if mateches is None:
-                        mateches = []
-                    else:
-                        mateches = mateches.groups()
+            # call the generic printer function
+            rule.printOutput(
+                self.printer, self.verbosity, self.no_warnings, first=(index == 0)
+            )
 
-                    if len(mateches) > 0 and mateches[1] == rule.name:
-                        exceptions_map += mateches
-                        exception_notes += mateches[2] + ": " + str(p.value) + "; "
-
-            if self.verbosity.value > Verbosity.HIGH.value:
-                self.printer.white("Checking rule " + rule.name)
-            rule.check(exception=exceptions_map)
-
-            if self.no_warnings and not rule.hasErrors():
+            # if there are only warnings, and we disabled warnings, don't do anything
+            # and start checking the next rule
+            if self.no_warnings and not rule.hasErrors:
                 continue
 
-            if rule.hasOutput():
-                if first:
-                    self.printer.green(
-                        "Checking symbol '{lib}:{sym}':".format(
-                            lib=symbol.libname, sym=symbol.name
-                        )
-                    )
-                    first = False
+            # if there is an exception, that also means that is cannot produce 'real'
+            # errors or warnings. So we need to nullify them
+            rule.apply_exceptions()
 
-                # Check for exception and print if wanted
-                if len(exceptions_map) > 0:
+            # add info about this check to the junit reporter
+            junit.add_klc_rule_results(junit_case, rule)
 
-                    exceptionMsg = (
-                        f"Exception {symbol.libname}:{symbol.name}, "
-                        + f"Rule: {rule.name} - {rule.url}, "
-                        + f"Note: {exception_notes}"
-                    )
-
-                    self.printer.yellow(exceptionMsg, indentation=2)
-
-                    junit_case.add_result(
-                        Severity.INFO, junit.JUnitResult(exceptionMsg)
-                    )
-
-                else:
-                    self.printer.yellow(
-                        "Violating " + rule.name + " - " + rule.url, indentation=2
-                    )
-
-                junit.add_klc_rule_results(junit_case, rule)
-                rule.printOutput(self.printer, self.verbosity)
-
-            if rule.hasErrors():
-                if self.log:
-                    logError(self.log, rule.name, symbol.libname, symbol.name)
+            # TODO: Check what the log is used for
+            if rule.hasErrors and self.log:
+                logError(self.log, rule.name, symbol.libname, symbol.name)
 
             # increment the number of violations
-            symbol_error_count += rule.errorCount
-            symbol_warning_count += rule.warningCount()
-
-        # No messages?
-        if first:
-            if not self.silent:
-                self.printer.green(
-                    "Checking symbol '{lib}:{sym}':".format(
-                        lib=symbol.libname, sym=symbol.name
-                    )
-                )
+            symbol_error_count += rule.error_count
+            symbol_warning_count += rule.warning_count
 
         # done checking the symbol
         # count errors and update metrics
@@ -254,7 +216,6 @@ class SymbolCheck:
 
 @dataclass
 class CheckResults:
-
     identifier: int
     error_count: int
     warning_count: int
@@ -275,7 +236,7 @@ def worker(
     i=0,
 ):
     # have one instance of SymbolCheck per worker
-    c = SymbolCheck(
+    checker = SymbolCheck(
         selected_rules,
         excluded_rules,
         verbosity,
@@ -283,19 +244,18 @@ def worker(
         footprints,
         not args.nocolor,
         no_warnings=args.nowarnings,
-        silent=args.silent,
         log=args.log,
     )
-    c.printer.buffered = True
+    checker.printer.buffered = True
 
     while True:
         try:
             fn = inp.get(block=False)
             # run the check on this file
-            c.check_library(fn, args.component, args.pattern, args.unittest)
+            checker.check_library(fn, args.component, args.pattern, args.unittest)
             # print the console output, all at once while we have the lock
             lock.acquire()
-            c.printer.flush()
+            checker.printer.flush()
             lock.release()
             # signal that we are done with this item
             inp.task_done()
@@ -303,7 +263,15 @@ def worker(
             break
 
     # output all the metrics at once
-    outp.put(CheckResults(i, c.error_count, c.warning_count, c.junit_cases, c.metrics))
+    outp.put(
+        CheckResults(
+            i,
+            checker.error_count,
+            checker.warning_count,
+            checker.junit_cases,
+            checker.metrics,
+        )
+    )
 
 
 if __name__ == "__main__":
@@ -350,7 +318,7 @@ if __name__ == "__main__":
         "--verbose",
         help=(
             "Enable verbose output. -v shows brief information, -vv shows complete"
-            " information"
+            " information, -vvv shows debug"
         ),
         action="count",
     )
@@ -411,6 +379,8 @@ if __name__ == "__main__":
     verbosity = Verbosity.NONE
     if args.verbose:
         verbosity = Verbosity(args.verbose)
+    if args.silent:
+        verbosity = Verbosity.SILENT
     KLCRule.verbosity = verbosity
 
     # Set disable_exceptions globally
