@@ -71,9 +71,9 @@ class SymbolCheck:
         unittest_result = m.group(1)
         unittest_rule = m.group(2)
         unittest_descrp = m.group(3)  # noqa: F841
-        for rule in self.rules:
-            rule.footprints_dir = self.footprints
-            rule = rule(symbol)
+        for rule_class in self.rules:
+            rule_class.footprints_dir = self.footprints
+            rule = rule_class(symbol)
             if unittest_rule == rule.name:
                 rule.check()
                 if unittest_result == "Fail" and rule.errorCount == 0:
@@ -104,9 +104,9 @@ class SymbolCheck:
         junit_case = junit.JunitTestCase(name=f"{symbol.libname}:{symbol.name}")
         self.junit_cases.append(junit_case)
 
-        for rule in self.rules:
-            rule.footprints_dir = self.footprints
-            rule = rule(symbol)
+        for rule_class in self.rules:
+            rule_class.footprints_dir = self.footprints
+            rule = rule_class(symbol)
 
             # check if there is an exception for this rule
             klc_rule_re = re.compile(r"(KLC_)([^_]+)_*(.?)$")
