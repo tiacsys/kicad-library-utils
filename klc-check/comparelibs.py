@@ -154,11 +154,12 @@ problems = {}
 # create a SymbolCheck instance
 # add footprints dir if possible
 sym_check = check_symbol.SymbolCheck(
-    None,
-    args.exclude,
-    Verbosity(2),
-    args.footprint_directory,
-    False if args.nocolor else True,
+    selected_rules=None,
+    excluded_rules=args.exclude,
+    verbosity=Verbosity(2),
+    disable_exceptions=False,
+    footprints=args.footprint_directory,
+    use_color=False if args.nocolor else True,
     silent=False,
 )
 
