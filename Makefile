@@ -73,7 +73,7 @@ test-comparelibs-symbols:
 		--metrics || if [ $$? -eq 2 ] || [ $$? -eq 3 ] ; then true; fi
 
 .PHONY: check
-check: lint spelling test-klc-footprints test-klc-symbols test-comparelibs-symbols
+check: lint test-klc-footprints test-klc-symbols test-comparelibs-symbols spelling
 
 .PHONY: install-deps
 install-deps:
