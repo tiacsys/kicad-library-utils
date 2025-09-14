@@ -1,17 +1,34 @@
 import re
 
+from kicad_sym import KicadSymbol
 from rules_symbol.rule import KLCRule, pinString
 
 
 class Rule(KLCRule):
     """Pins should be grouped by function"""
 
+    def __init__(self, component: KicadSymbol):
+        super().__init__(component)
+
+        # This rule will handle fine-grained exceptions
+        self.finegrained_exceptions = True
+
+        pinsnames_with_exceptions = list(self.exceptions_map.keys())
+        self.pins_to_check = []
+        for pin in self.component.pins:
+            if pin.name in pinsnames_with_exceptions:
+                self.exception(
+                    f"Exception for {pinString(pin)}: {self.exceptions_map[pin.name]}"
+                )
+            else:
+                self.pins_to_check.append(pin)
+
     def checkGroundPins(self) -> None:
         # Includes negative power pins
         GND = ["^[ad]*g(rou)*nd(a)*$", "^[ad]*v(ss)$"]
 
         first = True
-        for pin in self.component.pins:
+        for pin in self.pins_to_check:
             name = str(pin.name.lower())
             for gnd in GND:
                 if re.search(gnd, name, flags=re.IGNORECASE) is not None:
@@ -102,8 +119,8 @@ class Rule(KLCRule):
             return
 
         # All the pins actually marked with the power types
-        self.power_in_pins = [p for p in self.component.pins if p.etype == "power_in"]
-        self.power_out_pins = [p for p in self.component.pins if p.etype == "power_out"]
+        self.power_in_pins = [p for p in self.pins_to_check if p.etype == "power_in"]
+        self.power_out_pins = [p for p in self.pins_to_check if p.etype == "power_out"]
 
         self.checkGroundPins()
         self.checkPositivePowerInPins()
