@@ -38,7 +38,6 @@ klc-check:
     - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/check_footprints.sh
   artifacts:
     reports:
-      metrics: metrics.txt
       junit: junit.xml
 
 nightly-convert:

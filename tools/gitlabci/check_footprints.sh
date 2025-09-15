@@ -18,7 +18,6 @@ done
 # Run the KLC checker on all the files
 python3 "$SCRIPT" -vv \
     --junit junit.xml \
-    --metrics \
     ${mod_files[@]}
 
 KLC_ERRORS=$?

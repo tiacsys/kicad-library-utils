@@ -23,7 +23,7 @@ from rules_footprint.rule import KLCRule
 
 
 def check_library(
-    filename: str, rules, metrics, junit_suite: junit.JunitTestSuite, args
+    filename: str, rules, junit_suite: junit.JunitTestSuite, args
 ) -> Tuple[int, int]:
     """
     Returns (error count, warning count)
@@ -58,16 +58,14 @@ def check_library(
 
     # check which kind of tests we want to run
     if args.unittest:
-        ec, wc = do_unittest(module, rules, metrics)
+        ec, wc = do_unittest(module, rules)
     else:
-        ec, wc = do_rulecheck(module, rules, metrics, junit_case)
+        ec, wc = do_rulecheck(module, rules, junit_case)
     # done checking the footpint
-    metrics.append("{lib}.errors {n}".format(lib=module.name, n=ec))
-    metrics.append("{lib}.warnings {n}".format(lib=module.name, n=wc))
     return (ec, wc)
 
 
-def do_unittest(footprint, rules, metrics) -> Tuple[int, int]:
+def do_unittest(footprint, rules) -> Tuple[int, int]:
     error_count = 0
     m = re.match(r"(\w+)__(.+)__(.+)", footprint.name)
     if not m:
@@ -101,9 +99,7 @@ def do_unittest(footprint, rules, metrics) -> Tuple[int, int]:
     return (error_count, warning_count)
 
 
-def do_rulecheck(
-    module, rules, metrics, junit_case: junit.JunitTestCase
-) -> Tuple[int, int]:
+def do_rulecheck(module, rules, junit_case: junit.JunitTestCase) -> Tuple[int, int]:
     ec = 0
     wc = 0
     first = True
@@ -227,9 +223,6 @@ parser.add_argument(
     action="store_true",
 )
 parser.add_argument(
-    "-m", "--metrics", help="generate a metrics.txt file", action="store_true"
-)
-parser.add_argument(
     "--junit",
     help="Path to save results in JUnit XML format. Specify with e.g. './xxx --junit file.xml'",
     metavar="file",
@@ -278,24 +271,15 @@ if not files:
 # Sort the files for consistent output
 files.sort()
 
-# now iterate over all files and check them
-metrics = []
-
 junit_suite = junit.JunitTestSuite(name="Footprint KLC Checks", id="klc-fp")
 
+# now iterate over all files and check them
 error_count = 0
 warning_count = 0
 for filename in files:
-    ec, wc = check_library(filename, rules, metrics, junit_suite, args)
+    ec, wc = check_library(filename, rules, junit_suite, args)
     error_count += ec
     warning_count += wc
-
-# done checking all files
-if args.metrics or args.unittest:
-    metrics_file = open("metrics.txt", "a+")
-    for line in metrics:
-        metrics_file.write(line + "\n")
-    metrics_file.close()
 
 if args.fix:
     printer.light_red(

@@ -37,7 +37,6 @@ klc-check:
 
   artifacts:
     reports:
-      metrics: metrics.txt
       junit: junit.xml
 
 visual_diff:

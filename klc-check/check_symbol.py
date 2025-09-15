@@ -43,7 +43,6 @@ class SymbolCheck:
         self.printer = PrintColor(use_color=use_color)
         self.verbosity: Verbosity = verbosity
         self.disable_exceptions: bool = disable_exceptions
-        self.metrics: List[str] = []
         self.no_warnings: bool = no_warnings
         self.log: bool = log
         self.error_count: int = 0
@@ -144,18 +143,6 @@ class SymbolCheck:
             symbol_error_count += rule.error_count
             symbol_warning_count += rule.warning_count
 
-        # done checking the symbol
-        # count errors and update metrics
-        self.metrics.append(
-            "{l}.{p}.warnings {n}".format(
-                l=symbol.libname, p=symbol.name, n=symbol_warning_count
-            )
-        )
-        self.metrics.append(
-            "{l}.{p}.errors {n}".format(
-                l=symbol.libname, p=symbol.name, n=symbol_error_count
-            )
-        )
         return (symbol_error_count, symbol_warning_count)
 
     @lru_cache(maxsize=None)
@@ -167,7 +154,6 @@ class SymbolCheck:
     ) -> Tuple[int, int]:
         error_count = 0
         warning_count = 0
-        libname = ""
         if not os.path.exists(filename):
             self.printer.red("File does not exist: %s" % filename)
             return (1, 0)
@@ -202,13 +188,8 @@ class SymbolCheck:
 
             error_count += ec
             warning_count += wc
-            libname = symbol.libname
 
         # done checking the lib
-        self.metrics.append("{lib}.total_errors {n}".format(lib=libname, n=error_count))
-        self.metrics.append(
-            "{lib}.total_warnings {n}".format(lib=libname, n=warning_count)
-        )
         self.error_count += error_count
         self.warning_count += warning_count
         return (error_count, warning_count)
@@ -220,7 +201,6 @@ class CheckResults:
     error_count: int
     warning_count: int
     test_cases: List[junit.JunitTestCase]
-    metrics: List[str]
 
 
 def worker(
@@ -262,14 +242,13 @@ def worker(
         except queue.Empty:
             break
 
-    # output all the metrics at once
+    # output all the results at once
     outp.put(
         CheckResults(
             i,
             checker.error_count,
             checker.warning_count,
             checker.junit_cases,
-            checker.metrics,
         )
     )
 
@@ -344,9 +323,6 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "-m", "--metrics", help="generate a metrics.txt file", action="store_true"
-    )
-    parser.add_argument(
         "-u",
         "--unittest",
         help="unit test mode (to be used with test-symbols)",
@@ -418,7 +394,6 @@ if __name__ == "__main__":
         task_queue.put(filename)
 
     jobs = []
-    job_output = {}
 
     # create the workers
     lock = Lock()
@@ -440,7 +415,6 @@ if __name__ == "__main__":
         )
         jobs.append(p)
         p.start()
-        job_output[str(i)] = []
 
     error_count = 0
     warning_count = 0
@@ -451,8 +425,6 @@ if __name__ == "__main__":
             while True:
                 try:
                     results = out_queue.get(block=False)
-
-                    job_output[str(results.identifier)] += results.metrics
 
                     for junit_case in results.test_cases:
                         junit_suite.add_case(junit_case)
@@ -467,13 +439,6 @@ if __name__ == "__main__":
     out_queue.put("STOP")
 
     time.sleep(1)
-
-    # done checking all files
-    if args.metrics or args.unittest:
-        with open("metrics.txt", "a+") as metrics_file:
-            for identifier in job_output:
-                for line in job_output[identifier]:
-                    metrics_file.write(line + "\n")
 
     if args.junit:
         # create the junit xml report

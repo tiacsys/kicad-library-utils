@@ -69,8 +69,8 @@ test-comparelibs-symbols:
 		--new klc-check/test_symbol/comparelibs_new/* \
 		--check --check-derived \
 		--junit junit-comparelibs.xml \
-		--exclude S5.1 \
-		--metrics || if [ $$? -eq 2 ] || [ $$? -eq 3 ] ; then true; fi
+		--exclude S5.1 || \
+		if [ $$? -eq 2 ] || [ $$? -eq 3 ] ; then true; fi
 
 .PHONY: check
 check: lint test-klc-footprints test-klc-symbols test-comparelibs-symbols spelling
