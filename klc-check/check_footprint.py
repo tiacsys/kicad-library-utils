@@ -49,10 +49,6 @@ def check_library(
                 traceback.print_exc()
             return (1, 0)
 
-    if args.rotate != 0:
-        module.rotateFootprint(int(args.rotate))
-        printer.green("rotated footprint by {deg} degrees".format(deg=int(args.rotate)))
-
     junit_case = junit.JunitTestCase(module.name)
     junit_suite.add_case(junit_case)
 
@@ -150,7 +146,7 @@ def do_rulecheck(module, rules, junit_case: junit.JunitTestCase) -> Tuple[int, i
                 "Checking footprint '{fp}' - No errors".format(fp=module.name)
             )
 
-    if ((args.fix or args.fixmore) and ec > 0) or args.rotate != 0:
+    if (args.fix or args.fixmore) and ec > 0:
         module.save()
 
     return (ec, wc)
@@ -171,12 +167,6 @@ parser.add_argument(
         " implies --fix!"
     ),
     action="store_true",
-)
-parser.add_argument(
-    "--rotate",
-    help="rotate the whole footprint clockwise by the given number of degrees",
-    action="store",
-    default=0,
 )
 parser.add_argument(
     "-r",
