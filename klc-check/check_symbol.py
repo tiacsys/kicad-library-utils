@@ -303,8 +303,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-x",
-        "--disable_exceptions",
-        help=("Enable exceptions output. -x shows brief information"),
+        "--no-exceptions",
+        help="Disable rule-exceptions processing",
         action="store_true",
     )
     parser.add_argument(
@@ -361,8 +361,8 @@ if __name__ == "__main__":
 
     # Set disable_exceptions globally
     disable_exceptions = False
-    if args.disable_exceptions:
-        disable_exceptions = args.disable_exceptions
+    if args.no_exceptions:
+        disable_exceptions = args.no_exceptions
 
     # check if a footprints dir was passed
     footprints = args.footprints
