@@ -19,6 +19,7 @@ help:
 .PHONY: lint
 lint:
 	python3 -m flake8 .
+	black --check .
 
 
 .PHONY: spelling
