@@ -17,7 +17,7 @@ if common not in sys.path:
 import junit
 from kicad_mod import KicadMod
 from print_color import PrintColor
-from rulebase import Verbosity, logError
+from rulebase import Verbosity
 from rules_footprint import get_all_footprint_rules
 from rules_footprint.rule import KLCRule
 
@@ -126,12 +126,6 @@ def do_rulecheck(module, rules, junit_case: junit.JunitTestCase) -> Tuple[int, i
             rule.printOutput(printer, verbosity)
 
         if rule.hasErrors:
-            if args.log:
-                lib_name = os.path.basename(os.path.dirname(module.filename)).replace(
-                    ".pretty", ""
-                )
-                logError(args.log, rule.name, lib_name, module.name)
-
             if args.fix:
                 if args.fixmore and rule.needsFixMore:
                     rule.fixmore()
@@ -202,7 +196,6 @@ parser.add_argument(
 parser.add_argument(
     "-e", "--errors", help="Do not suppress fatal parsing errors", action="store_true"
 )
-parser.add_argument("-l", "--log", help="Path to JSON file to log error information")
 parser.add_argument(
     "-w", "--nowarnings", help="Hide warnings (only show errors)", action="store_true"
 )

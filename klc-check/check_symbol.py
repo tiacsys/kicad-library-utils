@@ -22,7 +22,7 @@ if common not in sys.path:
 import junit
 from kicad_sym import KicadFileFormatError, KicadLibrary
 from print_color import PrintColor
-from rulebase import Severity, Verbosity, logError
+from rulebase import Severity, Verbosity
 from rules_symbol import get_all_symbol_rules
 from rules_symbol.rule import KLCRule
 
@@ -134,10 +134,6 @@ class SymbolCheck:
 
             # add info about this check to the junit reporter
             junit.add_klc_rule_results(junit_case, rule)
-
-            # TODO: Check what the log is used for
-            if rule.hasErrors and self.log:
-                logError(self.log, rule.name, symbol.libname, symbol.name)
 
             # increment the number of violations
             symbol_error_count += rule.error_count

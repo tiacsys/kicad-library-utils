@@ -1,52 +1,10 @@
 import inspect
-import json
 import os
 import re
 from enum import Enum
 from typing import List
 
 from print_color import PrintColor
-
-
-def logError(
-    log_file: str, rule_name: str, lib_name: str, item_name: str, warning: bool = False
-) -> None:
-    """
-    Log KLC error output to a json file.
-    The JSON file will contain a cumulative dict
-    of the errors and the library items that do not comply.
-    """
-
-    if not log_file.endswith(".json"):
-        log_file += ".json"
-
-    if os.path.exists(log_file) and os.path.isfile(log_file):
-        with open(log_file, "r") as json_file:
-            try:
-                log_data = json.load(json_file)
-            except ValueError:
-                print("Found bad JSON data - clearing")
-                log_data = {}
-
-    else:
-        log_data = {}
-
-    key = "warnings" if warning else "errors"
-
-    if key not in log_data:
-        log_data[key] = {}
-
-    log_entry = {"library": lib_name, "item": item_name}
-
-    if rule_name not in log_data[key]:
-        log_data[key][rule_name] = []
-
-    log_data[key][rule_name].append(log_entry)
-
-    # Write the log data back to file
-    with open(log_file, "w") as json_file:
-        op = json.dumps(log_data, indent=4, sort_keys=True, separators=(",", ":"))
-        json_file.write(op)
 
 
 # Static functions
