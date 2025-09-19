@@ -106,6 +106,9 @@ class KicadMod:
         self.solder_paste_margin = self._getValue("solder_paste_margin", 0, 2)
         self.solder_paste_ratio = self._getValue("solder_paste_ratio", 0, 2)
 
+        # embedded fonts setting
+        self.embedded_fonts = self._getValue("embedded_fonts", "no", 2)
+
         # attribute
         self._getAttributes()
 
@@ -146,6 +149,9 @@ class KicadMod:
 
         # zones
         self.zones = self._getZones()
+
+        # embedded files
+        self.files = self._getEmbeddedFiles()
 
         # models
         self.models = self._getModels()
@@ -761,6 +767,26 @@ class KicadMod:
             zones.append(zone_dict)
 
         return zones
+
+    def _getEmbeddedFiles(self) -> List[Dict[str, Any]]:
+        files_sexpr = self._getArray(self.sexpr_data, "embedded_files")
+
+        file_list = []
+        for file_sexpr in files_sexpr:
+            file_info = {}
+            # [ "file": [name: asd], [type: model], [data: string]]
+
+            if name := self._getArray(file_sexpr, "name")[0]:
+                file_info["name"] = name[1]
+            if typ := self._getArray(file_sexpr, "type")[0]:
+                file_info["type"] = typ[1]
+            if checksum := self._getArray(file_sexpr, "checksum")[0]:
+                file_info["checksum"] = checksum[1]
+            if data := self._getArray(file_sexpr, "data")[0]:
+                file_info["data"] = data[1:]
+
+            file_list.append(file_info)
+        return file_list
 
     def _getModels(self) -> List[Dict[str, Any]]:
         models_array = self._getArray(self.sexpr_data, "model")
