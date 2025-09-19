@@ -177,11 +177,14 @@ class KicadMod:
 
         level += 1
 
-        for i in data:
+        for index, i in enumerate(data):
             if isinstance(i, list):
                 self._getArray(i, value, result, level, max_level)
             else:
-                if i == value:
+                # also check for the index here, if we don't do that, we might return a list
+                # that looks like [0, 1, 2, 'value', 4], but we only want to return a list
+                # where 'value' is the first element, like ['value', 2, 3, 4]
+                if i == value and index == 0:
                     result.append(data)
         return result
 
