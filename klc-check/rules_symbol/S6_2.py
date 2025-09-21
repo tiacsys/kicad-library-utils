@@ -60,6 +60,8 @@ ALLOWED_FIELDS = frozenset(
         "Footprint",
         "ki_keywords",
         "ki_fp_filters",
+        "ki_locked",
+        "ki_description",
     ]
 )
 
