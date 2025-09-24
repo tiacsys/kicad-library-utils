@@ -66,7 +66,7 @@ class Rule(KLCRule):
 
                     if not self.footprints_dir:
                         self.warning(
-                            "footprint existence is not going to be checked if --footprint is not specified"
+                            "footprint existence is not going to be checked if --footprints is not specified"
                         )
 
                     # Check that the footprint exists!
