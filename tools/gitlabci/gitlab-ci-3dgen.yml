@@ -372,11 +372,11 @@ Fuse:
     - .model
 
 #
-# GW_QFP_SOIC_SSOP_TSSOP_SOT
+# gullwing
 #
-GW_QFP_SOIC_SSOP_TSSOP_SOT:
+gullwing:
   variables:
-    library: GW_QFP_SOIC_SSOP_TSSOP_SOT
+    library: gullwing
   extends:
     - .model
   timeout: 3 hours
