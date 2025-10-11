@@ -83,15 +83,6 @@ Battery:
     - .model
 
 #
-# BGA_packages
-#
-BGA_packages:
-  variables:
-    library: BGA_packages
-  extends:
-    - .model
-
-#
 # Box_Headers directory
 #
 Box_Headers:
@@ -368,6 +359,15 @@ Flat_Pin_packages:
 Fuse:
   variables:
     library: Fuse
+  extends:
+    - .model
+
+#
+# grid_array
+#
+grid_array:
+  variables:
+    library: grid_array
   extends:
     - .model
 
