@@ -445,6 +445,15 @@ mounting_wuerth:
     - .model
 
 #
+# no_lead
+#
+no_lead:
+  variables:
+    library: no_lead
+  extends:
+    - .model
+
+#
 # OptoDevice
 #
 OptoDevice:
@@ -477,15 +486,6 @@ phoenix_contact:
 Potentiometer_THT:
   variables:
     library: Potentiometer_THT
-  extends:
-    - .model
-
-#
-# QFN_packages
-#
-QFN_packages:
-  variables:
-    library: QFN_packages
   extends:
     - .model
 
