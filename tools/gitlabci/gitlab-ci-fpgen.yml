@@ -197,7 +197,7 @@ make-3d-mr:
     - python -m pip install --upgrade pip
     - pip install .[3d] dictdiffer python-gitlab
     - apt-get update -q -y
-    - apt-get install -y libglx-mesa0 libgl1 git fontconfig
+    - apt-get install -y libglx-mesa0 libgl1 libxrender1 git fontconfig
   script:
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"

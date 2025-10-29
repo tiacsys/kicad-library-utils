@@ -20,7 +20,7 @@ variables:
     - when: manual
   before_script:
     - apt-get update -q -y
-    - apt-get install -y libglx-mesa0 libgl1 git fontconfig
+    - apt-get install -y libglx-mesa0 libgl1 libxrender1 git fontconfig
   # We use the line below when running the validator but don't need it
   # or the time required to d/l and setup unless we run the validator
   #  - apt-get install -y build-essential libgl1-mesa-glx kicad
