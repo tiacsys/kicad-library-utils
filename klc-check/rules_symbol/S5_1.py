@@ -8,6 +8,8 @@ from rules_symbol.rule import KLCRule
 class Rule(KLCRule):
     """Symbols with a default footprint link to a valid footprint file"""
 
+    generic_libraries = ["Device"]
+
     def check(self) -> bool:
         fail = False
 
@@ -147,7 +149,13 @@ class Rule(KLCRule):
                         " the footprint field.".format(fpcnt=len(filters))
                     )
                     fail = True
-            elif len(filters) == 1:
+            elif (
+                len(filters) == 1
+                and self.component.libname not in self.generic_libraries
+            ):
+                # we only want to output this warning for 'normal' symbols
+                # Stuff in the "Device" library is generic and will not have a default footprint,
+                # but filters set. Examples are stuff like Resistors or Capacitors.
                 self.warning("Symbol possibly missing default footprint")
                 self.warningExtra(
                     "Symbol has a single footprint filter "
