@@ -933,6 +933,7 @@ class Property(KicadSymbolBase):
     rotation: float = 0.0
     effects: Optional[TextEffect] = None
     private: bool = False
+    do_not_autoplace: bool = False
 
     def __post_init__(self):
         # There is some weird thing going on with the instance creation of effect.
@@ -947,6 +948,9 @@ class Property(KicadSymbolBase):
             self.quoted_string(self.value),
         ]
         sx.append(["at", self.posx, self.posy, self.rotation])
+
+        if self.do_not_autoplace:
+            sx.append(["do_not_autoplace"])
 
         if self.effects:
             sx.append(self.effects.get_sexpr())
@@ -976,8 +980,11 @@ class Property(KicadSymbolBase):
             name = sexpr.pop(0)
         value = sexpr.pop(0)
         (posx, posy, rotation) = _parse_at(sexpr)
+        do_not_autoplace = _has_value(sexpr, "do_not_autoplace")
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
-        return Property(name, value, posx, posy, rotation, effects, private)
+        return Property(
+            name, value, posx, posy, rotation, effects, private, do_not_autoplace
+        )
 
 
 @dataclass
