@@ -30,9 +30,9 @@ Pin,Name,Type,Side,Debug1,Debug2
 9,VSEL,input,left,-500 mils,200 mils
 12,CR,input,left,-500 mils,300 mils
 13,TMR_SEL,input,left,-500 mils,400 mils
--,-,space,bottom,-,-
--,-,space,bottom,-,-
+,,space,bottom,-,-
+,,space,bottom,-,-
 10,GND,power_in,bottom,0 mils,700 mils
 21,GND,power_in,bottom,0 mils,700 mils
--,-,space,bottom,-,-
+,,space,bottom,-,-
 16,AGND,power_in,bottom,200 mils,700 mils
