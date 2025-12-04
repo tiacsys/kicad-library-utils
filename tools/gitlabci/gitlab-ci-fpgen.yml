@@ -16,19 +16,41 @@ variables:
   KICAD_FOOTPRINTS_REPO: https://gitlab.com/kicad/libraries/kicad-footprints.git
   KICAD_MODELS_REPO: https://gitlab.com/kicad/libraries/kicad-packages3d.git
 
-fp-formatting:
+check-code-formatting:
   stage: Static Analysis
   needs: []
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - gitlabci/**/*
+        - .gitlab-ci.yml
+        - src/**/*
+        - KicadModTree/**/*
   before_script:
     - python --version
     - python -m pip install --upgrade pip
     - pip install .[dev]
   script:
-    - ./manage.sh fp_format_check
+    - ./manage.sh format_check
 
-fp-test:
+check-static-typing:
+  stage: Static Analysis
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - gitlabci/**/*
+        - .gitlab-ci.yml
+        - src/**/*
+        - KicadModTree/**/*
+  before_script:
+    - python --version
+    - python -m pip install --upgrade pip
+    - pip install .[dev]
+  script:
+    - ./manage.sh static_type_check
+
+pytest:
   stage: Test
   needs: []
   rules:
@@ -38,11 +60,10 @@ fp-test:
         - .gitlab-ci.yml
         - src/**/*
         - KicadModTree/**/*
-        - scripts/**/*
   before_script:
     - python --version
     - python -m pip install --upgrade pip
-    - pip install '.[dev]'
+    - pip install .[dev]
   script:
     - python -m pytest --junitxml=report.xml
   artifacts:
@@ -61,12 +82,12 @@ fp-generate:
   before_script:
     - python --version
     - python -m pip install --upgrade pip
-    - pip install .
+    - pip install -e .
   script:
     # Generate footprints
     - cd scripts
     - ls -lah
-    - time ./generator.py -j0 --separate-outputs --output-dir "$CI_PROJECT_DIR/footprints"
+    - time ./generate.py --separate-outputs --output-dir-footprints -j0 "$CI_PROJECT_DIR/footprints"
     # Collect generated footprints into artifact archive
     - cd "$CI_PROJECT_DIR"
     - tar -cJf footprints.tar.xz footprints/
@@ -92,7 +113,6 @@ fp-generate-and-compare:
         - .gitlab-ci.yml
         - src/**/*
         - KicadModTree/**/*
-        - scripts/**/*
         - data/**/*
   allow_failure: true
   image: kicad/kicad:9.0
@@ -103,7 +123,7 @@ fp-generate-and-compare:
     - sudo ln -s /usr/bin/python3 /usr/bin/python
     - python --version
     - python -m pip install --break-system-packages --upgrade pip
-    - pip install --break-system-packages .
+    - pip install --break-system-packages -e .
 
     - echo "CI_BUILDS_DIR = $CI_BUILDS_DIR"
     - echo "CI_PROJECT_DIR = $CI_PROJECT_DIR"
@@ -154,7 +174,8 @@ make-fp-mr:
   before_script:
     - python --version
     - python -m pip install --upgrade pip
-    - pip install .[dev] python-gitlab
+    - pip install -e .[dev]
+    - pip install python-gitlab
   script:
     # Clone fps
     - export TARGET=`realpath "$CI_BUILDS_DIR"`
@@ -164,9 +185,7 @@ make-fp-mr:
     # Clear all existing generated footprints (this allows auto-MRs to handle moves and deletions)
     - git grep --name-only -E "\(generator\s+\"kicad-footprint-generator\"\)" -- "*.kicad_mod" | xargs -d"\n" rm
     # Generate fps in a shell without CI environment variables
-    - env -i HOME="$HOME" bash -l -c "time ${CI_PROJECT_DIR}/scripts/generator.py -j0 --output-dir $TARGET/fps"
-    # Delete generated footprints we don't want to include in the MR
-    - rm -r Connector_Test.pretty test_output
+    - env -i HOME="$HOME" bash -l -c "time ${CI_PROJECT_DIR}/src/generators/generate.py -j0 --output-dir-footprints $TARGET/fps"
 
     - export branchname="gen-mr-${CI_MERGE_REQUEST_IID}"
     - git switch -c "$branchname"
@@ -195,7 +214,8 @@ make-3d-mr:
   before_script:
     - python --version
     - python -m pip install --upgrade pip
-    - pip install .[3d] dictdiffer python-gitlab
+    - pip install -e .[3d]
+    - pip install dictdiffer python-gitlab
     - apt-get update -q -y
     - apt-get install -y libglx-mesa0 libgl1 libxrender1 git fontconfig
   script:
