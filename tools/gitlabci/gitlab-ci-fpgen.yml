@@ -85,7 +85,7 @@ fp-generate:
     - pip install -e .
   script:
     # Generate footprints
-    - cd scripts
+    - cd src/generators
     - ls -lah
     - time ./generate.py --separate-outputs --output-dir-footprints -j0 "$CI_PROJECT_DIR/footprints"
     # Collect generated footprints into artifact archive
