@@ -7,3 +7,5 @@ symbol-generators/**/*kicad_sym
 # CI output files
 metrics.txt
 junit*.xml
+*api.token
+tmp/*
