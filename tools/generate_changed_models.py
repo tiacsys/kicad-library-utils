@@ -36,8 +36,8 @@ def emit_changed_generator_invocations(
         )
         invocations = []
         for i in changed_files:
-            if i.endswith(".yaml") and "generators" in i:
-                genname = i.split("/")[1]
+            if i.endswith(".yaml") and "data" in i:
+                genname = os.path.dirname(i)
                 if verbose:
                     print(f"Using file: {i}")
                 diff = compare_yamls(
