@@ -36,7 +36,7 @@ def emit_changed_generator_invocations(
         )
         invocations = []
         for i in changed_files:
-            if ".yaml" in i and "3d-model" in i:
+            if i.endswith(".yaml") and "generators" in i:
                 genname = i.split("/")[1]
                 if verbose:
                     print(f"Using file: {i}")
@@ -51,7 +51,7 @@ def emit_changed_generator_invocations(
                         )
                     for part in added.union(changed):
                         invocations.append(
-                            f"./generator.py -l {genname} -p {part}{extra_params}"
+                            f"./generate.py -g {genname} -p {part}{extra_params}"
                         )
             else:
                 if verbose:
@@ -88,11 +88,11 @@ if __name__ == "__main__":
     invocations = emit_changed_generator_invocations(
         args.prev, args.cur, verbose=args.verbose
     )
-    os.chdir(os.path.join(basedir, "3d-model-generators"))
+    os.chdir(os.path.join(basedir, "src/generators"))
     if args.verbose:
         print(f"Found {len(invocations)} generator invocations.")
     for i in invocations:
-        command = f"{i} -o {os.path.realpath(args.output)}"
+        command = f"{i} -m {os.path.realpath(args.output)}"
 
         if args.isolated:
             command = f'env -i HOME="$HOME" bash -l -c "{command}"'

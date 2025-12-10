@@ -5,7 +5,7 @@ source $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/common.sh
 export BUILDTARGET=`realpath "$CI_BUILDS_DIR"`
 echo "Cloning 3d model repo"
 git clone "${KICAD_MODELS_REPO}" "$BUILDTARGET/models" --branch master
-cd 3d-model-generators
+cd src/generators
 echo "/generate_changed_models.py -p ${BASE_SHA} -c ${TARGET_SHA} -o ${BUILDTARGET}/models -i -v"
 `dirname $0`/generate_changed_models.py -p "${BASE_SHA}" -c "${TARGET_SHA}" -o "${BUILDTARGET}/models" -i -v
 export branchname="gen-mr-${CI_MERGE_REQUEST_IID}"
