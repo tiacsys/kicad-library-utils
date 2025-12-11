@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import argparse
+import importlib.util
 import os
 import subprocess
+import sys
 import tempfile
-
-from generators.tools.spec.compare_specs import compare_specs_in_files
 
 
 def emit_changed_generator_invocations(
@@ -20,6 +20,16 @@ def emit_changed_generator_invocations(
             .strip()
             .decode("utf-8")
         )
+
+        # Load the module "compare_spec" from the "footprint-generator" repo:
+        sys.path.insert(0, basedir + "/src")
+        module_path = basedir + "/src/generators/tools/spec/compare_specs.py"
+        spec = importlib.util.spec_from_file_location("compare_specs", module_path)
+        assert spec is not None
+        compare_spec = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(compare_spec)
+
         changed_files = set(
             subprocess.check_output(
                 f"git diff-tree --diff-filter=M --no-commit-id --oneline --name-only -r {prev_hash} {cur_hash}",
@@ -40,7 +50,7 @@ def emit_changed_generator_invocations(
                 genname = os.path.dirname(i).split("/", 1)[1]
                 if verbose:
                     print(f"Using file: {i}")
-                diff = compare_specs_in_files(
+                diff = compare_spec.compare_specs_in_files(
                     file_new=os.path.join(basedir, i),
                     file_old=os.path.join(tmpdirname, i),
                 )
