@@ -4,7 +4,7 @@ import os
 import subprocess
 import tempfile
 
-from yaml_diff import compare_yamls
+from generators.tools.spec.compare_specs import compare_specs_in_files
 
 
 def emit_changed_generator_invocations(
@@ -32,27 +32,39 @@ def emit_changed_generator_invocations(
         if verbose:
             print(f"Modified files: {list(changed_files)}")
         subprocess.run(
-            f"git --work-tree={tmpdirname} checkout {prev_hash} -- .", shell=True
+            f"git --work-tree={tmpdirname} checkout {prev_hash} -- data", shell=True
         )
-        invocations = []
+        invocations: list[str] = []
         for i in changed_files:
             if i.endswith(".yaml") and "data" in i:
-                genname = os.path.dirname(i)
+                genname = os.path.dirname(i).split("/", 1)[1]
                 if verbose:
                     print(f"Using file: {i}")
-                diff = compare_yamls(
-                    os.path.join(tmpdirname, i), os.path.join(basedir, i)
+                diff = compare_specs_in_files(
+                    file_new=os.path.join(basedir, i),
+                    file_old=os.path.join(tmpdirname, i),
                 )
-                if diff is not None:
-                    added, changed, deleted = diff
+                if diff.modified_ids or diff.new_ids or diff.deleted_ids:
                     if verbose:
-                        print(
-                            f"Compare output: \n  Added: {added}\n  Changed: {changed}\n  Deleted: {deleted}"
-                        )
-                    for part in added.union(changed):
-                        invocations.append(
-                            f"./generate.py -g {genname} -p {part}{extra_params}"
-                        )
+                        print("Compare output:")
+                        if diff.new_ids:
+                            print("Added:")
+                            for id in diff.new_ids:
+                                print("  " + id)
+                        if diff.new_ids:
+                            print("Changed:")
+                            for id in diff.modified_ids:
+                                print("  " + id)
+                        if diff.new_ids:
+                            print("Deleted:")
+                            for id in diff.deleted_ids:
+                                print("  " + id)
+                    ids_to_regenerate = diff.new_ids + diff.modified_ids
+                    invocation = (
+                        f"python generate.py -g {genname} "
+                        f"-p {' '.join(ids_to_regenerate)}{extra_params}"
+                    )
+                    invocations.append(invocation)
             else:
                 if verbose:
                     print(f"Skipped file: {i}")
@@ -92,7 +104,7 @@ if __name__ == "__main__":
     if args.verbose:
         print(f"Found {len(invocations)} generator invocations.")
     for i in invocations:
-        command = f"{i} -m {os.path.realpath(args.output)}"
+        command = f"{i} -m {os.path.realpath(args.output)} --export-vrml"
 
         if args.isolated:
             command = f'env -i HOME="$HOME" bash -l -c "{command}"'
