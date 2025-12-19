@@ -32,7 +32,7 @@ def emit_changed_generator_invocations(
 
         changed_files = set(
             subprocess.check_output(
-                f"git diff-tree --diff-filter=M --no-commit-id --oneline --name-only -r {prev_hash} {cur_hash}",
+                f"git diff-tree --diff-filter=ADM --no-commit-id --oneline --name-only -r {prev_hash} {cur_hash}",
                 shell=True,
             )
             .decode("utf-8")
