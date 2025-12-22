@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 
 def emit_changed_generator_invocations(
@@ -39,45 +40,47 @@ def emit_changed_generator_invocations(
             .split("\n")
         )
         changed_files.remove("")
+        changed_generators: set[str] = {
+            os.path.dirname(g).split("/", 1)[1]
+            for g in changed_files
+            if g.startswith("data")
+        }
         if verbose:
             print(f"Modified files: {list(changed_files)}")
+            print(f"Affected generators: {list(changed_generators)}")
         subprocess.run(
             f"git --work-tree={tmpdirname} checkout {prev_hash} -- data", shell=True
         )
         invocations: list[str] = []
-        for i in changed_files:
-            if i.endswith(".yaml") and "data" in i:
-                genname = os.path.dirname(i).split("/", 1)[1]
+        for g in changed_generators:
+            if verbose:
+                print(f"Checking changes for generator: {g}")
+            diff = compare_spec.compare_specs_of_generator(
+                generator_name=g,
+                folder_new=Path(basedir) / "data",
+                folder_old=Path(tmpdirname) / "data",
+            )
+            if diff.modified_ids or diff.new_ids or diff.deleted_ids:
                 if verbose:
-                    print(f"Using file: {i}")
-                diff = compare_spec.compare_specs_in_files(
-                    file_new=os.path.join(basedir, i),
-                    file_old=os.path.join(tmpdirname, i),
+                    print("Compare output:")
+                    if diff.new_ids:
+                        print("Added:")
+                        for id in diff.new_ids:
+                            print("  " + id)
+                    if diff.new_ids:
+                        print("Changed:")
+                        for id in diff.modified_ids:
+                            print("  " + id)
+                    if diff.new_ids:
+                        print("Deleted:")
+                        for id in diff.deleted_ids:
+                            print("  " + id)
+                ids_to_regenerate = diff.new_ids + diff.modified_ids
+                invocation = (
+                    f"python generate.py -g {g} "
+                    f"-p {' '.join(ids_to_regenerate)}{extra_params}"
                 )
-                if diff.modified_ids or diff.new_ids or diff.deleted_ids:
-                    if verbose:
-                        print("Compare output:")
-                        if diff.new_ids:
-                            print("Added:")
-                            for id in diff.new_ids:
-                                print("  " + id)
-                        if diff.new_ids:
-                            print("Changed:")
-                            for id in diff.modified_ids:
-                                print("  " + id)
-                        if diff.new_ids:
-                            print("Deleted:")
-                            for id in diff.deleted_ids:
-                                print("  " + id)
-                    ids_to_regenerate = diff.new_ids + diff.modified_ids
-                    invocation = (
-                        f"python generate.py -g {genname} "
-                        f"-p {' '.join(ids_to_regenerate)}{extra_params}"
-                    )
-                    invocations.append(invocation)
-            else:
-                if verbose:
-                    print(f"Skipped file: {i}")
+                invocations.append(invocation)
         return invocations
 
 
