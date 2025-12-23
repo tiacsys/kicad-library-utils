@@ -60,22 +60,24 @@ def emit_changed_generator_invocations(
                 folder_new=Path(basedir) / "data",
                 folder_old=Path(tmpdirname) / "data",
             )
-            if diff.modified_ids or diff.new_ids:
-                if verbose:
-                    print("Compare output:")
-                    if diff.new_ids:
-                        print("Added:")
-                        for id in diff.new_ids:
-                            print("  " + id)
-                    if diff.new_ids:
-                        print("Changed:")
-                        for id in diff.modified_ids:
-                            print("  " + id)
-                    if diff.new_ids:
-                        print("Deleted:")
-                        for id in diff.deleted_ids:
-                            print("  " + id)
-                ids_to_regenerate = diff.new_ids + diff.modified_ids
+            if verbose:
+                print("Compare output:")
+                if diff.new_ids:
+                    print(f"{len(diff.modified_ids)} added definitions:")
+                    for id in diff.new_ids:
+                        print("  " + id)
+                if diff.modified_ids:
+                    print(f"{len(diff.modified_ids)} modified definitions:")
+                    for id in diff.modified_ids:
+                        print("  " + id)
+                if diff.deleted_ids:
+                    print(f"{len(diff.deleted_ids)} deleted definitions:")
+                    for id in diff.deleted_ids:
+                        print("  " + id)
+                if diff.identical_ids:
+                    print(f"{len(diff.identical_ids)} identical definitions.")
+            ids_to_regenerate = diff.new_ids + diff.modified_ids
+            if ids_to_regenerate:
                 invocation = (
                     f"python generate.py -g {g} "
                     f"-p {' '.join(ids_to_regenerate)}{extra_params}"
