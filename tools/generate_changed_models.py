@@ -60,7 +60,7 @@ def emit_changed_generator_invocations(
                 folder_new=Path(basedir) / "data",
                 folder_old=Path(tmpdirname) / "data",
             )
-            if diff.modified_ids or diff.new_ids or diff.deleted_ids:
+            if diff.modified_ids or diff.new_ids:
                 if verbose:
                     print("Compare output:")
                     if diff.new_ids:
