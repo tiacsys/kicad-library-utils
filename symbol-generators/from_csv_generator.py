@@ -23,148 +23,201 @@ from pathlib import Path
 
 from kicad_sym import AltFunction, KicadLibrary, KicadSymbol, Pin, Rectangle, mil_to_mm
 
+# Parser wide constants
 CHAR_WIDTH_GUESSTIMATE = 50
 PIN_NAME_LIMIT = 12
 
-# parse cmdline parameters
-parser = argparse.ArgumentParser(
-    prog="from_csv_generator.py", description="Generates KiCad Symbols from CSVs."
-)
-parser.add_argument("filename")
-parser.add_argument("-o", "--output")
-parser.add_argument("--split-alt-pinnames", type=int, dest="split")
-parser.add_argument("--min-aspect-ratio", type=float, dest="min_aspect_ratio")
+# function definitions used by this parser:
 
-args = parser.parse_args()
 
 # parse input CSV
+def parse_csv(filename, split_pin_names):
+    """Parses the given CSV file into a list of pins and metadata.
 
-metadata = {}
-in_metadata_section = True
+    Parameters:
+        filename (string): The path to the CSV file to parse.
+        split_pin_names (int): If and how often to split pin names into alt names by '/'.
 
-pin_headers = None
-pin_data = []
+    Returns:
+        tuple: A tuple with the symbol metadata as a dict as the first element
+               and a list of pin data as the second element.
+    """
+    metadata = {}
+    in_metadata_section = True
 
-with open(args.filename, newline="") as csvfile:
-    reader = csv.reader(
-        filter(lambda row: not row.startswith("# "), csvfile)
-    )  # filter out lines with comments
-    for row in reader:
-        if in_metadata_section:  # parse metadata
-            if (
-                len(row) == 0 or len(row[0].strip()) == 0
-            ):  # skip from metadata to pin data on first empty line
-                in_metadata_section = False
+    pin_headers = None
+    pin_data = []
 
-                # check required keys
-                required_key_missing = False
-                if "reference" not in metadata.keys():
-                    print('error: key "reference" is missing in the metadata')
-                    required_key_missing = True
-                if "name" not in metadata.keys():
-                    print('error: key "name" is missing in the metadata')
-                    required_key_missing = True
-                if "footprint" not in metadata.keys():
-                    print('warning: key "footprint" is missing in the metadata')
-                if "footprint_filter" not in metadata.keys():
-                    print('warning: key "footprint_filter" is missing in the metadata')
-                if "datasheet" not in metadata.keys():
-                    print('warning: key "datasheet" is missing in the metadata')
-                if "description" not in metadata.keys():
-                    print('warning: key "description" is missing in the metadata')
-                if "keywords" not in metadata.keys():
-                    print('warning: key "keywords" is missing in the metadata')
-                if required_key_missing:
-                    os._exit(1)
+    with open(filename, newline="") as csvfile:
+        reader = csv.reader(
+            filter(lambda row: not row.startswith("# "), csvfile)
+        )  # filter out lines with comments
+        for row in reader:
+            if in_metadata_section:  # parse metadata
+                if (
+                    len(row) == 0 or len(row[0].strip()) == 0
+                ):  # skip from metadata to pin data on first empty line
+                    in_metadata_section = False
 
-                continue
-            else:  # add row to metadata
-                metadata_key = row[0].lower().replace(" ", "_")
-                metadata_value = row[1]
-                if metadata_key not in metadata:
-                    if len(metadata_value) > 0:
-                        metadata[metadata_key] = metadata_value
-                else:
-                    print(
-                        f'error: metadata key "{metadata_key}" defined multiple times',
-                        file=sys.stderr,
-                    )
-                    os._exit(1)
-        else:  # parse pin data
-            if len(row) == 0 or all(
-                map(lambda cell: cell == "", row)
-            ):  # skip empty rows
-                continue
-            elif pin_headers is None:  # treat first pin data row as header names/order
-                pin_headers = list(
-                    map(lambda h: h.lower(), filter(lambda h: len(h) > 0, row))
-                )
-
-                required_key_missing = False
-                if "pin" not in pin_headers:
-                    print('error: key "pin" is missing in the header row')
-                    required_key_missing = True
-                if "name" not in pin_headers:
-                    print('error: key "name" is missing in the header row')
-                    required_key_missing = True
-                if "type" not in pin_headers:
-                    print('error: key "type" is missing in the header row')
-                    required_key_missing = True
-                if "side" not in pin_headers:
-                    print('warning: key "side" is missing in the header row')
-                if required_key_missing:
-                    os._exit(1)
-            else:
-                parsed_pin_data = {}
-
-                for column, header in enumerate(pin_headers):
-                    if column >= len(row):
-                        break
-                    parsed_pin_data[header] = row[column]
-
-                parsed_pin_data["type"] = (
-                    parsed_pin_data["type"].lower().replace(" ", "_")
-                )
-                parsed_pin_data["side"] = (
-                    parsed_pin_data["side"].lower().replace(" ", "_")
-                )
-
-                if args.split is not None:
-                    pin_names = list(map(str.strip, parsed_pin_data["name"].split("/")))
-                    split_index = max(args.split, 1)
-                    parsed_pin_data["name"] = "/".join(pin_names[:split_index])
-                    parsed_pin_data["alt_names"] = pin_names[split_index:]
-                else:
-                    parsed_pin_data["alt_names"] = []
-
-                if len(parsed_pin_data["name"]) > PIN_NAME_LIMIT:
-                    print(
-                        f"warning: pin name '{parsed_pin_data['name']}' is longer than {PIN_NAME_LIMIT} characters"
-                    )
-
-                if parsed_pin_data["pin"] == "":
-                    pin_data.append(parsed_pin_data)
-                else:
-                    for pin_num_str in parsed_pin_data["pin"].split(","):
-                        pin_range_arr = pin_num_str.split("-", maxsplit=1)
-                        pin_range_start = int(pin_range_arr[0].strip())
-                        pin_range_end = (
-                            int(pin_range_arr[1].strip())
-                            if len(pin_range_arr) > 1
-                            else pin_range_start
+                    # check required keys
+                    required_key_missing = False
+                    if "reference" not in metadata.keys():
+                        print('error: key "reference" is missing in the metadata')
+                        required_key_missing = True
+                    if "name" not in metadata.keys():
+                        print('error: key "name" is missing in the metadata')
+                        required_key_missing = True
+                    if "footprint" not in metadata.keys():
+                        print('warning: key "footprint" is missing in the metadata')
+                    if "footprint_filter" not in metadata.keys():
+                        print(
+                            'warning: key "footprint_filter" is missing in the metadata'
                         )
-                        pin_range = range(pin_range_start, pin_range_end + 1)
-                        for pin_num in pin_range:
-                            new_pin = parsed_pin_data.copy()
-                            new_pin["pin"] = str(pin_num)
-                            pin_data.append(new_pin)
+                    if "datasheet" not in metadata.keys():
+                        print('warning: key "datasheet" is missing in the metadata')
+                    if "description" not in metadata.keys():
+                        print('warning: key "description" is missing in the metadata')
+                    if "keywords" not in metadata.keys():
+                        print('warning: key "keywords" is missing in the metadata')
+                    if required_key_missing:
+                        os._exit(1)
+
+                    continue
+                else:  # add row to metadata
+                    metadata_key = row[0].lower().replace(" ", "_")
+                    metadata_value = row[1]
+                    if metadata_key not in metadata:
+                        if len(metadata_value) > 0:
+                            metadata[metadata_key] = metadata_value
+                    else:
+                        print(
+                            f'error: metadata key "{metadata_key}" defined multiple times',
+                            file=sys.stderr,
+                        )
+                        os._exit(1)
+            else:  # parse pin data
+                if len(row) == 0 or all(
+                    map(lambda cell: cell == "", row)
+                ):  # skip empty rows
+                    continue
+                elif (
+                    pin_headers is None
+                ):  # treat first pin data row as header names/order
+                    pin_headers = list(
+                        map(lambda h: h.lower(), filter(lambda h: len(h) > 0, row))
+                    )
+
+                    required_key_missing = False
+                    if "pin" not in pin_headers:
+                        print('error: key "pin" is missing in the header row')
+                        required_key_missing = True
+                    if "name" not in pin_headers:
+                        print('error: key "name" is missing in the header row')
+                        required_key_missing = True
+                    if "type" not in pin_headers:
+                        print('error: key "type" is missing in the header row')
+                        required_key_missing = True
+                    if "side" not in pin_headers:
+                        print('warning: key "side" is missing in the header row')
+                    if required_key_missing:
+                        os._exit(1)
+                else:
+                    parsed_pin_data = {}
+
+                    for column, header in enumerate(pin_headers):
+                        if column >= len(row):
+                            break
+                        parsed_pin_data[header] = row[column]
+
+                    parsed_pin_data["type"] = (
+                        parsed_pin_data["type"].lower().replace(" ", "_")
+                    )
+                    parsed_pin_data["side"] = (
+                        parsed_pin_data["side"].lower().replace(" ", "_")
+                    )
+                    if parsed_pin_data["side"] == "":
+                        parsed_pin_data["side"] = "right"
+
+                    if split_pin_names is not None:
+                        pin_names = list(
+                            map(str.strip, parsed_pin_data["name"].split("/"))
+                        )
+                        split_index = max(split_pin_names, 1)
+                        parsed_pin_data["name"] = "/".join(pin_names[:split_index])
+                        parsed_pin_data["alt_names"] = pin_names[split_index:]
+                    else:
+                        parsed_pin_data["alt_names"] = []
+
+                    if len(parsed_pin_data["name"]) > PIN_NAME_LIMIT:
+                        print(
+                            f"warning: pin name '{parsed_pin_data['name']}' is longer than {PIN_NAME_LIMIT} characters"
+                        )
+
+                    if "unit" in parsed_pin_data:
+                        unit_name = parsed_pin_data["unit"].strip()
+                        parsed_pin_data["unit"] = unit_name
+                    else:
+                        parsed_pin_data["unit"] = ""
+
+                    if "unit" in pin_headers and parsed_pin_data["unit"] == "":
+                        print(
+                            f'warning: no unit set for pin {parsed_pin_data["pin"]} "{parsed_pin_data["name"]}"'
+                        )
+
+                    if parsed_pin_data["pin"] == "":
+                        pin_data.append(parsed_pin_data)
+                    else:
+                        for pin_num_str in parsed_pin_data["pin"].split(","):
+                            pin_range_arr = pin_num_str.split("-", maxsplit=1)
+                            pin_range_start = int(pin_range_arr[0].strip())
+                            pin_range_end = (
+                                int(pin_range_arr[1].strip())
+                                if len(pin_range_arr) > 1
+                                else pin_range_start
+                            )
+                            pin_range = range(pin_range_start, pin_range_end + 1)
+                            for pin_num in pin_range:
+                                new_pin = parsed_pin_data.copy()
+                                new_pin["pin"] = str(pin_num)
+                                pin_data.append(new_pin)
+
+    return (metadata, pin_data)
+
+
+# group pins by unit name
+def group_pins_by_unit(pin_data):
+    """Groups together the given pins by their unit.
+
+    Parameters:
+        pins (list): A list of pin data.
+
+    Returns:
+        dict: A dict mapping for each unit the name of the unit to list of pins on in this unit.
+    """
+    symbol_units = {}
+    for pin in pin_data:
+        if pin["unit"] not in symbol_units:
+            symbol_units[pin["unit"]] = []
+        symbol_units[pin["unit"]].append(pin)
+    return symbol_units
 
 
 # group pins according to side
-pins_left = [pin for pin in pin_data if pin["side"] == "left"]
-pins_right = [pin for pin in pin_data if pin["side"] == "right" or pin["side"] == ""]
-pins_top = [pin for pin in pin_data if pin["side"] == "top"]
-pins_bottom = [pin for pin in pin_data if pin["side"] == "bottom"]
+def group_pins_by_side(pins):
+    """Groups together the given pins by their side.
+
+    Parameters:
+        pins (list): A list of pin data.
+
+    Returns:
+        dict: A dict mapping for each side the name of the side to list of pins on this side.
+    """
+    side_dict = {"top": [], "bottom": [], "left": [], "right": []}
+    for pin in pins:
+        if pin["side"] not in side_dict:
+            side_dict[pin["side"]] = []
+        side_dict[pin["side"]].append(pin)
+    return side_dict
 
 
 def create_pin_stacks(pins):
@@ -194,16 +247,6 @@ def create_pin_stacks(pins):
     return list(map(lambda g: sorted(g, key=lambda p: p["pin"]), pin_stacks.values()))
 
 
-# group pins for each side with the same name together to create pin stacks
-pin_stacks_left = create_pin_stacks(pins_left)
-pin_stacks_right = create_pin_stacks(pins_right)
-pin_stacks_top = create_pin_stacks(pins_top)
-pin_stacks_bottom = create_pin_stacks(pins_bottom)
-
-pin_count_horizontal = max(len(pin_stacks_top), len(pin_stacks_bottom))
-pin_count_vertical = max(len(pin_stacks_left), len(pin_stacks_right))
-
-
 def pos_for_pin(pin_count, index, direction=1):
     """Calculates the position for the pin at the given index.
 
@@ -230,52 +273,63 @@ def pin_label_width(pin):
     return (len(pin["name"]) + 1) * CHAR_WIDTH_GUESSTIMATE
 
 
-# Calculate base bounding box size
-total_horizontal_pin_width = (pin_count_horizontal + 1) * 100
-max_pin_name_length_left = max(
-    (pin_label_width(pin) for pin, *others in pin_stacks_left), default=0
-)
-max_pin_name_length_right = max(
-    (pin_label_width(pin) for pin, *others in pin_stacks_right), default=0
-)
+def calculate_base_bounding_box_size(pin_stacks):
+    """Calculates the base bounding box containing the given pin stacks.
 
-bounding_box_width = (
-    max(
-        total_horizontal_pin_width,
-        max_pin_name_length_left,
-        max_pin_name_length_right,
-        200,
+    Parameters:
+        pin_stacks (list): The pin stacks to calculate the base bounding box for.
+
+    Returns:
+        tuple: The base bounding box as a tuple of width, height.
+    """
+
+    pin_count_horizontal = max(len(pin_stacks["top"]), len(pin_stacks["bottom"]))
+    pin_count_vertical = max(len(pin_stacks["left"]), len(pin_stacks["right"]))
+
+    total_horizontal_pin_width = (pin_count_horizontal + 1) * 100
+    max_pin_name_length_left = max(
+        (pin_label_width(pin) for pin, *others in pin_stacks["left"]), default=0
     )
-    // 200
-    + 1
-) * 200
-
-
-total_vertical_pin_width = (pin_count_vertical + 1) * 100
-max_pin_name_length_top = max(
-    (pin_label_width(pin) for pin, *others in pin_stacks_top), default=0
-)
-max_pin_name_length_bottom = max(
-    (pin_label_width(pin) for pin, *others in pin_stacks_bottom), default=0
-)
-
-bounding_box_height = (
-    max(
-        total_vertical_pin_width,
-        max_pin_name_length_top,
-        max_pin_name_length_bottom,
-        200,
+    max_pin_name_length_right = max(
+        (pin_label_width(pin) for pin, *others in pin_stacks["right"]), default=0
     )
-    // 200
-    + 1
-) * 200
 
-# Calculate pin length according to KLC S4.1
-max_pin_number_length = max(list(map(lambda p: len(p["pin"]), pin_data)))
-pin_length = min(max(100, max_pin_number_length * 50), 300)
+    bounding_box_width = (
+        max(
+            total_horizontal_pin_width,
+            max_pin_name_length_left,
+            max_pin_name_length_right,
+            200,
+        )
+        // 200
+        + 1
+    ) * 200
+
+    total_vertical_pin_width = (pin_count_vertical + 1) * 100
+    max_pin_name_length_top = max(
+        (pin_label_width(pin) for pin, *others in pin_stacks["top"]), default=0
+    )
+    max_pin_name_length_bottom = max(
+        (pin_label_width(pin) for pin, *others in pin_stacks["bottom"]), default=0
+    )
+
+    bounding_box_height = (
+        max(
+            total_vertical_pin_width,
+            max_pin_name_length_top,
+            max_pin_name_length_bottom,
+            200,
+        )
+        // 200
+        + 1
+    ) * 200
+
+    return (bounding_box_width, bounding_box_height)
 
 
-def check_label_intersection(pin_stacks, pin_stacks_opposite, b_height, b_width):
+def check_label_intersection(
+    pin_stacks, pin_stacks_opposite, b_height, b_width, pin_length
+):
     """Checks if the labels of the given pin_stacks intersect with the labels of the opposite side.
 
     Parameters:
@@ -314,91 +368,78 @@ def check_label_intersection(pin_stacks, pin_stacks_opposite, b_height, b_width)
     return False
 
 
-# Extend bounding box size until no pin labels intersect
-intersect_top = True
-intersect_bottom = True
-intersect_left = True
-intersect_right = True
+def extend_bounding_box(pin_stacks, bounding_box, pin_length, min_aspect_ratio):
+    """Extends a given bounding box until no pin stack labels overlap anymore.
 
-while intersect_top or intersect_bottom or intersect_left or intersect_right:
+    Parameters:
+        pin_stacks (list): The list of pin stacks to check and remove intersections for.
+        bounding_box (tuple): A tuple of the bounding box width and height.
+        pin_length (int): The pin length according to KLC S4.1 for this symbol.
+        min_aspect_ratio (float): The min aspect ratio to enforce while calculating.
 
-    intersect_top = check_label_intersection(
-        pin_stacks_top, pin_stacks_bottom, bounding_box_height, bounding_box_width
-    )
+    Returns:
+        tuple: The extended bounding box as a tuple of width and height.
+    """
+    bounding_box_width, bounding_box_height = bounding_box
 
-    intersect_bottom = check_label_intersection(
-        pin_stacks_bottom, pin_stacks_top, bounding_box_height, bounding_box_width
-    )
+    # Extend bounding box size until no pin labels intersect
+    intersect_top = True
+    intersect_bottom = True
+    intersect_left = True
+    intersect_right = True
 
-    if intersect_top or intersect_bottom:
-        bounding_box_height += 200
+    while intersect_top or intersect_bottom or intersect_left or intersect_right:
 
-    intersect_left = check_label_intersection(
-        pin_stacks_left, pin_stacks_right, bounding_box_width, bounding_box_height
-    )
+        intersect_top = check_label_intersection(
+            pin_stacks["top"],
+            pin_stacks["bottom"],
+            bounding_box_height,
+            bounding_box_width,
+            pin_length,
+        )
 
-    intersect_right = check_label_intersection(
-        pin_stacks_right, pin_stacks_left, bounding_box_width, bounding_box_height
-    )
+        intersect_bottom = check_label_intersection(
+            pin_stacks["bottom"],
+            pin_stacks["top"],
+            bounding_box_height,
+            bounding_box_width,
+            pin_length,
+        )
 
-    if intersect_left or intersect_right:
-        bounding_box_width += 200
+        if intersect_top or intersect_bottom:
+            bounding_box_height += 200
 
-if (
-    args.min_aspect_ratio is not None
-    and bounding_box_width / bounding_box_height < args.min_aspect_ratio
-):
-    bounding_box_width = int(
-        math.ceil(bounding_box_height * args.min_aspect_ratio / 200.0) * 200
-    )
+        intersect_left = check_label_intersection(
+            pin_stacks["left"],
+            pin_stacks["right"],
+            bounding_box_width,
+            bounding_box_height,
+            pin_length,
+        )
 
-# generate kicad symbol
+        intersect_right = check_label_intersection(
+            pin_stacks["right"],
+            pin_stacks["left"],
+            bounding_box_width,
+            bounding_box_height,
+            pin_length,
+        )
 
-libname = Path(args.filename).stem
-filename = libname + ".kicad_sym"
+        if intersect_left or intersect_right:
+            bounding_box_width += 200
 
-if args.output:
-    filename = args.output
-    libname = Path(args.output).stem
+    if (
+        min_aspect_ratio is not None
+        and bounding_box_width / bounding_box_height < min_aspect_ratio
+    ):
+        bounding_box_width = int(
+            math.ceil(bounding_box_height * min_aspect_ratio / 200.0) * 200
+        )
 
-new_symbol = KicadSymbol.new(
-    metadata.get("name", ""),
-    libname,
-    reference=metadata.get("reference", ""),
-    footprint=metadata.get("footprint", ""),
-    datasheet=metadata.get("datasheet", ""),
-    keywords=metadata.get("keywords", ""),
-    description=metadata.get("description", ""),
-    fp_filters=metadata.get("footprint_filter", ""),
-)
-
-lib = KicadLibrary(filename)
-lib.symbols.append(new_symbol)
-
-# add symbol metadata
-new_symbol.add_default_properties()
-
-label_reference = new_symbol.get_property("Reference")
-label_reference.posx = mil_to_mm(-bounding_box_width / 2)
-label_reference.posy = mil_to_mm(bounding_box_height / 2 + 100)
-
-label_value = new_symbol.get_property("Value")
-label_value.posx = mil_to_mm(bounding_box_width / 2)
-label_value.posy = mil_to_mm(bounding_box_height / 2 + 100)
-
-label_datasheet = new_symbol.get_property("Datasheet")
-label_datasheet.posx = mil_to_mm(0)
-label_datasheet.posy = mil_to_mm(-bounding_box_height / 2 - 600)
-
-label_description = new_symbol.get_property("Description")
-label_description.posx = mil_to_mm(0)
-label_description.posy = mil_to_mm(-bounding_box_height / 2 - 800)
-label_description.effects.v_justify = "top"
-
-# add symbol pins
+    return (bounding_box_width, bounding_box_height)
 
 
-def generate_pins(pin_stacks, posx_func, posy_func, rotation):
+def generate_pins(pin_stacks, posx_func, posy_func, rotation, pin_length, unit_index):
     """Adds the given pin stacks to the new symbol using the given functions and rotation to determine pin positions.
 
     Parameters:
@@ -443,49 +484,170 @@ def generate_pins(pin_stacks, posx_func, posy_func, rotation):
                             lambda n: AltFunction(name=n, etype=etype), pin["alt_names"]
                         )
                     ),
+                    unit=unit_index,
                 )
             )
 
 
-# generate pins for each side
-generate_pins(
-    pin_stacks_left,
-    lambda i: -bounding_box_width / 2 - pin_length,
-    lambda i: pos_for_pin(len(pin_stacks_left), i, -1),
-    0,
-)
-
-generate_pins(
-    pin_stacks_right,
-    lambda i: bounding_box_width / 2 + pin_length,
-    lambda i: pos_for_pin(len(pin_stacks_right), i, -1),
-    180,
-)
-
-generate_pins(
-    pin_stacks_top,
-    lambda i: pos_for_pin(len(pin_stacks_top), i, 1),
-    lambda i: bounding_box_height / 2 + pin_length,
-    270,
-)
-
-generate_pins(
-    pin_stacks_bottom,
-    lambda i: pos_for_pin(len(pin_stacks_bottom), i, 1),
-    lambda i: -bounding_box_height / 2 - pin_length,
-    90,
-)
-
-# add bounding box
-new_symbol.rectangles.append(
-    Rectangle(
-        mil_to_mm(bounding_box_width / 2),
-        mil_to_mm(bounding_box_height / 2),
-        mil_to_mm(-bounding_box_width / 2),
-        mil_to_mm(-bounding_box_height / 2),
-        stroke_width=mil_to_mm(10),
+# the actual main function of the parser when invoked as a script:
+if __name__ == "__main__":
+    # parse cmdline parameters
+    parser = argparse.ArgumentParser(
+        prog="from_csv_generator.py", description="Generates KiCad Symbols from CSVs."
     )
-)
+    parser.add_argument("input_csv_file", help="The CSV file to generate a symbol for.")
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Where to output the generated symbol to. If not given the path of the"
+        + " input CSV with the extension .kicad_sym is used.",
+    )
+    parser.add_argument(
+        "--split-alt-pinnames",
+        type=int,
+        dest="split",
+        help="If given split pin names on '/' into alt pin names."
+        + " An integer can be given to ignore the first n '/'."
+        + " The default is to do no splitting.",
+    )
+    parser.add_argument(
+        "--min-aspect-ratio",
+        type=float,
+        dest="min_aspect_ratio",
+        help="The minimum aspect ratio to enforce for the generated symbol as width / height.",
+    )
 
-# save library with symbol
-lib.write()
+    cliArgs = parser.parse_args()
+
+    # parse csv and get units
+    metadata, pin_data = parse_csv(cliArgs.input_csv_file, cliArgs.split)
+    symbol_units_dict = group_pins_by_unit(pin_data)
+    unit_names_list = sorted(symbol_units_dict.keys())
+    unit_names_dict = {(i + 1): name for i, name in enumerate(unit_names_list)}
+
+    # generate kicad symbol
+
+    libname = Path(cliArgs.input_csv_file).stem
+    filename = libname + ".kicad_sym"
+
+    if cliArgs.output:
+        filename = cliArgs.output
+        libname = Path(cliArgs.output).stem
+
+    new_symbol = KicadSymbol.new(
+        metadata.get("name", ""),
+        libname,
+        reference=metadata.get("reference", ""),
+        footprint=metadata.get("footprint", ""),
+        datasheet=metadata.get("datasheet", ""),
+        keywords=metadata.get("keywords", ""),
+        description=metadata.get("description", ""),
+        fp_filters=metadata.get("footprint_filter", ""),
+        unit_names=unit_names_dict,
+    )
+
+    new_symbol.add_default_properties()
+    new_symbol.unit_count = len(symbol_units_dict.keys())
+
+    max_bounding_box_width = 0
+    max_bounding_box_height = 0
+
+    # for each unit add pins and bounding box rectangle
+    for unit_index, unit_name in unit_names_dict.items():
+        pins = symbol_units_dict[unit_name]
+        # group pins into stacks
+        pin_stacks = {
+            side: create_pin_stacks(pins)
+            for side, pins in group_pins_by_side(pins).items()
+        }
+
+        # get base bounding box
+        base_bounding_box = calculate_base_bounding_box_size(pin_stacks)
+
+        # Calculate pin length according to KLC S4.1
+        max_pin_number_length = max(list(map(lambda p: len(p["pin"]), pin_data)))
+        pin_length = min(max(100, max_pin_number_length * 50), 300)
+
+        # extend bounding box to prevent pin label intersections
+        bounding_box = extend_bounding_box(
+            pin_stacks, base_bounding_box, pin_length, cliArgs.min_aspect_ratio
+        )
+        bounding_box_width, bounding_box_height = bounding_box
+
+        if bounding_box_width > max_bounding_box_width:
+            max_bounding_box_width = bounding_box_width
+        if bounding_box_height > max_bounding_box_height:
+            max_bounding_box_height = bounding_box_height
+
+        # generate pins for each side
+        generate_pins(
+            pin_stacks["left"],
+            lambda i: -bounding_box_width / 2 - pin_length,
+            lambda i: pos_for_pin(len(pin_stacks["left"]), i, -1),
+            0,
+            pin_length,
+            unit_index,
+        )
+
+        generate_pins(
+            pin_stacks["right"],
+            lambda i: bounding_box_width / 2 + pin_length,
+            lambda i: pos_for_pin(len(pin_stacks["right"]), i, -1),
+            180,
+            pin_length,
+            unit_index,
+        )
+
+        generate_pins(
+            pin_stacks["top"],
+            lambda i: pos_for_pin(len(pin_stacks["top"]), i, 1),
+            lambda i: bounding_box_height / 2 + pin_length,
+            270,
+            pin_length,
+            unit_index,
+        )
+
+        generate_pins(
+            pin_stacks["bottom"],
+            lambda i: pos_for_pin(len(pin_stacks["bottom"]), i, 1),
+            lambda i: -bounding_box_height / 2 - pin_length,
+            90,
+            pin_length,
+            unit_index,
+        )
+
+        # add bounding box rectangle
+        new_symbol.rectangles.append(
+            Rectangle(
+                mil_to_mm(bounding_box_width / 2),
+                mil_to_mm(bounding_box_height / 2),
+                mil_to_mm(-bounding_box_width / 2),
+                mil_to_mm(-bounding_box_height / 2),
+                stroke_width=mil_to_mm(10),
+                unit=unit_index,
+            )
+        )
+
+    # add symbol metadata
+    label_reference = new_symbol.get_property("Reference")
+    label_reference.posx = mil_to_mm(-max_bounding_box_width / 2)
+    label_reference.posy = mil_to_mm(max_bounding_box_height / 2 + 100)
+
+    label_value = new_symbol.get_property("Value")
+    label_value.posx = mil_to_mm(max_bounding_box_width / 2)
+    label_value.posy = mil_to_mm(max_bounding_box_height / 2 + 100)
+
+    label_datasheet = new_symbol.get_property("Datasheet")
+    label_datasheet.posx = mil_to_mm(0)
+    label_datasheet.posy = mil_to_mm(-max_bounding_box_height / 2 - 600)
+
+    label_description = new_symbol.get_property("Description")
+    label_description.posx = mil_to_mm(0)
+    label_description.posy = mil_to_mm(-max_bounding_box_height / 2 - 800)
+    label_description.effects.v_justify = "top"
+
+    # save library with symbol
+    lib = KicadLibrary(filename)
+    lib.symbols.append(new_symbol)
+
+    lib.write()
