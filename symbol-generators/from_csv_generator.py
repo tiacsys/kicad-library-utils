@@ -17,6 +17,7 @@ if common not in sys.path:
 
 import argparse
 import csv
+import logging
 import math
 from collections import OrderedDict, defaultdict
 from collections.abc import Callable
@@ -25,6 +26,9 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 from kicad_sym import AltFunction, KicadLibrary, KicadSymbol, Pin, Rectangle, mil_to_mm
+
+# logger to use to print errors/warnings etc.
+logger = logging.getLogger("kicad_utils.from_csv_generator")
 
 # Parser wide constants
 CHAR_WIDTH_GUESSTIMATE = 50
@@ -121,8 +125,8 @@ class PinData:
             self.alt_names = []
 
         if len(self.name) > PIN_NAME_LIMIT:
-            print(
-                f"warning: pin name '{self.name}' is longer than {PIN_NAME_LIMIT} characters"
+            logger.warning(
+                f"pin name '{self.name}' is longer than {PIN_NAME_LIMIT} characters"
             )
 
         self.side = PinData.Side(data["side"].lower().replace(" ", "_"))
@@ -183,24 +187,24 @@ def parse_csv(
                     try:
                         metadata = Metadata(metadata_dict)
                         if not metadata.footprint:
-                            print('warning: key "footprint" is missing in the metadata')
+                            logger.warning('key "footprint" is missing in the metadata')
                         if not metadata.footprint_filter:
-                            print(
-                                'warning: key "footprint_filter" is missing in the metadata'
+                            logger.warning(
+                                'key "footprint_filter" is missing in the metadata'
                             )
                         if not metadata.datasheet:
-                            print('warning: key "datasheet" is missing in the metadata')
+                            logger.warning('key "datasheet" is missing in the metadata')
                         if not metadata.description:
-                            print(
-                                'warning: key "description" is missing in the metadata'
+                            logger.warning(
+                                'key "description" is missing in the metadata'
                             )
                         if not metadata.keywords:
-                            print('warning: key "keywords" is missing in the metadata')
+                            logger.warning('key "keywords" is missing in the metadata')
                     except ValueError as e:
                         if "reference" not in metadata_dict.keys():
-                            print('error: key "reference" is missing in the metadata')
+                            logger.error('key "reference" is missing in the metadata')
                         if "name" not in metadata_dict.keys():
-                            print('error: key "name" is missing in the metadata')
+                            logger.error('key "name" is missing in the metadata')
                         raise e
 
                     continue
@@ -228,16 +232,16 @@ def parse_csv(
 
                     required_key_missing = False
                     if "pin" not in pin_headers:
-                        print('error: key "pin" is missing in the header row')
+                        logger.error('key "pin" is missing in the header row')
                         required_key_missing = True
                     if "name" not in pin_headers:
-                        print('error: key "name" is missing in the header row')
+                        logger.error('key "name" is missing in the header row')
                         required_key_missing = True
                     if "type" not in pin_headers:
-                        print('error: key "type" is missing in the header row')
+                        logger.error('key "type" is missing in the header row')
                         required_key_missing = True
                     if "side" not in pin_headers:
-                        print('warning: key "side" is missing in the header row')
+                        logger.warning('key "side" is missing in the header row')
                     if required_key_missing:
                         raise ValueError(
                             "A required key is missing in the CSV pin header row."
@@ -251,8 +255,8 @@ def parse_csv(
                         parsed_pin_data[header] = row[column]
 
                     if "unit" in pin_headers and parsed_pin_data["unit"].strip() == "":
-                        print(
-                            f'warning: no unit set for pin {parsed_pin_data["pin"]} "{parsed_pin_data["name"]}"'
+                        logger.warning(
+                            f'no unit set for pin {parsed_pin_data["pin"]} "{parsed_pin_data["name"]}"'
                         )
 
                     if parsed_pin_data["pin"].strip() == "":
@@ -634,11 +638,14 @@ if __name__ == "__main__":
 
     cliArgs = parser.parse_args()
 
+    # configure logging
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
     # parse csv and get units
     try:
         metadata, pin_data = parse_csv(cliArgs.input_csv_file, cliArgs.split)
     except ValueError:
-        print("error: can not parse input CSV. Is it properly formatted?")
+        logger.error("Can not parse input CSV. Is it properly formatted?")
         os._exit(1)
 
     symbol_units_dict = group_pins_by_unit(pin_data)
