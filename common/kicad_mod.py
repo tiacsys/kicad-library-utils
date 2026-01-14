@@ -1497,10 +1497,7 @@ class KicadMod:
 
         se.endGroup(newline=True)
 
-    def save(self, filename: Optional[str] = None):
-        if not filename:
-            filename = self.filename
-
+    def createSexprBuilder(self) -> sexpr.SexprBuilder:
         se = sexpr.SexprBuilder("footprint")
 
         # Hex value of current epoch timestamp (in seconds)
@@ -1600,6 +1597,13 @@ class KicadMod:
             self._formatModel(model, se)
 
         se.endGroup(True)
+        return se
+
+    def save(self, filename: Optional[str] = None):
+        if not filename:
+            filename = self.filename
+
+        se = self.createSexprBuilder()
 
         with open(filename, "w", newline="\n") as f:
             f.write(se.output)
