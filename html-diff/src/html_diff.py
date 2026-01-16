@@ -689,6 +689,8 @@ class HTMLDiff:
             self.diff_index.append((diff_name(new_file), created, changed, deleted))
             files.append(new_file)
 
+        os.makedirs(self.screenshot_dir / new.name, exist_ok=True)
+
         # Render reference SVGs all at once
         # This is a lot faster than rendering them one by one, even if we end up over-rendering
         renderer = BatchRenderFootprints(new, self.screenshot_dir / new.name)
