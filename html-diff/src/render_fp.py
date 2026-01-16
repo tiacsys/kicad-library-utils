@@ -227,6 +227,37 @@ def render_arc(arc, **style):
     yield elem_bbox, Tag("path", **style, d=d)
 
 
+def render_point(point):
+
+    stroke_width = point["size"] / 20
+    circle_rad = point["size"] / 4
+    crosshair_length = point["size"] / 2
+
+    style = {
+        "class": layerclass(point["layer"], "stroke"),
+        "stroke-width": stroke_width,
+    }
+
+    x, y = point["pos"]["x"], point["pos"]["y"]
+    yield (x, y, x, y), Tag("circle", **style, cx=x, cy=y, r=circle_rad)
+
+    yield _render_polygon_by_points(
+        [
+            {"x": x - crosshair_length, "y": y - crosshair_length},
+            {"x": x + crosshair_length, "y": y + crosshair_length},
+        ],
+        **style,
+    )
+
+    yield _render_polygon_by_points(
+        [
+            {"x": x - crosshair_length, "y": y + crosshair_length},
+            {"x": x + crosshair_length, "y": y - crosshair_length},
+        ],
+        **style,
+    )
+
+
 def render_pad_circle(pad, layer, **style):
     x, y = pad["pos"]["x"], pad["pos"]["y"]
     r = pad["size"]["x"] / 2
@@ -395,6 +426,10 @@ def _render_mod_internal(mod):
 
             for bbox, tag in render_drill(pad, **{"class": f"l-{layer}-f"}):
                 yield layer, bbox, tag
+
+    for point in mod.points:
+        for bbox, tag in render_point(point):
+            yield point["layer"], bbox, tag
 
     for zone in mod.zones:
 

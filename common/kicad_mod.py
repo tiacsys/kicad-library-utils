@@ -144,6 +144,9 @@ class KicadMod:
         # arcs
         self.arcs = self._getArcs()
 
+        # PCB points
+        self.points = self._getPoints()
+
         # pads
         self.pads = self._getPads()
 
@@ -530,6 +533,21 @@ class KicadMod:
                 arcs.append(arc_dict)
 
         return arcs
+
+    def _getPoints(self) -> List[Dict[str, Any]]:
+        pts = []
+        for pt in self._getArray(self.sexpr_data, "point"):
+            point_dict = {}
+
+            point_dict["layer"] = self._getArray(pt, "layer")[0][1]
+            point_dict["size"] = self._getArray(pt, "size")[0][1]
+
+            at = self._getArray(pt, "at")[0]
+            point_dict["pos"] = {"x": at[1], "y": at[2]}
+
+            pts.append(point_dict)
+
+        return pts
 
     def _getPads(self) -> List[Dict[str, Any]]:
         pads = []
