@@ -1344,7 +1344,7 @@ class KicadLibrary(KicadSymbolBase):
     filename: str
     symbols: list[KicadSymbol] = field(default_factory=list)
     generator: str = "kicad-library-utils"
-    version: str = "20241209"
+    version: str = "20251024"
 
     def write(self) -> None:
         with open(self.filename, "w", encoding="utf-8") as lib_file:
@@ -1432,9 +1432,9 @@ class KicadLibrary(KicadSymbolBase):
         # to ensure that this parser is only used with v6 files. Any other version will most likely
         # not work as expected. So just don't load them at all.
         version = _get_value_of(sexpr_data, "version")
-        if str(version) != "20241209":
+        if str(version) != KicadLibrary.version:
             raise KicadFileFormatError(
-                f'Version of symbol file is "{version}", not "20241209"'
+                f'Version of symbol file is "{version}", not "{KicadLibrary.version}"'
             )
         library.generator = _get_value_of(sexpr_data, "generator")
 
