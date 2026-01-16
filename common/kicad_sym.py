@@ -212,7 +212,6 @@ class TextEffect(KicadSymbolBase):
     sizey: float
     is_italic: bool = False
     is_bold: bool = False
-    is_hidden: bool = False
     is_mirrored: bool = False
     h_justify: str = "center"
     v_justify: str = "center"
@@ -244,9 +243,6 @@ class TextEffect(KicadSymbolBase):
         if len(justify) > 1:
             sx.append(justify)
 
-        if self.is_hidden:
-            sx.append(["hide", "yes"])
-
         return sx
 
     @classmethod
@@ -257,10 +253,6 @@ class TextEffect(KicadSymbolBase):
         sizex, sizey = _get_xy(font, "size")
         is_italic = "italic" in font
         is_bold = "bold" in font
-        is_hidden = False
-        hidearray = _get_array2(sexpr, "hide")
-        if len(hidearray) and "yes" in hidearray[0]:
-            is_hidden = True
         is_mirrored = "mirror" in sexpr
         justify = _get_array2(sexpr, "justify")
         h_justify = "center"
@@ -279,7 +271,6 @@ class TextEffect(KicadSymbolBase):
             sizey,
             is_italic,
             is_bold,
-            is_hidden,
             is_mirrored,
             h_justify,
             v_justify,
@@ -798,6 +789,7 @@ class Text(KicadSymbolBase):
     posy: float
     rotation: float
     effects: TextEffect
+    is_hidden: bool
     unit: int = 0
     demorgan: int = 0
 
@@ -806,6 +798,7 @@ class Text(KicadSymbolBase):
             "text",
             self.quoted_string(self.text),
             ["at", self.posx, self.posy, self.rotation],
+            ["hide", "yes" if self.is_hidden else "no"],
             self.effects.get_sexpr(),
         ]
         return sx
@@ -817,7 +810,13 @@ class Text(KicadSymbolBase):
         text = sexpr.pop(0)
         posx, posy, rotation = _parse_at(sexpr)
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
-        return Text(text, posx, posy, rotation, effects, unit=unit, demorgan=demorgan)
+
+        is_hidden = False
+        hidearray = _get_array2(sexpr, "hide")
+        if len(hidearray) and "yes" in hidearray[0]:
+            is_hidden = True
+
+        return Text(text, posx, posy, rotation, effects, is_hidden, unit=unit, demorgan=demorgan)
 
     @property
     def pos(self):
@@ -931,6 +930,7 @@ class Property(KicadSymbolBase):
     posx: float = 0.0
     posy: float = 0.0
     rotation: float = 0.0
+    is_hidden: bool = False
     effects: Optional[TextEffect] = None
     private: bool = False
     do_not_autoplace: bool = False
@@ -951,6 +951,8 @@ class Property(KicadSymbolBase):
 
         if self.do_not_autoplace:
             sx.append(["do_not_autoplace"])
+
+        sx.append(["hide", "yes" if self.is_hidden else "no"])
 
         if self.effects:
             sx.append(self.effects.get_sexpr())
@@ -982,8 +984,14 @@ class Property(KicadSymbolBase):
         posx, posy, rotation = _parse_at(sexpr)
         do_not_autoplace = _has_value(sexpr, "do_not_autoplace")
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
+
+        is_hidden = False
+        hidearray = _get_array2(sexpr, "hide")
+        if len(hidearray) and "yes" in hidearray[0]:
+            is_hidden = True
+
         return Property(
-            name, value, posx, posy, rotation, effects, private, do_not_autoplace
+            name, value, posx, posy, rotation, is_hidden, effects, private, do_not_autoplace
         )
 
 

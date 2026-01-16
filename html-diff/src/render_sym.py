@@ -80,6 +80,10 @@ def render_arc(sym, arc, **style):
 
 
 def render_text(sym, elem, **style):
+
+    if elem.is_hidden:
+        return
+
     content = getattr(elem, "text", getattr(elem, "value", None))
     assert content is not None
     x, y = elem.posx, -elem.posy
@@ -98,8 +102,6 @@ def text_elem(x, y, rot, content, effects, style):
     style_extra = {}
 
     if effects is not None:
-        if effects.is_hidden:
-            return
 
         size = effects.sizey / 2 or 1.27
         anchor = {"center": "middle", "left": "start", "right": "end"}.get(
