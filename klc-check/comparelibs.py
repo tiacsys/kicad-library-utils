@@ -111,7 +111,7 @@ parser.add_argument(
     ),
 )
 
-(args, extra) = parser.parse_known_args()
+args, extra = parser.parse_known_args()
 printer = PrintColor(use_color=not args.nocolor)
 
 if not args.new:
@@ -192,7 +192,7 @@ for lib_name in new_libs:
         # Check all the components!
         for sym in new_lib.symbols:
             if args.check:
-                (ec, wc) = sym_check.do_rulecheck(sym)
+                ec, wc = sym_check.do_rulecheck(sym)
                 add_errors_and_warnings(sym.name, ec, wc)
 
         continue
@@ -225,7 +225,7 @@ for lib_name in new_libs:
 
             if args.check:
                 # only check new components
-                (ec, wc) = sym_check.check_library(lib_path, component=symname)
+                ec, wc = sym_check.check_library(lib_path, component=symname)
                 add_errors_and_warnings(symname, ec, wc)
 
             continue
@@ -295,7 +295,7 @@ for lib_name in new_libs:
                     )
 
             if args.check:
-                (ec, wc) = sym_check.do_rulecheck(new_sym[symname])
+                ec, wc = sym_check.do_rulecheck(new_sym[symname])
                 add_errors_and_warnings(symname, ec, wc)
 
     for symname in old_sym:

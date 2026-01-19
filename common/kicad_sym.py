@@ -254,7 +254,7 @@ class TextEffect(KicadSymbolBase):
         if sexpr.pop(0) != "effects":
             return None
         font = _get_array(sexpr, "font")[0]
-        (sizex, sizey) = _get_xy(font, "size")
+        sizex, sizey = _get_xy(font, "size")
         is_italic = "italic" in font
         is_bold = "bold" in font
         is_hidden = False
@@ -297,7 +297,7 @@ class AltFunction(KicadSymbolBase):
 
     @classmethod
     def from_sexpr(cls, sexpr) -> "AltFunction":
-        (identifier, name, etype, shape) = sexpr
+        identifier, name, etype, shape = sexpr
         return AltFunction(name, etype, shape)
 
 
@@ -404,9 +404,9 @@ class Pin(KicadSymbolBase):
         if len(hidearray) and "yes" in hidearray[0]:
             is_hidden = True
         length = _get_value_of(sexpr, "length")
-        (posx, posy, rotation) = _parse_at(sexpr)
-        (name, name_effect) = cls._parse_name_or_number(sexpr)
-        (number, number_effect) = cls._parse_name_or_number(sexpr, typ="number")
+        posx, posy, rotation = _parse_at(sexpr)
+        name, name_effect = cls._parse_name_or_number(sexpr)
+        number, number_effect = cls._parse_name_or_number(sexpr, typ="number")
 
         if rotation not in VALID_ROTATIONS:
             raise ValueError(
@@ -480,10 +480,10 @@ class Circle(KicadSymbolBase):
         if sexpr.pop(0) != "circle":
             return None
         # the 1st element
-        (centerx, centery) = _get_xy(sexpr, "center")
+        centerx, centery = _get_xy(sexpr, "center")
         radius = _get_value_of(sexpr, "radius")
-        (stroke, sline, scolor) = _get_stroke(sexpr)
-        (fill, fcolor) = _get_fill(sexpr)
+        stroke, sline, scolor = _get_stroke(sexpr)
+        fill, fcolor = _get_fill(sexpr)
         return Circle(
             centerx,
             centery,
@@ -547,11 +547,11 @@ class Arc(KicadSymbolBase):
     def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Arc"]:
         if sexpr.pop(0) != "arc":
             return None
-        (startx, starty) = _get_xy(sexpr, "start")
-        (endx, endy) = _get_xy(sexpr, "end")
-        (midx, midy) = _get_xy(sexpr, "mid")
-        (stroke, sline, scolor) = _get_stroke(sexpr)
-        (fill, fcolor) = _get_fill(sexpr)
+        startx, starty = _get_xy(sexpr, "start")
+        endx, endy = _get_xy(sexpr, "end")
+        midx, midy = _get_xy(sexpr, "mid")
+        stroke, sline, scolor = _get_stroke(sexpr)
+        fill, fcolor = _get_fill(sexpr)
         return Arc(
             startx,
             starty,
@@ -663,7 +663,7 @@ class Polyline(KicadSymbolBase):
             return (0, 0, 0, 0)
 
     def as_rectangle(self) -> "Rectangle":
-        (maxx, maxy, minx, miny) = self.get_boundingbox()
+        maxx, maxy, minx, miny = self.get_boundingbox()
         return Rectangle(
             minx,
             maxy,
@@ -678,7 +678,7 @@ class Polyline(KicadSymbolBase):
         )
 
     def get_center_of_boundingbox(self) -> Tuple[float, float]:
-        (maxx, maxy, minx, miny) = self.get_boundingbox()
+        maxx, maxy, minx, miny = self.get_boundingbox()
         return ((minx + maxx) / 2, ((miny + maxy) / 2))
 
     def is_rectangle(self) -> bool:
@@ -710,8 +710,8 @@ class Polyline(KicadSymbolBase):
             if "xy" in p:
                 pts.append(Point(p[1], p[2]))
 
-        (stroke, sline, scolor) = _get_stroke(sexpr)
-        (fill, fcolor) = _get_fill(sexpr)
+        stroke, sline, scolor = _get_stroke(sexpr)
+        fill, fcolor = _get_fill(sexpr)
         return Polyline(
             pts, stroke, sline, scolor, fill, fcolor, unit=unit, demorgan=demorgan
         )
@@ -777,8 +777,8 @@ class Bezier(KicadSymbolBase):
         for p in _get_array(sexpr, "pts")[0]:
             if "xy" in p:
                 points.append(Point(p[1], p[2]))
-        (stroke_width, stroke_type, stroke_color) = _get_stroke(sexpr)
-        (fill_type, fill_color) = _get_fill(sexpr)
+        stroke_width, stroke_type, stroke_color = _get_stroke(sexpr)
+        fill_type, fill_color = _get_fill(sexpr)
         return Bezier(
             points,
             stroke_width,
@@ -815,7 +815,7 @@ class Text(KicadSymbolBase):
         if sexpr.pop(0) != "text":
             return None
         text = sexpr.pop(0)
-        (posx, posy, rotation) = _parse_at(sexpr)
+        posx, posy, rotation = _parse_at(sexpr)
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
         return Text(text, posx, posy, rotation, effects, unit=unit, demorgan=demorgan)
 
@@ -905,10 +905,10 @@ class Rectangle(KicadSymbolBase):
         if sexpr.pop(0) != "rectangle":
             return None
         # the 1st element
-        (startx, starty) = _get_xy(sexpr, "start")
-        (endx, endy) = _get_xy(sexpr, "end")
-        (stroke, sline, scolor) = _get_stroke(sexpr)
-        (fill, fcolor) = _get_fill(sexpr)
+        startx, starty = _get_xy(sexpr, "start")
+        endx, endy = _get_xy(sexpr, "end")
+        stroke, sline, scolor = _get_stroke(sexpr)
+        fill, fcolor = _get_fill(sexpr)
         return Rectangle(
             startx,
             starty,
@@ -979,7 +979,7 @@ class Property(KicadSymbolBase):
             private = True
             name = sexpr.pop(0)
         value = sexpr.pop(0)
-        (posx, posy, rotation) = _parse_at(sexpr)
+        posx, posy, rotation = _parse_at(sexpr)
         do_not_autoplace = _has_value(sexpr, "do_not_autoplace")
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
         return Property(
@@ -1158,7 +1158,7 @@ class KicadSymbol(KicadSymbolBase):
         for pl in pl_rects:
             if (units is None) or (pl.unit in units):
                 # extract the center, calculate the distance to origin
-                (x, y) = pl.get_center_of_boundingbox()
+                x, y = pl.get_center_of_boundingbox()
                 dist = math.sqrt(x * x + y * y)
                 candidates[dist] = pl
 
@@ -1527,7 +1527,7 @@ class KicadLibrary(KicadSymbolBase):
                         f"Failed to parse subsymbol due to invalid name: {name}"
                     )
 
-                (unit_idx, demorgan_idx) = (m1.group(1), m1.group(2))
+                unit_idx, demorgan_idx = (m1.group(1), m1.group(2))
                 unit_idx = int(unit_idx)
                 demorgan_idx = int(demorgan_idx)
 

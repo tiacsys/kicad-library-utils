@@ -307,13 +307,11 @@ def render_sym(
                 0,
                 Tag(
                     "style",
-                    [
-                        """
+                    ["""
                 .l-any-f { fill: black; }
                 .l-any-s { stroke: black }
                 * { fill: none; stroke: none }
-                tspan { fill: black; } """
-                    ],
+                tspan { fill: black; } """],
                 ),
             )
         yield str(setup_svg(tags, bounds, margin=10))

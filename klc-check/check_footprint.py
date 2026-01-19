@@ -58,9 +58,9 @@ def check_library(
 
     # check which kind of tests we want to run
     if args.unittest:
-        (ec, wc) = do_unittest(module, rules, metrics)
+        ec, wc = do_unittest(module, rules, metrics)
     else:
-        (ec, wc) = do_rulecheck(module, rules, metrics, junit_case)
+        ec, wc = do_rulecheck(module, rules, metrics, junit_case)
     # done checking the footpint
     metrics.append("{lib}.errors {n}".format(lib=module.name, n=ec))
     metrics.append("{lib}.warnings {n}".format(lib=module.name, n=wc))
@@ -286,7 +286,7 @@ junit_suite = junit.JunitTestSuite(name="Footprint KLC Checks", id="klc-fp")
 error_count = 0
 warning_count = 0
 for filename in files:
-    (ec, wc) = check_library(filename, rules, metrics, junit_suite, args)
+    ec, wc = check_library(filename, rules, metrics, junit_suite, args)
     error_count += ec
     warning_count += wc
 

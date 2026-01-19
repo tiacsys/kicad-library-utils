@@ -11,6 +11,7 @@ first HTML file in the sub-directory.
 Usage:
     python render_index_html.py <directory with .diff directories inside>
 """
+
 import argparse
 import os
 from pathlib import Path

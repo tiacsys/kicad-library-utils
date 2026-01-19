@@ -25,7 +25,7 @@ class Rule(KLCRule):
             # main symbol outline.
             center_pl = self.component.get_center_rectangle([0, unit])
             if center_pl is not None:
-                (x, y) = center_pl.get_center_of_boundingbox()
+                x, y = center_pl.get_center_of_boundingbox()
 
                 bbox = center_pl.get_boundingbox()
                 size = [bbox[0] - bbox[2], bbox[1] - bbox[3]]

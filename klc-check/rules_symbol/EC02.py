@@ -34,7 +34,7 @@ class Rule(KLCRule):
         if not ctr:
             return False
 
-        (maxx, top, minx, bottom) = ctr.get_boundingbox()
+        maxx, top, minx, bottom = ctr.get_boundingbox()
 
         # reference checking
 

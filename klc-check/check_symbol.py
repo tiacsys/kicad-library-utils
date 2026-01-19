@@ -196,9 +196,9 @@ class SymbolCheck:
 
             # check which kind of tests we want to run
             if is_unittest:
-                (ec, wc) = self.do_unittest(symbol)
+                ec, wc = self.do_unittest(symbol)
             else:
-                (ec, wc) = self.do_rulecheck(symbol)
+                ec, wc = self.do_rulecheck(symbol)
 
             error_count += ec
             warning_count += wc

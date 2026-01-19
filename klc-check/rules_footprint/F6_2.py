@@ -34,9 +34,9 @@ class Rule(KLCRule):
         diff_fab = sqrt(center_fab["x"] ** 2 + center_fab["y"] ** 2)
         # select the xy coordinates that are closest to the center
         if diff_pads > diff_fab:
-            (x, y) = (center_fab["x"], center_fab["y"])
+            x, y = (center_fab["x"], center_fab["y"])
         else:
-            (x, y) = (center_pads["x"], center_pads["y"])
+            x, y = (center_pads["x"], center_pads["y"])
 
         THRESHOLD = 0.001
         if abs(x) > THRESHOLD or abs(y) > THRESHOLD:

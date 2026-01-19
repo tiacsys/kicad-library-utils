@@ -291,14 +291,12 @@ def make_base_device(family, device, package):
     )
 
     # Background
-    print(
-        f"""    (symbol "{part_name}_0_1"
+    print(f"""    (symbol "{part_name}_0_1"
       (rectangle (start {left} {top}) (end {right} {bottom})
         (stroke (width 0.254) (type default) (color 0 0 0 0))
         (fill (type background))
       )
-    )"""
-    )
+    )""")
 
     # Pins
     print(f'    (symbol "{part_name}_1_1"')

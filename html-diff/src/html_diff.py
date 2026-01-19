@@ -82,15 +82,13 @@ def _construct_syntax_css() -> str:
     light_css = HtmlFormatter(classprefix="wsd-", style="xcode").get_style_defs()
     dark_css = HtmlFormatter(classprefix="wsd-", style=WitchHazelStyle).get_style_defs()
 
-    syntax_css = textwrap.dedent(
-        f"""@media print, (prefers-color-scheme: light) {{
+    syntax_css = textwrap.dedent(f"""@media print, (prefers-color-scheme: light) {{
             {light_css}
         }}
 
         @media (prefers-color-scheme: dark) {{
             {dark_css}
-        }}"""
-    )
+        }}""")
     return syntax_css
 
 
@@ -721,9 +719,14 @@ class HTMLDiff:
             except Exception as e:
                 warnings.warn(f"Error processing footprints: {e}")
 
-    def _process_one_mod(self, old: Path, new_file: Path,
-                         next_file: Path, prev_file: Path,
-                         out_file: Path):  # fmt: skip
+    def _process_one_mod(
+        self,
+        old: Path,
+        new_file: Path,
+        next_file: Path,
+        prev_file: Path,
+        out_file: Path,
+    ):
         old_file = old / new_file.name
         old_text = old_file.read_text() if old_file.is_file() else ""
         new_text = new_file.read_text() if new_file.is_file() else ""
@@ -892,10 +895,14 @@ class HTMLDiff:
                 pool.terminate()
                 pool.join()
 
-    def _process_one_sym(self,
-                         symlib_diff_info: SymLibDiffInfo,
-                         sym_diff_info: SymbolDiffInfo,
-                         unit_files, next_file, prev_file):  # fmt: skip
+    def _process_one_sym(
+        self,
+        symlib_diff_info: SymLibDiffInfo,
+        sym_diff_info: SymbolDiffInfo,
+        unit_files,
+        next_file,
+        prev_file,
+    ):
 
         # The actual line content of the symbol
         symbol_old_lines = symlib_diff_info.old_lines[
