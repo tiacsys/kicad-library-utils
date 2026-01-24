@@ -644,8 +644,9 @@ if __name__ == "__main__":
     # parse csv and get units
     try:
         metadata, pin_data = parse_csv(cliArgs.input_csv_file, cliArgs.split)
-    except ValueError:
+    except ValueError as parser_error:
         logger.error("Can not parse input CSV. Is it properly formatted?")
+        logger.error(str(parser_error))
         os._exit(1)
 
     symbol_units_dict = group_pins_by_unit(pin_data)
@@ -692,7 +693,16 @@ if __name__ == "__main__":
         base_bounding_box = calculate_base_bounding_box_size(pin_stacks)
 
         # Calculate pin length according to KLC S4.1
-        max_pin_number_length = max(list(map(lambda p: len(str(p.pin_number)), pins)))
+        max_pin_number_length = max(
+            list(
+                map(
+                    lambda p: len(
+                        str(p.pin_number) if p.pin_number is not None else ""
+                    ),
+                    pins,
+                )
+            )
+        )
         pin_length = min(max(100, max_pin_number_length * 50), 300)
 
         # extend bounding box to prevent pin label intersections
