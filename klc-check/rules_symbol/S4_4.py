@@ -9,10 +9,11 @@ class Rule(KLCRule):
     """Pin electrical type should match pin function"""
 
     # Power Input Pins should be 'W'
-    POWER_INPUTS = ["^[ad]*g(rou)*nd(a)*$", "^[ad]*v(aa|cc|dd|ss|bat|in)$"]
+    POWER_INPUTS = ["^[ad]*g(rou)*nd(a)*$", "^[ad]*v_?{?(aa|cc|dd|ss|bat|in)}?$"]
 
     # Power Output Pins should be 'w'
-    POWER_OUTPUTS = ["^vout$"]
+    # we want to match vout, v_{out} and aso Voutput and its variants
+    POWER_OUTPUTS = ["^v_?{?out}?"]
 
     PASSIVE_PINS = []
 
