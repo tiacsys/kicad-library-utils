@@ -12,7 +12,7 @@ class Rule(KLCRule):
     POWER_INPUTS = ["^[ad]*g(rou)*nd(a)*$", "^[ad]*v_?{?(aa|cc|dd|ss|bat|in)}?$"]
 
     # Power Output Pins should be 'w'
-    # we want to match vout, v_{out} and aso Voutput and its variants
+    # we want to match vout, v_{out} and also Voutput and its variants
     POWER_OUTPUTS = ["^v_?{?out}?"]
 
     PASSIVE_PINS = []
