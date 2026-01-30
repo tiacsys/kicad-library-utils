@@ -98,9 +98,10 @@ def html_stacktrace(fun):
         try:
             return fun(*args, **kwargs)
         except Exception as e:
-            warnings.warn(f"Error formatting diff: {traceback.format_exception(e)}")
+            formatted_exc = "".join(traceback.format_exception(e))
+            warnings.warn(f"Error formatting diff: {formatted_exc}")
             return string.Template(ERROR_TEMPLATE).substitute(
-                error="".join(traceback.format_exception(e))
+                error=formatted_exc
             )
 
     return wrapper
