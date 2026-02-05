@@ -24,8 +24,8 @@ CI_BUILDS_DIR=`mktemp -d`
 
 # get the list of files we want to compare
 echo "Comparing range $BASE_SHA to $TARGET_SHA"
-LIBS_NEW=$(git diff-tree --diff-filter=AMR --no-commit-id --oneline --name-only -r "$BASE_SHA" "$TARGET_SHA" | grep '\.kicad_sym$') #| sed -e "s#^#$CI_PROJECT_DIR/#;")
-LIBS_OLD=$(git diff-tree --diff-filter=DMR --no-commit-id --oneline --name-only -r "$BASE_SHA" "$TARGET_SHA" | grep '\.kicad_sym$')
+LIBS_NEW=$(git diff-tree --diff-filter=AMR --no-commit-id --oneline --name-only -r "$BASE_SHA" "$TARGET_SHA" | grep '\.kicad_sym$' | xargs -n1 dirname | uniq) #| sed -e "s#^#$CI_PROJECT_DIR/#;")
+LIBS_OLD=$(git diff-tree --diff-filter=DMR --no-commit-id --oneline --name-only -r "$BASE_SHA" "$TARGET_SHA" | grep '\.kicad_sym$' | xargs -n1 dirname | uniq)
 
 # do some debug output
 echo "Found new Libraries: $LIBS_NEW"

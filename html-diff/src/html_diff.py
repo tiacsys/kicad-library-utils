@@ -427,39 +427,15 @@ class HTMLDiff:
     def diff(self, old, new):
         old, new = Path(old), Path(new)
 
-        if new.suffix.startswith(".kicad_sym"):
+        if new.suffix == ".kicad_sym":
+
+            print(f"Diffing symbol libraries {old} and {new}")
+
             if ":" in old.suffix or ":" in new.suffix:
                 _suffix, _, old_part_name = old.suffix.partition(":")
                 _suffix, _, new_part_name = new.suffix.partition(":")
                 old = old.with_suffix(".kicad_sym")
                 new = new.with_suffix(".kicad_sym")
-
-                if "*" in old_part_name or "*" in new_part_name:
-                    raise ValueError("part name can't be a glob")
-
-                if self.name_glob:
-                    raise ValueError(
-                        "Only either a part name filter or an individual symbol can be given, not both."
-                    )  # NOQA: E501
-
-                if not new_part_name:
-                    if not old_part_name:
-                        raise ValueError("No part name given")
-
-                    self.name_glob = old_part_name
-
-                elif not old_part_name:
-                    self.name_glob = new_part_name
-
-                else:
-                    self.name_glob = new_part_name
-                    self.name_map = {new_part_name: old_part_name}
-
-            # Check entire (updated) library for inconsistencies:
-            # Check if all parent symbols appear before the child symbols
-            new_library_data = new.read_text()
-            lib = kicad_sym.KicadLibrary.from_file(new, new_library_data)
-            lib.check_extends_order()
 
             self.symlib_diff(old, new)
 
@@ -512,6 +488,19 @@ class HTMLDiff:
                     ref_svg=ref_svg,
                 )
             )
+
+        elif new.suffix.startswith(".kicad_symdir"):
+            if ":" in old.suffix or ":" in new.suffix:
+                raise ValueError(
+                    "Giving library item names via [library]:[item_name] is not supported. "
+                    "To compare individual symbols, simply list their .kicad_sym files inside the .kicad_symdir directory."  # NOQA: E501
+                )
+
+            if self.output is None:
+                self.output = new.with_suffix(".diff")
+            self.output.mkdir(exist_ok=True, parents=True)
+
+            self.symlib_diff(old, new)
 
         elif new.suffix == ".pretty":
             if ":" in old.suffix or ":" in new.suffix:
@@ -659,35 +648,7 @@ class HTMLDiff:
         )
 
     def pretty_diff(self, old: Path, new: Path):
-        self.diff_index = []
-        files = []
-
-        def diff_name(new_file) -> Path:
-            return self.output / new_file.with_suffix(".html").name
-
-        new_mod_files = set(new.glob("*.kicad_mod"))
-        old_mod_files = set(old.glob("*.kicad_mod"))
-
-        all_stems = {f.stem for f in new_mod_files.union(old_mod_files)}
-
-        for stem in sorted(list(all_stems)):
-            if not fnmatch.fnmatch(stem, self.name_glob):
-                continue
-
-            new_file = new / f"{stem}.kicad_mod"
-            old_file = old / f"{stem}.kicad_mod"
-
-            old_text = old_file.read_text() if old_file.is_file() else ""
-            new_text = new_file.read_text() if new_file.is_file() else ""
-            changed = old_text != new_text
-            created = not old_file.is_file()
-            deleted = not new_file.is_file()
-
-            if self.changes_only and not changed:
-                continue
-
-            self.diff_index.append((diff_name(new_file), created, changed, deleted))
-            files.append(new_file)
+        self.diff_index, files = self._get_changed_stems(old, new, ".kicad_mod")
 
         os.makedirs(self.screenshot_dir / new.name, exist_ok=True)
 
@@ -708,9 +669,9 @@ class HTMLDiff:
             args = []
 
             for i, new_file in enumerate(files):
-                prev_file = diff_name(files[(i - 1) % len(files)]).name
-                next_file = diff_name(files[(i + 1) % len(files)]).name
-                out_file = diff_name(new_file)
+                prev_file = self._diff_name(files[(i - 1) % len(files)]).name
+                next_file = self._diff_name(files[(i + 1) % len(files)]).name
+                out_file = self._diff_name(new_file)
                 args.append((old, new_file, next_file, prev_file, out_file))
             try:
                 pool.starmap(self._process_one_mod, args)
@@ -757,13 +718,11 @@ class HTMLDiff:
     class SymLibDiffInfo:
         """
         Metadata describing a symbol library diff.
+
+        This might be for a packed or unpacked library.
         """
 
-        # Line content of the old and new symbol library files
-        old_lines: list[str]
-        new_lines: list[str]
-
-        new_lib_stem: str
+        new_lib_path: Path
 
         # Name of the new/current symbol library
         old_lib: kicad_sym.KicadLibrary
@@ -779,45 +738,144 @@ class HTMLDiff:
         # Output HTML file
         out_file: Path
 
+        # Old and new kicad_sym file
+        old_kicad_sym: Path | None
+        new_kicad_sym: Path | None
+
+        # Line ranges of the symbol in the old and new kicad_sym files, for code-level diffs
+        old_lines: tuple[int, int]
+        new_lines: tuple[int, int]
+
         # Name of the symbol in the new kicad_sym file
         new_name: str
-        # Lines range in the new kicad_sym file
-        new_start_line: int
-        new_end_line: int
 
         # Name of the symbol in the old kicad_sym file
         old_name: str
-        # Lines range in the old kicad_sym file
-        old_start_line: int
-        old_end_line: int
 
-    def symlib_diff(self, old_symlib_path: Path, new_symlib_path: Path):
+    def _diff_name(self, new_file: Path) -> Path:
+        return self.output / new_file.with_suffix(".html").name
+
+    def _get_changed_stems(
+        self, old_dir: Path, new_dir: Path, extension: str
+    ) -> tuple[list, list]:
+        """
+        Look for files with the given extension in the old and new directories, and return a list of their
+        stems along with their change status (created, changed, deleted).
+        """
+
+        diff_index = []
+        files = []
+
+        new_files = set(new_dir.glob(f"*{extension}"))
+        old_files = set(old_dir.glob(f"*{extension}"))
+
+        all_stems = {f.stem for f in new_files.union(old_files)}
+
+        for stem in sorted(list(all_stems)):
+
+            # Skip if the name doesn't match the glob
+            if not fnmatch.fnmatch(stem, self.name_glob):
+                continue
+
+            new_file = new_dir / f"{stem}{extension}"
+            old_file = old_dir / f"{stem}{extension}"
+
+            old_text = old_file.read_text() if old_file.is_file() else ""
+            new_text = new_file.read_text() if new_file.is_file() else ""
+            changed = old_text != new_text
+            created = not old_file.is_file()
+            deleted = not new_file.is_file()
+
+            if self.changes_only and not changed:
+                continue
+
+            diff_index.append((self._diff_name(new_file), created, changed, deleted))
+            files.append(new_file)
+
+        return diff_index, files
+
+    def _process_sym_diffs(
+        self, symdir_info: SymLibDiffInfo, syms: list[SymbolDiffInfo]
+    ):
+        """
+        Process a list of symbol diffs for a symbol library.
+        """
+
+        screenshot_subdir = self.screenshot_dir / symdir_info.new_lib_path.stem
+        os.makedirs(screenshot_subdir, exist_ok=True)
+
+        # Render reference SVGs all at once
+        # This is a lot faster than rendering them one by one, even if we end up over-rendering
+        renderer = BatchRenderSymbols(symdir_info.new_lib_path, screenshot_subdir)
+
+        for diffed_sym in syms:
+            # Don't try to render deleted symbols, since they won't be in the new library
+            # and kicad-cli will error out
+            if diffed_sym.new_lines != (0, 0):
+                renderer.add_stem(diffed_sym.new_name)
+
+        try:
+            renderer.render()
+        except Exception as e:
+            warnings.warn(f"Error exporting reference render using kicad-cli: {e}")
+
+        # Sort the symbols by their new name
+        sorted_syms = sorted(syms, key=lambda s: s.new_name)
+
+        with multiprocessing.Pool(processes=self.max_workers) as pool:
+
+            args = []
+
+            for i, sym_diff_info in enumerate(sorted_syms):
+
+                prev_sym = sorted_syms[(i - 1) % len(sorted_syms)]
+                next_sym = sorted_syms[(i + 1) % len(sorted_syms)]
+
+                prev_file = self._diff_name(
+                    prev_sym.old_kicad_sym / prev_sym.new_name
+                ).name
+                next_file = self._diff_name(
+                    next_sym.new_kicad_sym / next_sym.new_name
+                ).name
+
+                unit_files = renderer.get_files_for_stem(sym_diff_info.new_name)
+                args.append(
+                    (symdir_info, sym_diff_info, unit_files, next_file, prev_file)
+                )
+
+            try:
+                pool.starmap(self._process_one_sym, args)
+            except KeyboardInterrupt:
+                pool.terminate()
+                pool.join()
+            except Exception as e:
+                warnings.warn(f"Error processing footprints: {e}")
+                raise e
+
+    def _get_symbol_diffs(
+        self, old_kicad_sym_path: Path, new_kicad_sym_path: Path
+    ) -> list[SymbolDiffInfo]:
+        """
+        Get all the symbol diff infos for the symbols in the given kicad_sym files.
+        """
         if self.output is None:
-            self.output = new_symlib_path.with_suffix(".diff")
+            self.output = new_kicad_sym_path.with_suffix(".diff")
         self.output.mkdir(exist_ok=True, parents=True)
 
-        old_lib = kicad_sym.KicadLibrary.from_path(filename=old_symlib_path)
-        new_lib = kicad_sym.KicadLibrary.from_path(filename=new_symlib_path)
-
         # Get the raw s-expr lines of the symbol libraries for code-level diffs
-        index_old = dict(build_symlib_index(old_symlib_path))
-        index_new = dict(build_symlib_index(new_symlib_path))
+        index_old = dict(build_symlib_index(old_kicad_sym_path))
+        index_new = dict(build_symlib_index(new_kicad_sym_path))
         old_lines = (
-            old_symlib_path.read_text().splitlines()
-            if old_symlib_path.is_file()
+            old_kicad_sym_path.read_text().splitlines()
+            if old_kicad_sym_path.is_file()
             else []
         )
-        new_lines = new_symlib_path.read_text().splitlines()
-
-        symlib_diff_info = self.SymLibDiffInfo(
-            old_lib=old_lib,
-            new_lib=new_lib,
-            old_lines=old_lines,
-            new_lines=new_lines,
-            new_lib_stem=new_symlib_path.stem,
+        new_lines = (
+            new_kicad_sym_path.read_text().splitlines()
+            if new_kicad_sym_path.is_file()
+            else []
         )
 
-        self.diff_index = []
         files: list[HTMLDiff.SymbolDiffInfo] = []
 
         to_diff = []
@@ -843,104 +901,137 @@ class HTMLDiff:
             old_name = self.name_map.get(name, name)
             old_start, old_end = index_old.get(old_name, (0, 0))
 
-            created = (old_start, old_end) == (0, 0)
             changed = old_lines[old_start:old_end] != new_lines[start:end]
-
-            deleted = (start, end) == (0, 0)
 
             if self.changes_only and not changed:
                 continue
 
             out_file = self.output / f"{name}.html"
-            self.diff_index.append((out_file, created, changed, deleted))
 
             files.append(
                 self.SymbolDiffInfo(
                     out_file=out_file,
                     new_name=name,
-                    new_start_line=start,
-                    new_end_line=end,
+                    new_lines=(start, end),
                     old_name=old_name,
-                    old_start_line=old_start,
-                    old_end_line=old_end,
+                    old_lines=(old_start, old_end),
+                    old_kicad_sym=old_kicad_sym_path,
+                    new_kicad_sym=new_kicad_sym_path,
                 )
             )
 
-        # Render reference SVGs all at once
-        batch_renderer = BatchRenderSymbols(
-            new_symlib_path, self.screenshot_dir / new_symlib_path.name
+        return files
+
+    def symlib_diff(self, old_symlib_path: Path, new_symlib_path: Path) -> None:
+        """
+        Diff two libraries containing symbols.
+
+        These could be packed or unpacked.
+        """
+
+        old_lib = None
+        new_lib = None
+
+        if old_symlib_path.exists():
+            old_lib = kicad_sym.KicadLibrary.from_path(filename=old_symlib_path)
+        if new_symlib_path.exists():
+            new_lib = kicad_sym.KicadLibrary.from_path(filename=new_symlib_path)
+
+        # This is the common info about the library diff that applies to all
+        # symbol diffs in this library.
+        symdir_info = self.SymLibDiffInfo(
+            old_lib=old_lib,
+            new_lib=new_lib,
+            new_lib_path=new_symlib_path,
         )
-        for sym_diff_info in files:
-            batch_renderer.add_stem(sym_diff_info.new_name)
 
-        try:
-            batch_renderer.render()
-        except Exception as e:
-            warnings.warn(f"Error exporting reference render using kicad-cli: {e}")
+        # So now we know about a change library, but we need to extract
+        # the actual symbols - do this for both old and new libraries in case they
+        # have different contents or multiple symbols each. This means we can
+        # track symbols across packing/unpacking, for example.
 
-        with multiprocessing.Pool(processes=self.max_workers) as pool:
+        sym_diff_infos: list[HTMLDiff.SymbolDiffInfo] = []
 
-            args = []
-            for i, sym_diff_info in enumerate(files):
-                unit_files = batch_renderer.get_files_for_stem(sym_diff_info.new_name)
+        # Look for files being added, removed or changed
 
-                prev_file = files[(i - 1) % len(files)].out_file.name
-                next_file = files[(i + 1) % len(files)].out_file.name
+        # If a .kicad_sym file is given, we treat it as its own packed library.
+        if old_symlib_path.is_file():
+            old_stem_search_dir = old_symlib_path.parent
+        else:
+            old_stem_search_dir = old_symlib_path
 
-                args.append(
-                    (symlib_diff_info, sym_diff_info, unit_files, next_file, prev_file)
-                )
-            try:
-                pool.starmap(self._process_one_sym, args)
-            except KeyboardInterrupt:
-                pool.terminate()
-                pool.join()
+        if new_symlib_path.is_file():
+            new_stem_search_dir = new_symlib_path.parent
+        else:
+            new_stem_search_dir = new_symlib_path
+
+        # Looks for appearing, changing or disappearing .kicad_sym files
+        self.diff_index, files = self._get_changed_stems(
+            old_dir=old_stem_search_dir,
+            new_dir=new_stem_search_dir,
+            extension=".kicad_sym",
+        )
+
+        # Gather symbols from each separate .kicad_sym file and do a diff of each one
+        for kicad_sym_file in files:
+            old_kicad_sym_path = old_stem_search_dir / kicad_sym_file.name
+            new_kicad_sym_path = new_stem_search_dir / kicad_sym_file.name
+
+            sym_diff_infos += self._get_symbol_diffs(
+                old_kicad_sym_path, new_kicad_sym_path
+            )
+
+        # Finally, process all the symbol diffs
+        self._process_sym_diffs(symdir_info, sym_diff_infos)
 
     def _process_one_sym(
         self,
-        symlib_diff_info: SymLibDiffInfo,
+        symdir_diff_info: SymLibDiffInfo,
         sym_diff_info: SymbolDiffInfo,
         unit_files,
         next_file,
         prev_file,
     ):
 
-        # The actual line content of the symbol
-        symbol_old_lines = symlib_diff_info.old_lines[
-            sym_diff_info.old_start_line : sym_diff_info.old_end_line
-        ]
-        symbol_new_lines = symlib_diff_info.new_lines[
-            sym_diff_info.new_start_line : sym_diff_info.new_end_line
-        ]
-
-        # Construct a temporary symbol library that contains only the new/old symbol
-        old_sym = symlib_diff_info.old_lib.get_symbol(sym_diff_info.old_name)
-        new_sym = symlib_diff_info.new_lib.get_symbol(sym_diff_info.new_name)
-
         screenshots_content = [f.read_text() for f in unit_files]
 
         svgs_old = []
         svgs_new = []
 
-        if symbol_old_lines:
-            svgs_old = [
-                str(x)
-                for x in render_sym.render_sym(
-                    old_sym, symlib_diff_info.old_lib, default_style=False
-                )
+        old_content = ""
+        new_content = ""
+
+        new_sym = None
+        old_sym = None
+
+        def _get_sym_data(kicad_sym_path: Path, sym_name: str):
+            """
+            Extract symbol data - the raw s-expr lines, the parsed symbol and the rendered SVGs,
+            for a given symbol in a given kicad_sym file.
+            """
+            lib = kicad_sym.KicadLibrary.from_file(kicad_sym_path)
+            content = kicad_sym_path.read_text()
+            sym = lib.get_symbol(sym_name)
+
+            svgs = [
+                str(x) for x in render_sym.render_sym(sym, lib, default_style=False)
             ]
 
-        if symbol_new_lines:
-            svgs_new = [
-                str(x)
-                for x in render_sym.render_sym(
-                    new_sym, symlib_diff_info.new_lib, default_style=False
-                )
-            ]
+            return content, sym, svgs
+
+        if sym_diff_info.old_lines != (0, 0):
+            old_content, old_sym, svgs_old = _get_sym_data(
+                sym_diff_info.old_kicad_sym, sym_diff_info.old_name
+            )
+
+        if sym_diff_info.new_lines != (0, 0):
+            new_content, new_sym, svgs_new = _get_sym_data(
+                sym_diff_info.new_kicad_sym, sym_diff_info.new_name
+            )
 
         sexpr_diff = wsdiff.html_diff_block(
-            "\n".join(symbol_old_lines),
-            "\n".join(symbol_new_lines),
+            old_content,
+            new_content,
             filename="",
             lexer=SexprLexer(),
         )
@@ -967,7 +1058,7 @@ class HTMLDiff:
 
         sym_diff_info.out_file.write_text(
             self._format_html_diff(
-                lib_name=symlib_diff_info.new_lib_stem,
+                lib_name=symdir_diff_info.new_lib_path.stem,
                 part_name=sym_diff_info.new_name,
                 next_diff=next_file,
                 prev_diff=prev_file,
@@ -1099,7 +1190,7 @@ if __name__ == "__main__":
 
         else:
             if (
-                base.suffix.lower() in (".kicad_mod", ".kicad_sym")
+                base.suffix.lower() in (".kicad_mod", ".kicad_symdir")
                 and ":" not in args.base
             ):
                 # This does not look like either "[git_revision]" or "[git_revision]:[path]"
@@ -1139,7 +1230,8 @@ if __name__ == "__main__":
                 )
                 sys.exit(1)
 
-            with tempfile.TemporaryDirectory(suffix=path.suffix) as tmpd:
+            with tempfile.TemporaryDirectory(suffix=path.name) as tmpd:
+                print(tmpd)
                 tmpd = Path(tmpd)
                 try:
                     ls_path = str(
@@ -1147,6 +1239,7 @@ if __name__ == "__main__":
                     )
                     if path.is_dir():
                         ls_path += "/"
+
                     proc = subprocess.run(
                         ["git", "ls-tree", "--name-only", base_rev, ls_path],
                         check=True,
@@ -1155,7 +1248,8 @@ if __name__ == "__main__":
                         cwd=path.parent,
                     )
                     for fn in proc.stdout.splitlines():
-                        with (tmpd / Path(fn).name).open("w") as outf:
+                        out_fn = tmpd / Path(fn).name
+                        with out_fn.open("w") as outf:
                             subprocess.run(
                                 ["git", "show", f"{base_rev}:{fn}"],
                                 check=True,
