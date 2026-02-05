@@ -57,7 +57,7 @@ test-klc-footprints:
 test-klc-symbols:
 	python3 klc-check/check_symbol.py \
 	--unittest \
-	klc-check/test_symbol/*.kicad_sym
+	klc-check/test_symbol/*.kicad_symdir
 
 # Compare the libraries in the test_symbol directory to make sure comparelibs.py works
 # We do all the checks, but we exclude S5.1 because there are no footprints in this repo.
@@ -66,8 +66,8 @@ test-klc-symbols:
 .PHONY: test-comparelibs-symbols
 test-comparelibs-symbols:
 	python3 klc-check/comparelibs.py -v \
-		--old klc-check/test_symbol/comparelibs_old/* \
-		--new klc-check/test_symbol/comparelibs_new/* \
+		--old klc-check/test_symbol/comparelibs_old/*.kicad_symdir \
+		--new klc-check/test_symbol/comparelibs_new/*.kicad_symdir \
 		--check --check-derived \
 		--junit junit-comparelibs.xml \
 		--exclude S5.1 || \

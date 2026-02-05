@@ -129,6 +129,12 @@ def build_library_dict(filelist):
     """
     libs = {}
     for lib in filelist:
+        # special case added for the .kicad_symdir
+        if lib.endswith(".kicad_symdir"):
+            libs[os.path.basename(lib)] = os.path.abspath(lib)
+            continue
+
+        # TODO: this code is not readable. Document why it does what it does.
         flibs = glob(lib)
 
         for lib_path in flibs:
@@ -141,6 +147,7 @@ def build_library_dict(filelist):
 
             elif lib_path.endswith(".kicad_sym") and os.path.exists(lib_path):
                 libs[os.path.basename(lib_path)] = os.path.abspath(lib_path)
+
     return libs
 
 
@@ -173,7 +180,7 @@ def add_errors_and_warnings(symname: str, sym_errors: int, sym_warnings: int):
 # iterate over all new libraries
 for lib_name in new_libs:
     lib_path = new_libs[lib_name]
-    new_lib = KicadLibrary.from_file(lib_path)
+    new_lib = KicadLibrary.from_path(lib_path)
 
     # If library checksums match, we can skip entire library check
     if lib_name in old_libs:
@@ -199,7 +206,7 @@ for lib_name in new_libs:
 
     # Library has been updated - check each component to see if it has been changed
     old_lib_path = old_libs[lib_name]
-    old_lib = KicadLibrary.from_file(old_lib_path)
+    old_lib = KicadLibrary.from_path(old_lib_path)
 
     new_sym = {}
     old_sym = {}

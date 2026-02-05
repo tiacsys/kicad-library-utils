@@ -796,8 +796,8 @@ class HTMLDiff:
             self.output = new_symlib_path.with_suffix(".diff")
         self.output.mkdir(exist_ok=True, parents=True)
 
-        old_lib = kicad_sym.KicadLibrary.from_file(filename=old_symlib_path)
-        new_lib = kicad_sym.KicadLibrary.from_file(filename=new_symlib_path)
+        old_lib = kicad_sym.KicadLibrary.from_path(filename=old_symlib_path)
+        new_lib = kicad_sym.KicadLibrary.from_path(filename=new_symlib_path)
 
         # Get the raw s-expr lines of the symbol libraries for code-level diffs
         index_old = dict(build_symlib_index(old_symlib_path))

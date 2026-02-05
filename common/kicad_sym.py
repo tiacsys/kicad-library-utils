@@ -816,7 +816,9 @@ class Text(KicadSymbolBase):
         if len(hidearray) and "yes" in hidearray[0]:
             is_hidden = True
 
-        return Text(text, posx, posy, rotation, effects, is_hidden, unit=unit, demorgan=demorgan)
+        return Text(
+            text, posx, posy, rotation, effects, is_hidden, unit=unit, demorgan=demorgan
+        )
 
     @property
     def pos(self):
@@ -991,7 +993,15 @@ class Property(KicadSymbolBase):
             is_hidden = True
 
         return Property(
-            name, value, posx, posy, rotation, is_hidden, effects, private, do_not_autoplace
+            name,
+            value,
+            posx,
+            posy,
+            rotation,
+            is_hidden,
+            effects,
+            private,
+            do_not_autoplace,
         )
 
 
@@ -1408,7 +1418,78 @@ class KicadLibrary(KicadSymbolBase):
             already_seen.add(symbol.name)
 
     @classmethod
-    def from_file(cls, filename: str, data=None) -> "KicadLibrary":
+    def from_path(cls, filename: str, data=None) -> "KicadLibrary":
+        if Path(filename).is_dir():
+            return KicadLibrary.from_dir(filename)
+        else:
+            return KicadLibrary.from_file(filename)
+
+    @classmethod
+    def from_dir(cls, dirname: str, data=None) -> "KicadLibrary":
+        """
+        Parse a symbol library from a kicad_symdir directory
+
+        raises KicadFileFormatError in case of problems
+        """
+        symdir = Path(dirname)
+        if not symdir.is_dir():
+            raise Exception(f'The directory "{dirname}" cannot be opened')
+
+        # create a empty library
+        # we kinda would need to set version and generator, but that is
+        # not simple, because they could differ in the sub-files in that kicad_symdir
+        library = KicadLibrary(dirname)
+
+        # for tracking derived symbols we need another dict
+        # (this is code-duplication from the from_file method)
+        symbol_names = {}
+
+        # iterate over all .kicad_sym files in the directory
+        for sub_lib_filename in os.listdir(dirname):
+            # read the sub library
+            sub_library = KicadLibrary.from_file(
+                symdir.joinpath(sub_lib_filename), check_inheritance=False
+            )
+            if len(sub_library.symbols) > 1:
+                raise KicadFileFormatError(
+                    f"Found more than one symbols in: {sub_lib_filename}"
+                )
+
+            # fetch the first symbol from the sub-library
+            # overwrite the libname with the name from the directory
+            symbol = sub_library.symbols[0]
+            symbol.libname = symdir.stem
+
+            # fill the symbol_names dict we need for inheritance checking laters
+            if symbol.name in symbol_names:
+                raise KicadFileFormatError(f"Duplicate symbols: {symbol.name}")
+            symbol_names[symbol.name] = symbol
+
+            # add this single symbol to our library
+            library.symbols.append(symbol)
+
+        # do some inheritance sanity checks (duplicated from from_file function)
+        for symbol in library.symbols:
+            cursor = symbol
+            while cursor.extends:
+                if symbol.name == symbol.extends:
+                    raise KicadFileFormatError(f"Symbol {symbol.name} extends itself")
+
+                if symbol.extends in symbol._inheritance:
+                    raise KicadFileFormatError(
+                        f"Symbol {symbol.name} has a circular inheritance"
+                    )
+
+                parent_sym = symbol_names.get(cursor.extends)
+                symbol._inheritance.append(parent_sym)
+                cursor = parent_sym
+
+        return library
+
+    @classmethod
+    def from_file(
+        cls, filename: str, data=None, check_inheritance=True
+    ) -> "KicadLibrary":
         """
         Parse a symbol library from a file.
 
@@ -1417,9 +1498,7 @@ class KicadLibrary(KicadSymbolBase):
 
         # Check if library exists and set the empty library if not
         if not Path(filename).is_file():
-            dir_path = os.path.dirname(os.path.realpath(__file__))
-            print(f"NO FILE FOUND, using {dir_path}/empty.kicad_sym")
-            filename = dir_path + "/empty.kicad_sym"
+            raise Exception(f'The file "{filename}" cannot be opened')
 
         library = KicadLibrary(filename)
 
@@ -1449,7 +1528,7 @@ class KicadLibrary(KicadSymbolBase):
         # for tracking derived symbols we need another dict
         symbol_names = {}
 
-        # itertate over symbol
+        # itertate over symbols
         sym_list = _get_array(sexpr_data, "symbol", max_level=2)
         for item in sym_list:
             item_type = item.pop(0)
@@ -1582,21 +1661,29 @@ class KicadLibrary(KicadSymbolBase):
             # add it to the list of symbols
             library.symbols.append(symbol)
 
-        for symbol in library.symbols:
+        # do some inheritance sanity checks
+        if check_inheritance:
+            for symbol in library.symbols:
+                cursor = symbol
+                while cursor.extends:
+                    if symbol.name == symbol.extends:
+                        raise KicadFileFormatError(
+                            f"Symbol {symbol.name} extends itself"
+                        )
 
-            cursor = symbol
-            while cursor.extends:
-                if symbol.name == symbol.extends:
-                    raise KicadFileFormatError(f"Symbol {symbol.name} extends itself")
+                    if symbol.extends in symbol._inheritance:
+                        raise KicadFileFormatError(
+                            f"Symbol {symbol.name} has a circular inheritance"
+                        )
 
-                if symbol.extends in symbol._inheritance:
-                    raise KicadFileFormatError(
-                        f"Symbol {symbol.name} has a circular inheritance"
-                    )
+                    parent_sym = symbol_names.get(cursor.extends)
+                    if not parent_sym:
+                        raise KicadFileFormatError(
+                            f"Parent {cursor.extends} of symbol {symbol.name} not found"
+                        )
 
-                parent_sym = symbol_names.get(cursor.extends)
-                symbol._inheritance.append(parent_sym)
-                cursor = parent_sym
+                    symbol._inheritance.append(parent_sym)
+                    cursor = parent_sym
 
         return library
 

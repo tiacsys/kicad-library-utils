@@ -74,6 +74,7 @@ class Rule(KLCRule):
         # No FP and DS is '~' -> looks like a virtual root symbol
         # Be careful not to use logic here that uses "doesn't have filters"
         # as a condition, as that's what we're checking for.
+        # TODO: KiCad10 seems to remove the ~ from fields and replaces it with empty string
         maybe_virtual_root = (fp and not fp.value) and (ds and ds.value == "~")
 
         should_have_filters = not (

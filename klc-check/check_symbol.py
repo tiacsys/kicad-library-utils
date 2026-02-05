@@ -143,7 +143,7 @@ class SymbolCheck:
 
     @lru_cache(maxsize=None)
     def _load_library(self, filename):
-        return KicadLibrary.from_file(filename)
+        return KicadLibrary.from_path(filename)
 
     def check_library(
         self, filename: str, component=None, pattern=None, is_unittest: bool = False
@@ -154,8 +154,10 @@ class SymbolCheck:
             self.printer.red("File does not exist: %s" % filename)
             return (1, 0)
 
-        if not filename.endswith(".kicad_sym"):
-            self.printer.red("File is not a .kicad_sym : %s" % filename)
+        if not (filename.endswith(".kicad_sym") or filename.endswith(".kicad_symdir")):
+            self.printer.red(
+                "File is not a .kicad_sym nor .kicad_symdir: %s" % filename
+            )
             return (1, 0)
 
         try:

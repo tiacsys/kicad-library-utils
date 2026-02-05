@@ -87,11 +87,11 @@ class Rule(KLCRule):
         if (not self.component.is_graphic_symbol()) and (
             not self.component.is_power_symbol()
         ):
-            if ref.effects.is_hidden:
+            if ref.is_hidden:
                 self.error("Reference field must be VISIBLE")
                 fail = True
         else:
-            if not ref.effects.is_hidden:
+            if not ref.is_hidden:
                 self.error(
                     "Reference field must be INVISIBLE in graphic symbols or"
                     " power-symbols"
@@ -122,7 +122,7 @@ class Rule(KLCRule):
                 )
                 fail = True
             # name field must be visible!
-            if prop.effects.is_hidden:
+            if prop.is_hidden:
                 self.error("Value field must be VISIBLE")
                 fail = True
         else:
@@ -158,7 +158,7 @@ class Rule(KLCRule):
             # can not do other checks, return
             return True
 
-        if not prop.effects.is_hidden:
+        if not prop.is_hidden:
             self.error("Footprint field must be INVISIBLE")
             fail = True
 
@@ -174,7 +174,7 @@ class Rule(KLCRule):
             # can not do other checks, return
             return True
 
-        if not ds.effects.is_hidden:
+        if not ds.is_hidden:
             self.error("Datasheet field must be INVISIBLE")
             fail = True
 
