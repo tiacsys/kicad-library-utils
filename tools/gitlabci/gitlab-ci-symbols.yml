@@ -22,12 +22,11 @@ klc-check:
   allow_failure:
     exit_codes:
      - 2  # KLC checks have warnings
-  only:
-    refs:
-      - merge_requests
-    changes:
-      - "*.kicad_sym"
-      - "sym-lib-table"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - "**/*.kicad_sym"
+        - "sym-lib-table"
   script:
     - python3 -V
     - pip install pytest
@@ -47,11 +46,10 @@ visual_diff:
   image: kicad/kicad:9.0
   allow_failure: true
   when: always
-  only:
-    refs:
-      - merge_requests
-    changes:
-      - "*.kicad_sym"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - "**/*.kicad_sym"
   script:
     - mkdir -p $HOME/.config/kicad/9.0/colors
     - sudo apt update -qq
