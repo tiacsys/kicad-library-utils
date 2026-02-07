@@ -119,7 +119,7 @@ if __name__ == "__main__":
     if args.verbose:
         print(f"Found {len(invocations)} generator invocations.")
     for i in invocations:
-        command = f"{i} -m {os.path.realpath(args.output)} --export-vrml"
+        command = f"{i} -m {os.path.realpath(args.output)}"
 
         if args.isolated:
             command = f'env -i HOME="$HOME" bash -l -c "{command}"'
