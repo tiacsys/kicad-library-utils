@@ -5,12 +5,13 @@
 
 import argparse
 import re
+import signal
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from file_resolver import get_resolver
+import file_resolver
 
 if TYPE_CHECKING:
     import cadquery as cq
@@ -81,6 +82,28 @@ class StepDiffResult:
     model_added: "cq.Workplane"
     model_removed: "cq.Workplane"
     stats: StepDiffStats
+
+
+@dataclass
+class DiffConfig:
+    """All the configuration options for the diff process."""
+
+    ignore_missing: bool
+    epsilon: float
+    output_path: Path | None
+    output_as_file: bool
+    colors: DiffColors
+    show_stats: bool
+
+
+@dataclass
+class DiffProcessResult:
+    step_diff_stats: StepDiffStats | None = None
+    """The actual result if any"""
+    error: str | None = None
+    """The error message if an error occurred"""
+    files_checked: bool = False
+    """Whether the files were actually checked"""
 
 
 def load_step_file(path: Path) -> "cq.Workplane":
@@ -174,6 +197,51 @@ def save_step_diff(
     assembly.export(str(output_file_path), "STEP")
 
 
+def process_file_pair(
+    pair: file_resolver.ResolvedFilePair, config: DiffConfig
+) -> DiffProcessResult:
+    """
+    Process a pair of files and return the result.
+    This function is designed to be run in parallel for multiple file pairs.
+    """
+
+    old_file = Path(pair.file1)
+    new_file = Path(pair.file2)
+
+    process_result = DiffProcessResult()
+
+    if not old_file.exists() or not new_file.exists():
+        if not config.ignore_missing:
+            process_result.error = f"{pair.name}: MISSING"
+
+        return process_result
+
+    process_result.files_checked = True
+
+    try:
+        step_diff = get_step_diff(old_file, new_file)
+        process_result.step_diff_stats = step_diff.stats
+    except _LoadStepFileError as e:
+        process_result.error = f"WARNING: {e.message}"
+        return process_result
+
+    if step_diff.stats.changed_volume_proportion > config.epsilon:
+        process_result.error = (
+            f"CHANGED ({step_diff.stats.changed_volume_proportion * 100:.2f}%)"
+        )
+
+        if config.output_path:
+            assert isinstance(config.output_path, Path)
+            if config.output_as_file:
+                diff_file = config.output_path
+            else:
+                diff_file = config.output_path / pair.name
+
+            save_step_diff(step_diff, diff_file, config.colors)
+
+    return process_result
+
+
 def color(arg) -> tuple[float, float, float, float]:
     arg_re = re.compile(r"^([^,]*),([^,]*),([^,]*)(,[^,]*)?$")
     arg_match = arg_re.match(arg)
@@ -200,6 +268,11 @@ def format_diff_stats(stats: StepDiffStats) -> None:
   Changed volume: {stats.changed_volume:.2f} ({stats.changed_volume_proportion * 100:.2f}%)"""
 
     return s
+
+
+def _worker_init():
+    """Ignore SIGINT in worker processes; let the main process handle it."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def main():
@@ -242,6 +315,12 @@ def main():
         action="store_true",
         help="Print statistics about the differences found.",
     )
+    parser.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        help="Number of parallel jobs to run (default: 0 - use as many as possible).",
+    )
 
     # Note: The colors here are have different values for each main
     # color channel on purpose. If one color is "0.0, 0.0, 0.5", and
@@ -268,12 +347,6 @@ def main():
 
     args = parser.parse_args()
 
-    colors = DiffColors(
-        unchanged=args.diff_unchanged_color,
-        added=args.diff_added_color,
-        removed=args.diff_removed_color,
-    )
-
     def filter_files(path: Path) -> bool:
         path = Path(path)
 
@@ -286,46 +359,66 @@ def main():
             return True
 
     errors_count = 0
-    resolver = get_resolver(args.path1, args.path2, filter_files)
-    files_checked = False
+    files_checked = 0
+    resolver = file_resolver.get_resolver(args.path1, args.path2, filter_files)
 
-    for pair in sorted(resolver.files, key=lambda pair: pair.name):
-        old_file = Path(pair.file1)
-        new_file = Path(pair.file2)
+    config = DiffConfig(
+        ignore_missing=args.ignore_missing,
+        epsilon=args.epsilon,
+        output_path=args.diff_output,
+        output_as_file=args.diff_output.is_file() if args.diff_output else False,
+        colors=DiffColors(
+            unchanged=args.diff_unchanged_color,
+            added=args.diff_added_color,
+            removed=args.diff_removed_color,
+        ),
+        show_stats=args.stats,
+    )
 
-        if not old_file.exists() or not new_file.exists():
-            if not args.ignore_missing:
-                errors_count += 1
-                print(f"{pair.name}: MISSING")
-            continue
+    from concurrent.futures import ProcessPoolExecutor, as_completed
 
-        files_checked = True
-        print(f"{pair.name}: ", end="", flush=True)
+    with ProcessPoolExecutor(
+        max_workers=args.jobs if args.jobs and args.jobs > 0 else None,
+        initializer=_worker_init,
+    ) as executor:
+
+        futures = {}
+
+        for pair in sorted(resolver.files, key=lambda pair: pair.name):
+            future = executor.submit(process_file_pair, pair, config)
+            futures[future] = pair
+
+        # Wait for futures to complete and gather results
         try:
-            step_diff = get_step_diff(old_file, new_file)
-        except _LoadStepFileError as e:
-            print("ERROR")
-            print(f"WARNING: {e.message}")
-            errors_count += 1
-            continue
+            for future in as_completed(futures):
 
-        if step_diff.stats.changed_volume_proportion > args.epsilon:
-            print(f"CHANGED ({step_diff.stats.changed_volume_proportion * 100:.2f}%)")
-            errors_count += 1
-            if args.diff_output:
-                assert isinstance(args.diff_output, Path)
-                if args.path1.is_file():
-                    diff_file = args.diff_output
+                pair = futures[future]
+
+                diff_result: DiffProcessResult = future.result()
+
+                print(f"{pair.name}: ", end="")
+
+                if diff_result.error:
+                    print(diff_result.error)
+                    errors_count += 1
                 else:
-                    diff_file = args.diff_output / pair.name
+                    print("OK")
 
-                print(f"Saving diff: {diff_file}")
-                save_step_diff(step_diff, diff_file, colors)
-        else:
-            print("OK")
+                if diff_result.files_checked:
+                    files_checked += 1
 
-        if args.stats:
-            print(format_diff_stats(step_diff.stats))
+                if config.show_stats and diff_result.step_diff_stats:
+                    print(format_diff_stats(diff_result.step_diff_stats))
+
+        except KeyboardInterrupt:
+
+            # Kill running worker processes immediately
+            for proc in executor._processes.values():
+                proc.terminate()
+
+            executor.shutdown(cancel_futures=True, wait=False)
+            print("Interrupted by user, shutting down...")
+            return 2
 
     if errors_count:
         print(
