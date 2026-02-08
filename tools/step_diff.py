@@ -191,6 +191,17 @@ def color(arg) -> tuple[float, float, float, float]:
     return cq.Color(*arg)
 
 
+def format_diff_stats(stats: StepDiffStats) -> None:
+    s = f"""\
+  Old volume:     {stats.old_volume:.2f}
+  New volume:     {stats.new_volume:.2f}
+  Added volume:   {stats.added_volume:.2f} ({stats.added_volume_proportion * 100:.2f}%)
+  Removed volume: {stats.removed_volume:.2f} ({stats.removed_volume_proportion * 100:.2f}%)
+  Changed volume: {stats.changed_volume:.2f} ({stats.changed_volume_proportion * 100:.2f}%)"""
+
+    return s
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=(
@@ -224,6 +235,12 @@ def main():
     )
     parser.add_argument(
         "-o", "--diff-output", type=Path, help="Diff output directory or file."
+    )
+    parser.add_argument(
+        "-s",
+        "--stats",
+        action="store_true",
+        help="Print statistics about the differences found.",
     )
 
     # Note: The colors here are have different values for each main
@@ -306,6 +323,9 @@ def main():
                 save_step_diff(step_diff, diff_file, colors)
         else:
             print("OK")
+
+        if args.stats:
+            print(format_diff_stats(step_diff.stats))
 
     if errors_count:
         print(
