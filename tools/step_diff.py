@@ -6,9 +6,14 @@
 import argparse
 import re
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from file_resolver import get_resolver
+
+if TYPE_CHECKING:
+    import cadquery as cq
 
 
 class _LoadStepFileError(Exception):
@@ -18,7 +23,67 @@ class _LoadStepFileError(Exception):
         super().__init__(self.message)
 
 
-def load_step_file(path):
+@dataclass
+class DiffColors:
+    unchanged: "cq.Color"
+    added: "cq.Color"
+    removed: "cq.Color"
+
+
+@dataclass
+class StepDiffStats:
+    """
+    All the statistics about the volume difference between two STEP files.
+    """
+
+    old_volume: float
+    new_volume: float
+    added_volume: float
+    removed_volume: float
+
+    @property
+    def changed_volume(self) -> float:
+        return self.added_volume + self.removed_volume
+
+    @property
+    def added_volume_proportion(self) -> float:
+        if self.old_volume == 0:
+            if self.new_volume == 0:
+                return 0.0
+            return float("inf")
+
+        return self.added_volume / self.old_volume
+
+    @property
+    def removed_volume_proportion(self) -> float:
+        if self.old_volume == 0:
+            return 0.0
+
+        return self.removed_volume / self.old_volume
+
+    @property
+    def changed_volume_proportion(self) -> float:
+        if self.old_volume == 0:
+            if self.new_volume == 0:
+                return 0.0
+            return float("inf")
+
+        return self.changed_volume / self.old_volume
+
+
+@dataclass
+class StepDiffResult:
+    """All the information about the difference between two STEP files."""
+
+    model_name: str
+    old_model: "cq.Workplane"
+    new_model: "cq.Workplane"
+    model_added: "cq.Workplane"
+    model_removed: "cq.Workplane"
+    stats: StepDiffStats
+
+
+def load_step_file(path: Path) -> "cq.Workplane":
     import cadquery as cq
 
     try:
@@ -28,9 +93,7 @@ def load_step_file(path):
         raise _LoadStepFileError(path)
 
 
-def get_step_diff(old_path, new_path):
-    old_path = Path(old_path)
-    new_path = Path(new_path)
+def get_step_diff(old_path: Path, new_path: Path) -> StepDiffResult:
 
     old_model = load_step_file(old_path)
     new_model = load_step_file(new_path)
@@ -47,40 +110,26 @@ def get_step_diff(old_path, new_path):
 
     added_volume = model_added.val().Volume()
     removed_volume = model_removed.val().Volume()
-    changed_volume = added_volume + removed_volume
 
-    if old_volume == 0 and new_volume == 0:
-        added_volume_proportion = 0.0
-        removed_volume_proportion = 0.0
-        changed_volume_proportion = 0.0
-    elif old_volume == 0:
-        added_volume_proportion = float("inf")
-        removed_volume_proportion = 0.0
-        changed_volume_proportion = float("inf")
-    else:
-        added_volume_proportion = added_volume / old_volume
-        removed_volume_proportion = removed_volume / old_volume
-        changed_volume_proportion = changed_volume / old_volume
-
-    return {
-        "model_name": old_path.stem,
-        "old_model": old_model,
-        "new_model": new_model,
-        "model_added": model_added,
-        "model_removed": model_removed,
-        "old_volume": old_volume,
-        "new_volume": new_volume,
-        "added_volume": added_volume,
-        "removed_volume": removed_volume,
-        "changed_volume": changed_volume,
-        "added_volume_proportion": added_volume_proportion,
-        "removed_volume_proportion": removed_volume_proportion,
-        "changed_volume_proportion": changed_volume_proportion,
-    }
+    return StepDiffResult(
+        model_name=old_path.stem,
+        old_model=old_model,
+        new_model=new_model,
+        model_added=model_added,
+        model_removed=model_removed,
+        stats=StepDiffStats(
+            old_volume=old_volume,
+            new_volume=new_volume,
+            added_volume=added_volume,
+            removed_volume=removed_volume,
+        ),
+    )
 
 
-def save_step_diff(step_diff, output_file_path, colors):
-    output_file_path = Path(output_file_path)
+def save_step_diff(
+    step_diff: StepDiffResult, output_file_path: Path, colors: DiffColors
+) -> None:
+    import cadquery as cq
 
     if output_file_path.is_dir():
         print(f"Can't overwrite directory: {output_file_path}")
@@ -101,37 +150,31 @@ def save_step_diff(step_diff, output_file_path, colors):
         print(f"Write permission denied: {output_file_path}")
         return
 
-    import cadquery as cq
-
-    unchanged_color = cq.Color(*colors["unchanged"])
-    added_color = cq.Color(*colors["added"])
-    removed_color = cq.Color(*colors["removed"])
-
-    if step_diff["old_model"].val().Volume() == 0:
-        unchanged = step_diff["old_model"]
+    if step_diff.old_model.val().Volume() == 0:
+        unchanged = step_diff.old_model
     else:
-        unchanged = step_diff["old_model"].intersect(step_diff["new_model"])
+        unchanged = step_diff.old_model.intersect(step_diff.new_model)
 
-    assembly = cq.Assembly(name=step_diff["model_name"])
+    assembly = cq.Assembly(name=step_diff.model_name)
     assembly = assembly.add(
         unchanged,
         name="unchanged",
-        color=unchanged_color,
+        color=colors.unchanged,
     )
     assembly = assembly.add(
-        step_diff["model_added"],
+        step_diff.model_added,
         name="added",
-        color=added_color,
+        color=colors.added,
     )
     assembly = assembly.add(
-        step_diff["model_removed"],
+        step_diff.model_removed,
         name="removed",
-        color=removed_color,
+        color=colors.removed,
     )
     assembly.export(str(output_file_path), "STEP")
 
 
-def color(arg):
+def color(arg) -> tuple[float, float, float, float]:
     arg_re = re.compile(r"^([^,]*),([^,]*),([^,]*)(,[^,]*)?$")
     arg_match = arg_re.match(arg)
     assert arg_match
@@ -140,7 +183,12 @@ def color(arg):
         arg.append("1.0")
     arg = tuple(map(float, arg))
 
-    return arg
+    assert len(arg) == 4
+    assert all(0.0 <= c <= 1.0 for c in arg)
+
+    import cadquery as cq
+
+    return cq.Color(*arg)
 
 
 def main():
@@ -203,13 +251,13 @@ def main():
 
     args = parser.parse_args()
 
-    colors = {
-        "unchanged": args.diff_unchanged_color,
-        "added": args.diff_added_color,
-        "removed": args.diff_removed_color,
-    }
+    colors = DiffColors(
+        unchanged=args.diff_unchanged_color,
+        added=args.diff_added_color,
+        removed=args.diff_removed_color,
+    )
 
-    def filter_files(path: Path):
+    def filter_files(path: Path) -> bool:
         path = Path(path)
 
         if path.suffix.lower() != ".step":
@@ -244,10 +292,11 @@ def main():
             errors_count += 1
             continue
 
-        if step_diff["changed_volume_proportion"] > args.epsilon:
-            print(f"CHANGED ({step_diff['changed_volume_proportion'] * 100:.2f}%)")
+        if step_diff.stats.changed_volume_proportion > args.epsilon:
+            print(f"CHANGED ({step_diff.stats.changed_volume_proportion * 100:.2f}%)")
             errors_count += 1
             if args.diff_output:
+                assert isinstance(args.diff_output, Path)
                 if args.path1.is_file():
                     diff_file = args.diff_output
                 else:
