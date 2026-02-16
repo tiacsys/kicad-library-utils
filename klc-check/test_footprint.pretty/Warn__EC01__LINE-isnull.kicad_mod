@@ -124,7 +124,7 @@
 			)
 		)
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test_footprint.3dshapes/Warn__EC01__LINE-isnull.step"
+	(model "${KICAD10_3DMODEL_DIR}/test_footprint.3dshapes/Warn__EC01__LINE-isnull.step"
 		(offset
 			(xyz 0 0 0)
 		)

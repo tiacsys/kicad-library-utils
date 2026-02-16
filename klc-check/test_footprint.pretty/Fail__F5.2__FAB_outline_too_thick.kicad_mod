@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "aeb58809-3e89-449b-8c2c-86406502ce46")
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.2__FAB_outline_too_thick.step"
+	(model "${KICAD10_3DMODEL_DIR}/test.3dshapes/Fail__F5.2__FAB_outline_too_thick.step"
 		(offset
 			(xyz 0 0 0)
 		)

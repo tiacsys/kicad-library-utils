@@ -134,7 +134,7 @@
 			)
 		)
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test_footprint.3dshapes/Warn__EC01__LINE-almostHV.step"
+	(model "${KICAD10_3DMODEL_DIR}/test_footprint.3dshapes/Warn__EC01__LINE-almostHV.step"
 		(offset
 			(xyz 0 0 0)
 		)

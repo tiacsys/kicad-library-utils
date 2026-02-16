@@ -522,7 +522,7 @@
 		(layers "F&B.Cu" "*.Mask")
 		(uuid "167c6c45-88e8-466b-8e3b-8bd77359c54b")
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F5.3__disjoint_courtyard.step"
+	(model "${KICAD10_3DMODEL_DIR}/test_footprint.3dshapes/Pass__F5.3__disjoint_courtyard.step"
 		(offset
 			(xyz 0 0 0)
 		)

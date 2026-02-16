@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "901001cc-6a13-4387-a60d-89ca740a06ea")
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__REFDES-silk-empty.step"
+	(model "${KICAD10_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__REFDES-silk-empty.step"
 		(offset
 			(xyz 0 0 0)
 		)

@@ -273,7 +273,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "cb5ab544-bed5-48c8-b03f-a7f57b2dae23")
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test_footprint.3dshapes/SO-8_3.9x4.9mm_P1.27mm.step"
+	(model "${KICAD10_3DMODEL_DIR}/test_footprint.3dshapes/SO-8_3.9x4.9mm_P1.27mm.step"
 		(offset
 			(xyz 0 0 0)
 		)

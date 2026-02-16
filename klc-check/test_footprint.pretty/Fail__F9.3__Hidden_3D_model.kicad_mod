@@ -122,7 +122,7 @@
 		(remove_unused_layers no)
 		(uuid "1301256c-a819-41f4-9d09-65b61d5b3b82")
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test_footprints.3dshapes/Fail__F9.3__Hidden_3D_model.step"
+	(model "${KICAD10_3DMODEL_DIR}/test_footprints.3dshapes/Fail__F9.3__Hidden_3D_model.step"
 		(hide yes)
 		(offset
 			(xyz 0 0 0)

@@ -183,7 +183,7 @@
 		(roundrect_rratio 0.25)
 		(uuid "e6feb5bc-8710-4bf3-9313-bcdbdc824555")
 	)
-	(model "${KICAD9_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__REFDES-silk-too-thick.step"
+	(model "${KICAD10_3DMODEL_DIR}/test.3dshapes/Fail__F5.1__REFDES-silk-too-thick.step"
 		(offset
 			(xyz 0 0 0)
 		)
