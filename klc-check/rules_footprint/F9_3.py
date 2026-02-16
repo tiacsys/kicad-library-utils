@@ -6,8 +6,8 @@ from kicad_mod import KicadMod
 from rulebase import isValidName
 from rules_footprint.rule import KLCRule
 
-SYSMOD_PREFIX = "${KICAD9_3DMODEL_DIR}/"
-OLD_SYSMOD_PREFIX_RE = r"^(\$\{KICAD[0-8]_3DMODEL_DIR\})/"
+SYSMOD_PREFIX = "${KICAD10_3DMODEL_DIR}/"
+OLD_SYSMOD_PREFIX_RE = r"^(\$\{KICAD[0-9]_3DMODEL_DIR\})/"
 
 
 class Rule(KLCRule):
