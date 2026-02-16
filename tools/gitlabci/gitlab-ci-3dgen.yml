@@ -333,12 +333,6 @@ inductor/SMD:
   extends:
     - .model
 
-inductor/SMD/legacy:
-  variables:
-    library: inductor/SMD/legacy
-  extends:
-    - .model
-
 LED/SMD:
   variables:
     library: LED/SMD
