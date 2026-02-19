@@ -286,6 +286,12 @@ class KicadMod:
                     # text hide
                     text_dict["hide"] = self._hasValue(text, "hide")
 
+                    # fontface
+                    if self._hasValue(font, "face"):
+                        text_dict["font"]["face"] = self._getArray(font, "face")[0][1]
+                    else:
+                        text_dict["font"]["face"] = None
+
                     result.append(text_dict)
 
         return result
@@ -1271,7 +1277,7 @@ class KicadMod:
         """
         Text is formatted like thus:
         (fp_text <type> <value> (at <x> <y> <R>*) (layer <layer>)
-          (effects (font (size <sx> <sy>) (thickness <t>)))
+          (effects (font (size <sx> <sy>) (thickness <t>) (face "FreeMono")))
         )
         """
 
@@ -1291,15 +1297,15 @@ class KicadMod:
         )
 
         tf = text["font"]
-
-        font = [
-            {
-                "font": [
-                    {"size": [tf["height"], tf["width"]]},
-                    {"thickness": tf["thickness"]},
-                ]
-            }
+        face = text["face"]
+        font_properties = [
+            {"size": [tf["height"], tf["width"]]},
+            {"thickness": tf["thickness"]},
         ]
+        if face is not None:
+            font_properties.append({"face", face})
+
+        font = [{"font": font_properties}]
         italic = tf.get("italic", None)
         if italic:
             font.append(italic)

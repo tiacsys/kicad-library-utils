@@ -21,6 +21,7 @@ def get_all_footprint_rules():
         G1_1,
         G1_7,
         G1_10,
+        G1_11,
     )
 
     return {
@@ -28,6 +29,7 @@ def get_all_footprint_rules():
         "G1.1": G1_1,
         "G1.7": G1_7,
         "G1.10": G1_10,
+        "G1.11": G1_11,
         "F5.1": F5_1,
         "F5.2": F5_2,
         "F5.3": F5_3,

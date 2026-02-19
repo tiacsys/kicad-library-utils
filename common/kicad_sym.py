@@ -216,7 +216,7 @@ class TextEffect(KicadSymbolBase):
     h_justify: str = "center"
     v_justify: str = "center"
     color: Optional[Color] = None
-    font: Optional[str] = None
+    face: Optional[str] = None
 
     @classmethod
     def new_mil(cls, size: float) -> "TextEffect":
@@ -224,6 +224,8 @@ class TextEffect(KicadSymbolBase):
 
     def get_sexpr(self):
         fnt = ["font", ["size", self.sizex, self.sizey]]
+        if self.face:
+            fnt.append(["face", self.face])
         if self.is_italic:
             fnt.append("italic")
         if self.is_bold:
@@ -249,10 +251,11 @@ class TextEffect(KicadSymbolBase):
     def from_sexpr(cls, sexpr):
         if sexpr.pop(0) != "effects":
             return None
-        font = _get_array(sexpr, "font")[0]
-        sizex, sizey = _get_xy(font, "size")
-        is_italic = "italic" in font
-        is_bold = "bold" in font
+        font_info = _get_array(sexpr, "font")[0]
+        face = _get_value_of(font_info, "face", None)
+        sizex, sizey = _get_xy(font_info, "size")
+        is_italic = "italic" in font_info
+        is_bold = "bold" in font_info
         is_mirrored = "mirror" in sexpr
         justify = _get_array2(sexpr, "justify")
         h_justify = "center"
@@ -274,6 +277,7 @@ class TextEffect(KicadSymbolBase):
             is_mirrored,
             h_justify,
             v_justify,
+            face=face,
         )
 
 
