@@ -137,7 +137,6 @@ connector/FFC-FPC:
     library: connector/FFC-FPC
   extends:
     - .model
-  timeout: 3 hours
 
 connector/JST:
   variables:
@@ -180,6 +179,7 @@ connector/pin_header/other:
     library: connector/pin_header/other
   extends:
     - .model
+  timeout: 3 hours
 
 connector/pin_socket/THT_1.00:
   variables:
@@ -325,7 +325,6 @@ fuse:
     library: fuse
   extends:
     - .model
-  timeout: 3 hours
 
 inductor/SMD:
   variables:
