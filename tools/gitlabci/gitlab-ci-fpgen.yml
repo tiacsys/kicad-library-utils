@@ -126,7 +126,6 @@ fp-generate-and-compare:
     - python -m pip install --break-system-packages --upgrade pip
     - pip install --break-system-packages -e .
 
-    - echo "CI_BUILDS_DIR = $CI_BUILDS_DIR"
     - echo "CI_PROJECT_DIR = $CI_PROJECT_DIR"
     - echo "KICAD_LIBRARY_UTILS_DIR = KICAD_LIBRARY_UTILS_DIR"
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
@@ -180,14 +179,14 @@ make-fp-mr:
     - pip install python-gitlab
   script:
     # Clone fps
-    - export TARGET=`realpath "$CI_BUILDS_DIR"`
-    - git clone "${KICAD_FOOTPRINTS_REPO}" "$TARGET/fps" --branch master
+    - export FP_TARGET_DIR=`realpath "~/fps"`
+    - git clone "${KICAD_FOOTPRINTS_REPO}" "$FP_TARGET_DIR" --branch master
 
-    - cd "$TARGET/fps"
+    - cd "$FP_TARGET_DIR"
     # Clear all existing generated footprints (this allows auto-MRs to handle moves and deletions)
     - git grep --name-only -E "\(generator\s+\"kicad-footprint-generator\"\)" -- "*.kicad_mod" | xargs -d"\n" rm
     # Generate fps in a shell without CI environment variables
-    - env -i HOME="$HOME" bash -l -c "time ${CI_PROJECT_DIR}/src/generators/generate.py -j0 --output-dir-footprints $TARGET/fps"
+    - env -i HOME="$HOME" bash -l -c "time ${CI_PROJECT_DIR}/src/generators/generate.py -j0 --output-dir-footprints $FP_TARGET_DIR"
 
     - export branchname="gen-mr-${CI_MERGE_REQUEST_IID}"
     - git switch -c "$branchname"
