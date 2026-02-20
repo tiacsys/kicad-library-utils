@@ -66,11 +66,11 @@ visual_diff:
         -r "${CI_PROJECT_DIR}"
         -b "${BASE_SHA}"
         -t "${TARGET_SHA}"
-        -o "diffs"
+        -o "~/diffs"
   artifacts:
     expose_as: "Visual Diff"
     paths:
-      - "diffs/"
+      - "~/diffs/"
     reports:
       dotenv: deploy.env
   environment:
