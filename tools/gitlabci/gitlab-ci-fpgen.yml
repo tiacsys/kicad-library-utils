@@ -115,7 +115,7 @@ fp-generate-and-compare:
         - KicadModTree/**/*
         - data/**/*
   allow_failure: true
-  image: kicad/kicad:9.0
+  image: kicad/kicad:nightly
   before_script:
     # Required when using kicad Docker image (kicad-cli needed for visu diff):
     - sudo apt update -qq

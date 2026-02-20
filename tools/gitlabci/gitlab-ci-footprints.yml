@@ -61,7 +61,7 @@ nightly-convert:
     - git push origin HEAD:$LIB_REMOTE_BRANCH
 
 screenshot:
-  image: kicad/kicad:9.0
+  image: kicad/kicad:nightly
   stage: screenshot
   allow_failure: true
   when: manual
@@ -84,7 +84,7 @@ screenshot:
       - screenshots/
 
 model:
-  image: kicad/kicad:9.0
+  image: kicad/kicad:nightly
   stage: model
   allow_failure: true
   when: manual
@@ -112,7 +112,7 @@ visual_diff:
   needs: []
   tags:
     - saas-linux-medium-amd64
-  image: kicad/kicad:9.0
+  image: kicad/kicad:nightly
   allow_failure: true
   when: always
   rules:
