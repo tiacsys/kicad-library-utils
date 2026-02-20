@@ -8,7 +8,7 @@ variables:
   # You can override this in your projects GitLab UI
   KICAD_LIBRARY_UTILS_REPO: https://gitlab.com/kicad/libraries/kicad-library-utils.git
   KICAD_LIBRARY_UTILS_BRANCH: master
-  KICAD_LIBRARY_UTILS_DIR: /klu
+  KICAD_LIBRARY_UTILS_DIR: ~/klu
 
 default:
   before_script:
