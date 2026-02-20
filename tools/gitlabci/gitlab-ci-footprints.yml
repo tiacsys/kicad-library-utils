@@ -11,11 +11,12 @@ variables:
   # You can override this in your projects GitLab UI
   KICAD_LIBRARY_UTILS_REPO: https://gitlab.com/kicad/libraries/kicad-library-utils.git
   KICAD_LIBRARY_UTILS_BRANCH: master
+  KICAD_LIBRARY_UTILS_DIR: /klu
 
 default:
   before_script:
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
-    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)
 
 klc-check:
@@ -33,7 +34,7 @@ klc-check:
   script:
       # Don't let Gitlab force return code 1 on error
     - set +e
-    - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/check_footprints.sh
+    - $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/check_footprints.sh
   artifacts:
     reports:
       junit: junit.xml
@@ -52,11 +53,11 @@ screenshot:
     - sudo apt update -qq
     - sudo apt install curl inkscape python3 git -qqy --no-install-recommends
     - mkdir -p $HOME/.config/kicad/9.0/colors
-    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)
     - kicad-cli version --format=about
   script:
-    - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/screenshot_footprints.sh
+    - $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/screenshot_footprints.sh
   artifacts:
     expose_as: 'Screenshots'
     paths:
@@ -76,12 +77,12 @@ model:
     - sudo apt update -qq
     - sudo apt install curl python3 git -qqy --no-install-recommends
     - mkdir -p $HOME/.config/kicad/9.0/colors
-    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-packages3D $CI_BUILDS_DIR/kicad-packages3D
     - git config --global --add safe.directory $(realpath .)
     - kicad-cli version --format=about
   script:
-    - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/screenshot_model.sh
+    - $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/screenshot_model.sh
   artifacts:
     expose_as: 'Model'
     paths:
@@ -114,8 +115,8 @@ visual_diff:
         wsdiff
         jinja2
     # Get the MR SHA values
-    - source $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/common.sh
-    - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/visual_diff.sh
+    - source $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/common.sh
+    - $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/visual_diff.sh
         -r "${CI_PROJECT_DIR}"
         -b "${BASE_SHA}"
         -t "${TARGET_SHA}"

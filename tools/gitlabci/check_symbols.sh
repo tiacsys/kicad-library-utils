@@ -67,7 +67,7 @@ for LIBNAME in $CHANGED_SYMBOLS; do
 done
 
 # now run comparelibs
-$CI_BUILDS_DIR/kicad-library-utils/klc-check/comparelibs.py -v \
+$KICAD_LIBRARY_UTILS_DIR/klc-check/comparelibs.py -v \
   --old $CI_BUILDS_DIR/kicad-symbols-prev/* \
   --new $CHANGED_SYMBOLS \
   --check --check-derived \
@@ -77,7 +77,7 @@ $CI_BUILDS_DIR/kicad-library-utils/klc-check/comparelibs.py -v \
 KLC_ERRORS=$?
 
 # check lib table
-$CI_BUILDS_DIR/kicad-library-utils/klc-check/check_lib_table.py $CI_PROJECT_DIR/*.kicad_symdir \
+$KICAD_LIBRARY_UTILS_DIR/klc-check/check_lib_table.py $CI_PROJECT_DIR/*.kicad_symdir \
     --table $CI_PROJECT_DIR/sym-lib-table \
     --junit junit.xml
 

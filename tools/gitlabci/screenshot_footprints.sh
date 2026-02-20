@@ -11,7 +11,7 @@ mkdir -p screenshots
 for change in $CHANGES; do
     if [[ $change =~ .*\.kicad_mod ]]; then
         echo "Creating a board with footprint: $change"
-        python3 "$CI_BUILDS_DIR/kicad-library-utils/scripts/create_board.py" "/$CI_PROJECT_DIR/$change" \
+        python3 "$KICAD_LIBRARY_UTILS_DIR/scripts/create_board.py" "/$CI_PROJECT_DIR/$change" \
             "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
         echo "Exporting svg"
         kicad-cli pcb export svg --page-size-mode 2 -l "$LAYERS" \

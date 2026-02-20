@@ -1,7 +1,7 @@
 #!/bin/bash
 source $(dirname ${BASH_SOURCE[0]})/common.sh
 
-SCRIPT="$CI_BUILDS_DIR/kicad-library-utils/klc-check/check_footprint.py"
+SCRIPT="$KICAD_LIBRARY_UTILS_DIR/klc-check/check_footprint.py"
 
 echo "Comparing range $BASE_SHA to $TARGET_SHA"
 
@@ -23,7 +23,7 @@ python3 "$SCRIPT" -vv \
 KLC_ERRORS=$?
 
 # check lib table
-$CI_BUILDS_DIR/kicad-library-utils/klc-check/check_lib_table.py $CI_PROJECT_DIR/*.pretty \
+$KICAD_LIBRARY_UTILS_DIR/klc-check/check_lib_table.py $CI_PROJECT_DIR/*.pretty \
     --table $CI_PROJECT_DIR/fp-lib-table \
     --junit junit.xml
 

@@ -8,11 +8,12 @@ variables:
   # You can override this in your projects GitLab UI
   KICAD_LIBRARY_UTILS_REPO: https://gitlab.com/kicad/libraries/kicad-library-utils.git
   KICAD_LIBRARY_UTILS_BRANCH: master
+  KICAD_LIBRARY_UTILS_DIR: /klu
 
 default:
   before_script:
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
-    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
+    - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)
 
 klc-check:
@@ -31,7 +32,7 @@ klc-check:
     - pip install pytest
     # Don't let Gitlab force return code 1 on error
     - set +e
-    - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/check_symbols.sh
+    - $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/check_symbols.sh
 
   artifacts:
     reports:
@@ -61,8 +62,8 @@ visual_diff:
         wsdiff
         jinja2
     # Get the MR SHA values
-    - source $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/common.sh
-    - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/visual_diff.sh
+    - source $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/common.sh
+    - $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/visual_diff.sh
         -r "${CI_PROJECT_DIR}"
         -b "${BASE_SHA}"
         -t "${TARGET_SHA}"
