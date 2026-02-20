@@ -100,9 +100,8 @@ visual_diff:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - "**/*.kicad_mod"
-  before_script:
-    - kicad-cli version --format=about
   script:
+    - kicad-cli version --format=about
     - echo -e "\e[0Ksection_start:`date +%s`:environment[collapsed=true]\r\e[0KEnvironment"
     - printenv
     - echo -e "\e[0Ksection_end:`date +%s`:environment\r\e[0K"
