@@ -131,7 +131,7 @@ fp-generate-and-compare:
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)
-    - mkdir -p $HOME/.config/kicad/8.0/colors
+    - mkdir -p $HOME/.config/kicad/10.0/colors
     - pip install --break-system-packages --no-warn-script-location
         pygments
         wsdiff

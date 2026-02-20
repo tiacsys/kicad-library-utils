@@ -6,8 +6,8 @@ source $(dirname ${BASH_SOURCE[0]})/common.sh
 CHANGES=$(git diff-tree --diff-filter=AMR --no-commit-id --name-only -r "$BASE_SHA" "$TARGET_SHA")
 mkdir -p "$CI_BUILDS_DIR/tmp"
 mkdir -p screenshots
-mkdir -p "$HOME/.config/kicad/8.99/"
-cp "$KICAD_LIBRARY_UTILS_DIR/scripts/3d_viewer.json" "$HOME/.config/kicad/8.99/3d_viewer.json"
+mkdir -p "$HOME/.config/kicad/10.0/"
+cp "$KICAD_LIBRARY_UTILS_DIR/scripts/3d_viewer.json" "$HOME/.config/kicad/10.0/3d_viewer.json"
 
 for change in $CHANGES; do
     if [[ $change =~ .*\.kicad_mod ]]; then

@@ -52,7 +52,7 @@ screenshot:
     - export DEBIAN_FRONTEND=noninteractive
     - sudo apt update -qq
     - sudo apt install curl inkscape python3 git -qqy --no-install-recommends
-    - mkdir -p $HOME/.config/kicad/9.0/colors
+    - mkdir -p $HOME/.config/kicad/10.0/colors
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)
     - kicad-cli version --format=about
@@ -76,7 +76,7 @@ model:
     - export DEBIAN_FRONTEND=noninteractive
     - sudo apt update -qq
     - sudo apt install curl python3 git -qqy --no-install-recommends
-    - mkdir -p $HOME/.config/kicad/9.0/colors
+    - mkdir -p $HOME/.config/kicad/10.0/colors
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-packages3D $CI_BUILDS_DIR/kicad-packages3D
     - git config --global --add safe.directory $(realpath .)
@@ -106,7 +106,7 @@ visual_diff:
     - echo -e "\e[0Ksection_start:`date +%s`:environment[collapsed=true]\r\e[0KEnvironment"
     - printenv
     - echo -e "\e[0Ksection_end:`date +%s`:environment\r\e[0K"
-    - mkdir -p $HOME/.config/kicad/9.0/colors
+    - mkdir -p $HOME/.config/kicad/10.0/colors
     - sudo apt update -qq
     - sudo apt install curl python3 python3-pip -qqy --no-install-recommends
     - python3 -V
