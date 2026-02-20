@@ -1,8 +1,8 @@
 #!/bin/bash
 
-source $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/common.sh
+source $KICAD_LIBRARY_UTILS_DIR/tools/gitlabci/common.sh
 
-export BUILDTARGET=`realpath "$CI_BUILDS_DIR"`
+export BUILDTARGET=`realpath "$TMP_BUILD_DIR"`
 echo "Cloning 3d model repo"
 git clone "${KICAD_MODELS_REPO}" "$BUILDTARGET/models" --branch master
 cd src/generators
@@ -20,4 +20,4 @@ git push -uf "https://gitlab-ci-token:${MR_3D_TOKEN}@gitlab.com/kicad/libraries/
 export MR_DESCRIPTION="Output of merge request ${CI_MERGE_REQUEST_PROJECT_URL}/-/merge_requests/${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
 export MR_TITLE="Generator MR ${CI_MERGE_REQUEST_IID} ${CI_MERGE_REQUEST_TITLE}"
 gitlab --private-token "${MR_3D_TOKEN}" project-merge-request create --project-id 68922623 --source-branch "$branchname" --target-branch master --allow-collaboration true --squash true --remove-source-branch true --target-project-id 21604637 --title "$MR_TITLE" --description "$MR_DESCRIPTION"
-rm -rf $CI_BUILDS_DIR/*
+rm -rf $TMP_BUILD_DIR/*

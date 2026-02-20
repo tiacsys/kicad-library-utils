@@ -19,7 +19,7 @@ if [ -z $BASE_SHA ]; then
   BASE_SHA="$TARGET_SHA~1"
 fi
 
-CI_BUILDS_DIR=`mktemp -d`
+TMP_BUILD_DIR=`mktemp -d`
 
 
 # get the list of files we want to compare
@@ -32,17 +32,17 @@ echo "Found new Libraries: $LIBS_NEW"
 echo "Found old Libraries: $LIBS_OLD"
 
 # checkout the previous version of the 'old' files so we can compare against them
-mkdir -p $CI_BUILDS_DIR/kicad-symbols-prev
+mkdir -p $TMP_BUILD_DIR/kicad-symbols-prev
 for LIBNAME in $LIBS_OLD; do
-  git cat-file blob "$BASE_SHA:$LIBNAME" > "$CI_BUILDS_DIR/kicad-symbols-prev/$LIBNAME"
+  git cat-file blob "$BASE_SHA:$LIBNAME" > "$TMP_BUILD_DIR/kicad-symbols-prev/$LIBNAME"
 done
 
-mkdir -p $CI_BUILDS_DIR/kicad-symbols-curr
+mkdir -p $TMP_BUILD_DIR/kicad-symbols-curr
 for LIBNAME in $LIBS_NEW; do
-  git cat-file blob "$TARGET_SHA:$LIBNAME" > "$CI_BUILDS_DIR/kicad-symbols-curr/$LIBNAME"
+  git cat-file blob "$TARGET_SHA:$LIBNAME" > "$TMP_BUILD_DIR/kicad-symbols-curr/$LIBNAME"
 done
 
 # now run comparelibs
-`dirname $0`/../klc-check/comparelibs.py -v --old $CI_BUILDS_DIR/kicad-symbols-prev/* --new $CI_BUILDS_DIR/kicad-symbols-curr/* --check --check-derived --footprint_directory $FOOTPRINTS_DIR -m
+`dirname $0`/../klc-check/comparelibs.py -v --old $TMP_BUILD_DIR/kicad-symbols-prev/* --new $TMP_BUILD_DIR/kicad-symbols-curr/* --check --check-derived --footprint_directory $FOOTPRINTS_DIR -m
 
-rm -rf $CI_BUILDS_DIR
+rm -rf $TMP_BUILD_DIR
