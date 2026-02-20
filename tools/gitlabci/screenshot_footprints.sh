@@ -5,17 +5,17 @@ source $(dirname ${BASH_SOURCE[0]})/common.sh
 
 LAYERS="F.Cu,B.Cu,F.SilkS,B.SilkS,F.Fab,B.Fab,F.CrtYd,B.CrtYd,F.Adhes,B.Adhes"
 CHANGES=$(git diff-tree --diff-filter=AMR --no-commit-id --name-only -r "$BASE_SHA" "$TARGET_SHA")
-mkdir -p "$CI_BUILDS_DIR/tmp"
+TMP_BOARD_DIR=`mktemp -d`
 mkdir -p screenshots
 
 for change in $CHANGES; do
     if [[ $change =~ .*\.kicad_mod ]]; then
         echo "Creating a board with footprint: $change"
         python3 "$KICAD_LIBRARY_UTILS_DIR/scripts/create_board.py" "/$CI_PROJECT_DIR/$change" \
-            "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
+            "$TMP_BOARD_DIR/board.kicad_pcb"
         echo "Exporting svg"
         kicad-cli pcb export svg --page-size-mode 2 -l "$LAYERS" \
-            -o "screenshots/$change.svg" "$CI_BUILDS_DIR/tmp/board.kicad_pcb"
+            -o "screenshots/$change.svg" "$TMP_BOARD_DIR/board.kicad_pcb"
         echo
         echo "Converting to png"
         mkdir -p screenshots/$(dirname "$change")
