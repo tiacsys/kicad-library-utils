@@ -136,6 +136,7 @@ fp-generate-and-compare:
         pygments
         wsdiff
         jinja2
+    - kicad-cli version --format=about
     # Get the MR SHA values
     - source ${KICAD_LIBRARY_UTILS}/tools/gitlabci/common.sh
   script:

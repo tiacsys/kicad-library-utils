@@ -50,6 +50,8 @@ visual_diff:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - "**/*.kicad_sym"
+  before_script:
+    - kicad-cli version --format=about
   script:
     - mkdir -p $HOME/.config/kicad/9.0/colors
     - sudo apt update -qq

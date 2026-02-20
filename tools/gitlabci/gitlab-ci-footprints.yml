@@ -76,6 +76,7 @@ screenshot:
     - mkdir -p $HOME/.config/kicad/9.0/colors
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)
+    - kicad-cli version --format=about
   script:
     - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/screenshot_footprints.sh
   artifacts:
@@ -100,6 +101,7 @@ model:
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" $CI_BUILDS_DIR/kicad-library-utils --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-packages3D $CI_BUILDS_DIR/kicad-packages3D
     - git config --global --add safe.directory $(realpath .)
+    - kicad-cli version --format=about
   script:
     - $CI_BUILDS_DIR/kicad-library-utils/tools/gitlabci/screenshot_model.sh
   artifacts:
@@ -119,6 +121,8 @@ visual_diff:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - "**/*.kicad_mod"
+  before_script:
+    - kicad-cli version --format=about
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:environment[collapsed=true]\r\e[0KEnvironment"
     - printenv
