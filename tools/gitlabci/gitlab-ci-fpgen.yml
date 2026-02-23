@@ -181,7 +181,7 @@ make-fp-mr:
     - pip install python-gitlab
   script:
     # Clone fps
-    - export FP_TARGET_DIR=`realpath "~/fps"`
+    - export FP_TARGET_DIR="$HOME/fps"
     - git clone "${KICAD_FOOTPRINTS_REPO}" "$FP_TARGET_DIR" --branch master
 
     - cd "$FP_TARGET_DIR"
