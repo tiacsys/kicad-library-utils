@@ -12,6 +12,8 @@ variables:
 
 default:
   before_script:
+    # ugly hack, 'resolve' the ~, because the other usage of this variable is in quotes, so ~ stays ~ which is bad
+    - KICAD_LIBRARY_UTILS_DIR="${KICAD_LIBRARY_UTILS_DIR/#\~/$HOME}"
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
     - git config --global --add safe.directory $(realpath .)

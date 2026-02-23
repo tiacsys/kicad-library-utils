@@ -126,6 +126,8 @@ fp-generate-and-compare:
     - python -m pip install --break-system-packages --upgrade pip
     - pip install --break-system-packages -e .
 
+    # ugly hack, 'resolve' the ~, because the other usage of this variable is in quotes, so ~ stays ~ which is bad
+    - KICAD_LIBRARY_UTILS_DIR="${KICAD_LIBRARY_UTILS_DIR/#\~/$HOME}"
     - echo "CI_PROJECT_DIR = $CI_PROJECT_DIR"
     - echo "KICAD_LIBRARY_UTILS_DIR = KICAD_LIBRARY_UTILS_DIR"
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
@@ -253,6 +255,8 @@ make-3d-mr:
     - pip install dictdiffer python-gitlab
     - apt-get update -q -y
     - apt-get install -y libglx-mesa0 libgl1 libxrender1 git fontconfig
+    # ugly hack, 'resolve' the ~, because the other usage of this variable is in quotes, so ~ stays ~ which is bad
+    - KICAD_LIBRARY_UTILS_DIR="${KICAD_LIBRARY_UTILS_DIR/#\~/$HOME}"
   script:
     - echo "Cloning ${KICAD_LIBRARY_UTILS_REPO} branch ${KICAD_LIBRARY_UTILS_BRANCH}"
     - git clone --depth 1 "${KICAD_LIBRARY_UTILS_REPO}" "$KICAD_LIBRARY_UTILS_DIR" --branch "${KICAD_LIBRARY_UTILS_BRANCH}"
