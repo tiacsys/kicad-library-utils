@@ -17,6 +17,7 @@ variables:
     - pip install -e .[3d]
   script:
     - cd src/generators
+    - echo "./generate.py --output-dir-models ../../3dmodels --generator $library"
     - ./generate.py --output-dir-models ../../3dmodels --generator $library
     # - sudo find / -iname 3dmodels > models_location.txt
     # - ./validator.py --unvalidated_dir /tmp/3dmodels --validated_dir /usr/share/kicad/3dmodels/ > audit_log.txt
@@ -40,6 +41,7 @@ variables:
         do
           package_args="$package_args -p $package"
         done
+    - echo "./generate.py --output-dir-models ../../3dmodels --generator $library $package_args"
     - ./generate.py --output-dir-models ../../3dmodels --generator $library $package_args
 
 battery:
