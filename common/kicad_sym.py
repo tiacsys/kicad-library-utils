@@ -1264,7 +1264,7 @@ class KicadSymbol(KicadSymbolBase):
         for prop in defaults:
             if self.get_property(prop["n"]) is None:
                 p = Property(prop["n"], prop["v"])
-                p.effects.is_hidden = prop["h"]
+                p.is_hidden = prop["h"]
                 self.properties.append(p)
 
     @classmethod
