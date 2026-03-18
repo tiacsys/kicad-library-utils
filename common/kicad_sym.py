@@ -193,7 +193,7 @@ class KicadSymbolBase:
 
 @dataclass
 class Color(KicadSymbolBase):
-    """Encode the color of an entiry. Currently not used in the kicad_sym format"""
+    """Encode the color of an entity. Currently not used in the kicad_sym format"""
 
     r: int
     g: int
@@ -206,7 +206,7 @@ class Color(KicadSymbolBase):
 
 @dataclass
 class TextEffect(KicadSymbolBase):
-    """Encode the text effect of an entiry"""
+    """Encode the text effect of an entity"""
 
     sizex: float
     sizey: float
