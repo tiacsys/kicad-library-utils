@@ -71,7 +71,7 @@ class SymbolCheck:
         for rule_class in self.rules:
             rule_class.footprints_dir = self.footprints
             rule = rule_class(symbol)
-            rule.disable_exceptions = disable_exceptions
+            rule.disable_exceptions = self.disable_exceptions
             if unittest_rule == rule.name:
                 # check if there is an exception for this rule
                 rule.parse_exceptions(symbol.properties)
