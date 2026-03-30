@@ -145,6 +145,14 @@ def _get_value_of(data, lookup, default=None):
     return default
 
 
+def _get_yesno_value_of(data, lookup, default=False):
+    """find the array which has lookup as first element, return its 2nd element as boolean"""
+    for i in data:
+        if isinstance(i, list) and i[0] == lookup:
+            return i[1].lower() == "yes"
+    return default
+
+
 def _has_value(data, lookup) -> bool:
     """return true if the lookup item exists"""
     for i in data:
@@ -955,8 +963,7 @@ class Property(KicadSymbolBase):
         ]
         sx.append(["at", self.posx, self.posy, self.rotation])
 
-        if self.do_not_autoplace:
-            sx.append(["do_not_autoplace"])
+        sx.append(["do_not_autoplace", "yes" if self.do_not_autoplace else "no"])
 
         sx.append(["hide", "yes" if self.is_hidden else "no"])
 
@@ -988,7 +995,8 @@ class Property(KicadSymbolBase):
             name = sexpr.pop(0)
         value = sexpr.pop(0)
         posx, posy, rotation = _parse_at(sexpr)
-        do_not_autoplace = _has_value(sexpr, "do_not_autoplace")
+
+        do_not_autoplace = _get_yesno_value_of(sexpr, "do_not_autoplace")
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
 
         is_hidden = False
