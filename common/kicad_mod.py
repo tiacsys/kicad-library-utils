@@ -1297,14 +1297,13 @@ class KicadMod:
         )
 
         tf = text["font"]
-        face = text["face"]
+        face = tf.get("face", None)
         font_properties = [
             {"size": [tf["height"], tf["width"]]},
             {"thickness": tf["thickness"]},
         ]
         if face is not None:
-            font_properties.append({"face", face})
-
+            font_properties.append({"face": face})
         font = [{"font": font_properties}]
         italic = tf.get("italic", None)
         if italic:
