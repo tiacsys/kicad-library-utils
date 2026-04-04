@@ -259,6 +259,9 @@ def parse_csv(
                             f'no unit set for pin {parsed_pin_data["pin"]} "{parsed_pin_data["name"]}"'
                         )
 
+                    # if there are multiple pins with the same number (e.g. GND pins) one can specify
+                    # them all in a single line like separated by comma like this: "1,2,5,7"
+                    # This loop parses and splits that format.
                     for pin_num_str in parsed_pin_data["pin"].split(","):
                         new_pin = parsed_pin_data.copy()
                         new_pin["pin"] = pin_num_str

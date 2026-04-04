@@ -14,11 +14,7 @@ Pin,Name,Type,Side,Debug1,Debug2
 17,VSENSE,input,right,500 mils,-300 mils
 ,,space,right,-,-
 14,STAT1,output,right,500 mils,-100 mils
-1,N/C,no_connect,right,400 mils,100 mils
-6,N/C,no_connect,right,400 mils,200 mils
-11,N/C,no_connect,right,400 mils,300 mils
-15,N/C,no_connect,right,400 mils,0 mils
-20,N/C,no_connect,right,400 mils,400 mils
+"1,6,11,15,20",N/C,no_connect,right,400 mils,100 mils
 2,IN,input,left,-500 mils,-500 mils
 3,IN,input,left,-500 mils,-500 mils
 ,,space,left,-,-
