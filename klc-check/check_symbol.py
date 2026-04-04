@@ -416,6 +416,7 @@ if __name__ == "__main__":
 
     error_count = 0
     warning_count = 0
+    ret_code = 0  # pass
 
     # wait for all workers to finish
     while jobs:
@@ -432,6 +433,8 @@ if __name__ == "__main__":
                 except queue.Empty:
                     break
             if not p.is_alive():
+                if p.exitcode:
+                    ret_code = p.exitcode
                 jobs.remove(p)
 
     out_queue.put("STOP")
@@ -449,13 +452,12 @@ if __name__ == "__main__":
 
     out_queue.close()
 
-    ret_code = 0  # pass
-
-    if error_count:
-        # This will fail the pipeline
-        ret_code = 3
-    elif warning_count:
-        # This will be an "allowed failure"
-        ret_code = 2
+    if not ret_code:
+        if error_count:
+            # This will fail the pipeline
+            ret_code = 3
+        elif warning_count:
+            # This will be an "allowed failure"
+            ret_code = 2
 
     sys.exit(ret_code)
