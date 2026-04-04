@@ -1029,7 +1029,7 @@ class KicadEmbeddedFile(KicadSymbolBase):
             "file",
             ["name", self.quoted_string(self.name)],
             ["type", self.ftype],
-            ["data", self.compressed_data_base64],
+            ["data", "".join(self.compressed_data_base64)],
             ["checksum", self.quoted_string(self.checksum)],
         ]
         return sx
@@ -1128,7 +1128,7 @@ class KicadSymbol(KicadSymbolBase):
         for file in self.files:
             file_expression.append(file.get_sexpr())
         if len(file_expression) > 0:
-            sx.append(["files", file_expression])
+            sx.append(["embedded_files", *file_expression])
 
         def pin_sort_key(pin: Pin) -> tuple:
             # This is a bit fiddly, and the comments in KiCad seems wrong
@@ -1573,10 +1573,9 @@ class KicadLibrary(KicadSymbolBase):
                     ) from exc
 
             # get embedded files
-            files_sexpr = _get_value_of(item, "embedded_files")
-            if files_sexpr:
-                files_list = _get_array(files_sexpr, "file")
-                for file in files_list:
+            files_array = _get_array(item, "embedded_files")
+            if files_array:
+                for file in _get_array(files_array[0], "file"):
                     symbol.files.append(KicadEmbeddedFile.from_sexpr(file))
 
             # get flags
