@@ -92,7 +92,7 @@ class PinData:
         LEFT = "left"
         RIGHT = "right"
 
-    pin_number: int | None
+    pin_number: str | None
     name: str
     alt_names: List[str]
     type: str
@@ -111,7 +111,7 @@ class PinData:
             raise ValueError("Missing pin name in data")
 
         if "pin" in data and len(data["pin"].strip()) > 0:
-            self.pin_number = int(data["pin"])
+            self.pin_number = data["pin"]
         else:
             self.pin_number = None
 
@@ -259,22 +259,10 @@ def parse_csv(
                             f'no unit set for pin {parsed_pin_data["pin"]} "{parsed_pin_data["name"]}"'
                         )
 
-                    if parsed_pin_data["pin"].strip() == "":
-                        pin_data.append(PinData(parsed_pin_data, split_pin_names))
-                    else:
-                        for pin_num_str in parsed_pin_data["pin"].split(","):
-                            pin_range_arr = pin_num_str.split("-", maxsplit=1)
-                            pin_range_start = int(pin_range_arr[0].strip())
-                            pin_range_end = (
-                                int(pin_range_arr[1].strip())
-                                if len(pin_range_arr) > 1
-                                else pin_range_start
-                            )
-                            pin_range = range(pin_range_start, pin_range_end + 1)
-                            for pin_num in pin_range:
-                                new_pin = parsed_pin_data.copy()
-                                new_pin["pin"] = str(pin_num)
-                                pin_data.append(PinData(new_pin, split_pin_names))
+                    for pin_num_str in parsed_pin_data["pin"].split(","):
+                        new_pin = parsed_pin_data.copy()
+                        new_pin["pin"] = pin_num_str
+                        pin_data.append(PinData(new_pin, split_pin_names))
 
     if metadata is None:
         raise ValueError("Failed to parse metadata from CSV.")
@@ -592,7 +580,7 @@ def generate_pins(
             # Add the pin to the symbol
             new_symbol.pins.append(
                 Pin(
-                    number=str(pin.pin_number),
+                    number=pin.pin_number,
                     name=pin.name,
                     etype=etype,
                     posx=mil_to_mm(posx),
