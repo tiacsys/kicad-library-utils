@@ -7,6 +7,7 @@ import math
 import os
 import re
 import sys
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -388,6 +389,35 @@ class Pin(KicadSymbolBase):
             return "D"
         else:
             raise NotImplementedError(f"Invalid 'rotation' of Pin: {self.rotation}")
+
+    """
+    Since KiCad10 Pins can be natively stacked. They format just puts a list of pin numbers
+    into the normal pin_number field like so: [23, 45, 74]
+    This function splits 'unstacks' those pins and returns a list of the pins that are
+    part of the pinstack.
+    """
+
+    def unstack(self) -> List["Pin"]:
+        if stack_list := re.match(r"^\[(.*?)\]$", self.number):
+            pin_list = []
+            pins_in_stack = stack_list.group(1).split(",")
+            print(f"pins in native stack {pins_in_stack}")
+            for pin_number in pins_in_stack:
+                # we first make a copy of the pin, then overwrite its
+                # number with the unstacked number
+                pinstack_pin = deepcopy(self)
+                pinstack_pin.number = pin_number
+                pin_list.append(pinstack_pin)
+            return pin_list
+        else:
+            return []
+
+    """
+    Returns true when this pin is a native pin stack
+    """
+
+    def is_stack(self) -> bool:
+        return True if re.match(r"^\[(.*?)\]$", self.number) else False
 
     @classmethod
     def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> "Pin":
@@ -1235,10 +1265,9 @@ class KicadSymbol(KicadSymbolBase):
                     loc = "x{0}_y{1}_u{2}_d{3}".format(
                         pin.posx, pin.posy, unit, demorgan
                     )
-                    if loc in stacks:
-                        stacks[loc].append(pin)
-                    else:
-                        stacks[loc] = [pin]
+                    # add this location to the dict if it does not exist
+                    stacks.setdefault(loc, [])
+                    stacks[loc].append(pin)
         return stacks
 
     def get_parent_symbol(self) -> "KicadSymbol":

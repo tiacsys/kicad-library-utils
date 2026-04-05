@@ -46,6 +46,13 @@ class Rule(KLCRule):
             # skip stacks with only one pin
             if len(pins) == 1:
                 continue
+            else:
+                # we have two or more pins on the same location.
+                # since KiCad10 this is always a warning. Because we except
+                # that the native pinstack feature is used
+                self.warning(
+                    f"Found legacy pin-stack, please convert it to a native pin-stack {pinString(pins[0])}"
+                )
 
             common_pin_name = pins[0].name
             visible_pin = None
@@ -53,6 +60,11 @@ class Rule(KLCRule):
             min_pin_number = self.get_smallest_pin_number(pins)
 
             for pin in pins:
+                if pin.is_stack():
+                    self.error(
+                        f"Native pin-stack on top of another pin {pinString(pin)}"
+                    )
+
                 if pin.number_int is None and pos not in self.non_numeric:
                     self.warning(
                         "Found non-numeric pin in a pinstack: {0}".format(
