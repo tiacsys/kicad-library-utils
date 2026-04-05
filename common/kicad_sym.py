@@ -1510,7 +1510,7 @@ class KicadLibrary(KicadSymbolBase):
 
         # Check if library exists and set the empty library if not
         if not Path(filename).is_file():
-            raise Exception(f'The file "{filename}" cannot be opened')
+            raise FileNotFoundError(f'The file "{filename}" cannot be opened')
 
         library = KicadLibrary(filename)
 
@@ -1674,7 +1674,7 @@ class KicadLibrary(KicadSymbolBase):
 
         # do some inheritance sanity checks
         if check_inheritance:
-            for symbol in library.symbols:
+            for symbol in library.symbols[:]:
                 cursor = symbol
                 while cursor.extends:
                     if symbol.name == symbol.extends:
@@ -1686,6 +1686,30 @@ class KicadLibrary(KicadSymbolBase):
                         raise KicadFileFormatError(
                             f"Symbol {symbol.name} has a circular inheritance"
                         )
+
+                    # If a single file from a `kicad_symdir` is loaded, that means that we don't load the parent of a
+                    # derived symbol. So we need to guess its filename based on the parent name and load it as well.
+                    if cursor.extends not in symbol_names:
+                        parent_filename = (
+                            Path(library.filename).parent
+                            / f"{cursor.extends}.kicad_sym"
+                        )
+                        try:
+                            parent_lib = KicadLibrary.from_file(parent_filename)
+                        except FileNotFoundError:
+                            raise KicadFileFormatError(
+                                f"Could not open parent-library {parent_filename} while trying to load {symbol.name}"
+                            )
+                        for extra_sym in parent_lib.symbols:
+                            if (
+                                symbol_names.setdefault(extra_sym.name, extra_sym)
+                                is not extra_sym
+                            ):
+                                raise KicadFileFormatError(
+                                    f"Duplicate symbol while trying to load parent symbol: {extra_sym.name}"
+                                )
+                            if extra_sym.name == cursor.extends:
+                                library.symbols.append(extra_sym)
 
                     parent_sym = symbol_names.get(cursor.extends)
                     if not parent_sym:
