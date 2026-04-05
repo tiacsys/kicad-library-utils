@@ -1493,6 +1493,11 @@ class KicadLibrary(KicadSymbolBase):
                     )
 
                 parent_sym = symbol_names.get(cursor.extends)
+                if parent_sym is None:
+                    raise KicadFileFormatError(
+                        f"Symbol {symbol.name} is extended to a part not in the library"
+                    )
+
                 symbol._inheritance.append(parent_sym)
                 cursor = parent_sym
 

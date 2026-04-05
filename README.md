@@ -124,6 +124,9 @@ How to use
     # run the following 'h'elp command to see other options
     ./comparelibs.py -h
 
+## Add Symbol/Footprint Test Symbols/Footprints
+    `klc-check/test_project` contains a test project which has all `sym_lib_table` to edit the librarys
+
 # Contributing
 
 Please keep in mind, that this repository is mainly targeted at the [official KiCad libraries](gitlab.com/kicad/libraries/).

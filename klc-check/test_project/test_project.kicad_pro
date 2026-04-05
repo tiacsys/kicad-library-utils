@@ -221,6 +221,15 @@
     "viewports": []
   },
   "boards": [],
+  "component_class_settings": {
+    "assignments": [],
+    "meta": {
+      "version": 0
+    },
+    "sheet_component_classes": {
+      "enabled": false
+    }
+  },
   "cvpcb": {
     "equivalence_files": []
   },
@@ -237,7 +246,8 @@
       "CI_Test_S4.6",
       "CI_Test_S5.x",
       "CI_Test_S6.x",
-      "CI_Test_S7.x"
+      "CI_Test_S7.x",
+      "framework_inheritance"
     ]
   },
   "meta": {
@@ -260,13 +270,14 @@
         "priority": 2147483647,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.2,
+        "tuning_profile": "",
         "via_diameter": 0.6,
         "via_drill": 0.3,
         "wire_width": 6
       }
     ],
     "meta": {
-      "version": 4
+      "version": 5
     },
     "net_colors": null,
     "netclass_assignments": null,
@@ -287,9 +298,23 @@
     "page_layout_descr_file": ""
   },
   "schematic": {
+    "bus_aliases": {},
     "legacy_lib_dir": "",
-    "legacy_lib_list": []
+    "legacy_lib_list": [],
+    "top_level_sheets": [
+      {
+        "filename": "test_project.kicad_sch",
+        "name": "test_project",
+        "uuid": "00000000-0000-0000-0000-000000000000"
+      }
+    ]
   },
   "sheets": [],
-  "text_variables": {}
+  "text_variables": {},
+  "tuning_profiles": {
+    "meta": {
+      "version": 0
+    },
+    "tuning_profiles_impedance_geometric": []
+  }
 }
