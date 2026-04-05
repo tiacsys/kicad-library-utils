@@ -23,7 +23,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from kicad_sym import AltFunction, KicadLibrary, KicadSymbol, Pin, Rectangle, mil_to_mm
 
@@ -341,7 +341,14 @@ def create_pin_stacks(pins: List[PinData]) -> List[PinStack]:
             pin_stacks[f"do_not_group_{index}"] = [pin]
         # add pins to existing pin_stacks
         elif pin.name in pin_stacks:
-            pin_stacks[pin.name].append(pin)
+            existing_pin = pin_stacks[pin.name][0]
+            if pin.type == existing_pin.type:
+                pin_stacks[pin.name].append(pin)
+            else:
+                logger.warning(
+                    f"Tried to add pin with number {pin.pin_number} and type {pin.type}"
+                    + f" to stack with name {pin.name} and conflicting type {existing_pin.type}!"
+                )
         # create new pin_stacks for new pin names
         else:
             pin_stacks[pin.name] = [pin]
@@ -560,6 +567,7 @@ def extend_bounding_box(
 
 
 def generate_pins(
+    new_symbol: KicadSymbol,
     pin_stacks: List[PinStack],
     posx_func: Callable[[int], int],
     posy_func: Callable[[int], int],
@@ -570,6 +578,7 @@ def generate_pins(
     """Adds the given pin stacks to the new symbol using the given functions and rotation to determine pin positions.
 
     Parameters:
+        new_symbol (KicadSymbol): The symbol to generate pins for.
         pin_stacks (list): The list of pin stacks to place where each is a list of pins.
         posx_func (func): Function returning the x position of a pin (stack) for a given index.
         posy_func (func): Function returning the y position of a pin (stack) for a given index.
@@ -616,46 +625,16 @@ def generate_pins(
             )
 
 
-# the actual main function of the parser when invoked as a script:
-if __name__ == "__main__":
-    # parse cmdline parameters
-    parser = argparse.ArgumentParser(
-        prog="from_csv_generator.py", description="Generates KiCad Symbols from CSVs."
-    )
-    parser.add_argument("input_csv_file", help="The CSV file to generate a symbol for.")
-    parser.add_argument(
-        "-o",
-        "--output",
-        help="Where to output the generated symbol to. If not given the path of the"
-        + " input CSV with the extension .kicad_sym is used.",
-    )
-    parser.add_argument(
-        "--split-alt-pinnames",
-        type=int,
-        dest="split",
-        help="If given split pin names on '/' into alt pin names."
-        + " An integer can be given to ignore the first n '/'."
-        + " The default is to do no splitting.",
-    )
-    parser.add_argument(
-        "--min-aspect-ratio",
-        type=float,
-        dest="min_aspect_ratio",
-        help="The minimum aspect ratio to enforce for the generated symbol as width / height.",
-    )
-
-    cliArgs = parser.parse_args()
-
-    # configure logging
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-
+def output_symbol(input_csv_file: str, cli_args: Any) -> None:
     # parse csv and get units
     try:
-        metadata, pin_data = parse_csv(cliArgs.input_csv_file, cliArgs.split)
+        metadata, pin_data = parse_csv(input_csv_file, cliArgs.split)
     except ValueError as parser_error:
-        logger.error("Can not parse input CSV. Is it properly formatted?")
+        logger.error(
+            f"Can not parse input CSV {input_csv_file}. Is it properly formatted?"
+        )
         logger.error(str(parser_error))
-        os._exit(1)
+        raise parser_error
 
     # load generator default CLI args from CSV
     cliArgs.split = cliArgs.split or metadata.generator_split_pin_names
@@ -669,12 +648,21 @@ if __name__ == "__main__":
 
     # generate kicad symbol
 
-    libname = Path(cliArgs.input_csv_file).stem
-    filename = libname + ".kicad_sym"
+    output_base_path = cliArgs.output or cliArgs.input
 
-    if cliArgs.output:
-        filename = cliArgs.output
-        libname = Path(cliArgs.output).stem
+    if cli_args.folder_mode:
+        input_file_parts = Path(input_csv_file).parts[len(Path(cli_args.input).parts) :]
+        output_path = Path(output_base_path, *input_file_parts)
+        output_path = Path(
+            output_path.parents[1],
+            output_path.parent.with_suffix(".kicad_symdir").name,
+            output_path.with_suffix(".kicad_sym").name,
+        )
+        libname = output_path.stem
+        filename = str(output_path)
+    else:
+        libname = Path(output_base_path).stem
+        filename = str(Path(output_base_path).with_suffix(".kicad_sym"))
 
     new_symbol = KicadSymbol.new(
         metadata.name,
@@ -732,6 +720,7 @@ if __name__ == "__main__":
 
         # generate pins for each side
         generate_pins(
+            new_symbol,
             pin_stacks[PinData.Side.LEFT],
             lambda i: -bounding_box_width / 2 - pin_length,
             lambda i: pos_for_pin(len(pin_stacks[PinData.Side.LEFT]), i, False),
@@ -741,6 +730,7 @@ if __name__ == "__main__":
         )
 
         generate_pins(
+            new_symbol,
             pin_stacks[PinData.Side.RIGHT],
             lambda i: bounding_box_width / 2 + pin_length,
             lambda i: pos_for_pin(len(pin_stacks[PinData.Side.RIGHT]), i, False),
@@ -750,6 +740,7 @@ if __name__ == "__main__":
         )
 
         generate_pins(
+            new_symbol,
             pin_stacks[PinData.Side.TOP],
             lambda i: pos_for_pin(len(pin_stacks[PinData.Side.TOP]), i, True),
             lambda i: bounding_box_height / 2 + pin_length,
@@ -759,6 +750,7 @@ if __name__ == "__main__":
         )
 
         generate_pins(
+            new_symbol,
             pin_stacks[PinData.Side.BOTTOM],
             lambda i: pos_for_pin(len(pin_stacks[PinData.Side.BOTTOM]), i, True),
             lambda i: -bounding_box_height / 2 - pin_length,
@@ -801,6 +793,73 @@ if __name__ == "__main__":
     lib = KicadLibrary(filename)
     lib.symbols.append(new_symbol)
 
+    Path(filename).parent.mkdir(parents=True, exist_ok=True)
+
     lib.write()
 
     print(f"Written generated symbol to {filename}")
+
+
+# the actual main function of the parser when invoked as a script:
+if __name__ == "__main__":
+    # parse cmdline parameters
+    parser = argparse.ArgumentParser(
+        prog="from_csv_generator.py", description="Generates KiCad Symbols from CSVs."
+    )
+    parser.add_argument(
+        "input", help="The CSV file or folder of CSV files to generate a symbol for."
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Where to output the generated symbol(s) to. If not given the path of the"
+        + " input CSV(s) with the extension .kicad_sym is used.",
+    )
+    parser.add_argument(
+        "--split-alt-pinnames",
+        type=int,
+        dest="split",
+        help="If given split pin names on '/' into alt pin names."
+        + " An integer can be given to ignore the first n '/'."
+        + " The default is to do no splitting.",
+    )
+    parser.add_argument(
+        "--min-aspect-ratio",
+        type=float,
+        dest="min_aspect_ratio",
+        help="The minimum aspect ratio to enforce for the generated symbol as width / height.",
+    )
+    parser.add_argument(
+        "--folder",
+        dest="folder_mode",
+        action="store_true",
+        default=False,
+        help="Process a folder of CSVs and output a directory structure of KiCad Symbols.",
+    )
+
+    cliArgs = parser.parse_args()
+
+    # configure logging
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    if cliArgs.folder_mode:
+        if not Path(cliArgs.input).is_dir():
+            logger.error("No folder given as input!")
+        else:
+            csv_files = [
+                Path(r, f)
+                for r, d, files in os.walk(cliArgs.input)
+                for f in files
+                if f.endswith(".csv")
+            ]
+            for csv_file in csv_files:
+                try:
+                    output_symbol(str(csv_file), cliArgs)
+                except BaseException:
+                    logger.error(f"Error generating output for {csv_file}!")
+                    continue
+    else:
+        if Path(cliArgs.input).is_dir():
+            logger.error("Folder given as input! Did you mean to use --folder?")
+        else:
+            output_symbol(cliArgs.input, cliArgs)

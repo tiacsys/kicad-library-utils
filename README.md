@@ -45,6 +45,7 @@ Contains various python libraries used by the check scripts and the generators.
 ## symbol-generators
 
 **example-generator.py**: An example on how to create symbols using python
+**from_csv_generator.py**: A Python CLI to generate symbols from pinout CSVs.
 
 ## tools directory
 
@@ -126,6 +127,19 @@ How to use
 
 ## Add Symbol/Footprint Test Symbols/Footprints
     `klc-check/test_project` contains a test project which has all `sym_lib_table` to edit the librarys
+
+## Generate Symbols
+
+You can use `./symbol-generators/from_csv_generator.py` to generate KiCad Symbols from pinout CSVs.
+For example use:
+
+    python3 ./symbol-generators/from_csv_generator.py pinout.csv --output SYMBOL_NAME.kicad_sym
+
+You can also process a folder of pinout CSVs like this:
+
+    python3 ./symbol-generators/from_csv_generator.py pinout_data --folder --output generated_symbols
+
+For more information see the [corresponding wiki page](https://gitlab.com/groups/kicad/libraries/-/wikis/Spreadsheed-driven-symbol-generator).
 
 # Contributing
 
