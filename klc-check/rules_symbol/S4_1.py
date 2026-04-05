@@ -38,6 +38,19 @@ class Rule(KLCRule):
 
         return len(self.violating_pins) > 0
 
+    def checkNameNumberPins(self) -> bool:
+        err = False
+        for pin in self.component.pins:
+            if not pin.number:
+                self.error(f"Pin {pinString(pin)} does not have a number")
+                err = True
+            if not pin.name:
+                # pins might not have a name, for example TVS diode arrays
+                self.warning(f"Pin {pinString(pin)} does not have a name")
+                err = True
+
+        return err
+
     def checkDuplicatePins(self) -> bool:
         test_pins = self.component.pins
         seen = set()
@@ -119,6 +132,7 @@ class Rule(KLCRule):
                 self.checkPinOrigin(pingrid),
                 self.checkPinLength(errorPinLength, warningPinLength),
                 self.checkDuplicatePins(),
+                self.checkNameNumberPins(),
             ]
         )
 
