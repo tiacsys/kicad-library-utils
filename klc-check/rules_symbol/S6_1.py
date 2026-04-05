@@ -4,6 +4,40 @@ RD_Map = [
     ("Y", ["Oscillator"]),
     ("U", ["CI_Test_S6.x"]),
 ]
+AllowedDesignators = [
+    "A",
+    "AE",
+    "BT",
+    "C",
+    "D",
+    "DS",
+    "F",
+    "FB",
+    "FB",
+    "FD",
+    "FL",
+    "H",
+    "J",
+    "JP",
+    "K",
+    "L",
+    "LS",
+    "M",
+    "MK",
+    "P",
+    "Q",
+    "R",
+    "RN",
+    "RT",
+    "RV",
+    "SW",
+    "T",
+    "TC",
+    "TP",
+    "U",
+    "Y",
+    "Z",
+]
 
 
 class Rule(KLCRule):
@@ -27,9 +61,19 @@ class Rule(KLCRule):
 
         return fail
 
+    def checkReferenceValue(self) -> bool:
+        ref = self.component.get_property("Reference")
+        print(ref)
+        if ref.value not in AllowedDesignators:
+            self.error(
+                "Component Reference designator not in list of allowed designators"
+            )
+            return True
+        return False
+
     def check(self) -> bool:
 
-        return any([self.checkRD()])
+        return any([self.checkRD(), self.checkReferenceValue()])
 
     def fix(self) -> None:
         """
