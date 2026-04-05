@@ -48,21 +48,29 @@ class Metadata:
     datasheet: str | None
     description: str | None
     keywords: str | None
+    generator_split_pin_names: int | None
+    generator_min_aspect_ratio: float | None
 
-    def __init__(self, data: dict):
+    def __init__(self, data: Dict[str, str]):
         if type(data) is not dict:
             raise TypeError("Parameter data must be of type dict.")
         if "reference" not in data or "name" not in data:
             raise ValueError(
                 "The required keys 'reference' and/or 'name' are missing in the data."
             )
-        self.reference = data.get("reference", "")
-        self.name = data.get("name", "")
+        self.reference = data.get("reference") or ""
+        self.name = data.get("name") or ""
         self.footprint = data.get("footprint")
         self.footprint_filter = data.get("footprint_filter")
         self.datasheet = data.get("datasheet")
         self.description = data.get("description")
         self.keywords = data.get("keywords")
+        self.generator_split_pin_names = int(
+            data.get("generator_split_pin_names") or "None"
+        )
+        self.generator_min_aspect_ratio = float(
+            data.get("generator_min_aspect_ratio") or "None"
+        )
 
     def __str__(self):
         string_rep = f"{self.reference} '{self.name}':\n"
@@ -71,6 +79,10 @@ class Metadata:
         string_rep += f"\tdatasheet: {self.datasheet}\n"
         string_rep += f"\tdescription: {self.description}\n"
         string_rep += f"\tkeywords: {self.keywords}\n"
+        string_rep += f"\tgenerator_split_pin_names: {self.generator_split_pin_names}\n"
+        string_rep += (
+            f"\tgenerator_min_aspect_ratio: {self.generator_min_aspect_ratio}\n"
+        )
         return string_rep
 
     def __repr__(self):
@@ -206,6 +218,11 @@ def parse_csv(
                         if "name" not in metadata_dict.keys():
                             logger.error('key "name" is missing in the metadata')
                         raise e
+
+                    # fallback to split pin names from metadata section
+                    split_pin_names = (
+                        split_pin_names or metadata.generator_split_pin_names
+                    )
 
                     continue
                 else:  # add row to metadata
@@ -639,6 +656,12 @@ if __name__ == "__main__":
         logger.error("Can not parse input CSV. Is it properly formatted?")
         logger.error(str(parser_error))
         os._exit(1)
+
+    # load generator default CLI args from CSV
+    cliArgs.split = cliArgs.split or metadata.generator_split_pin_names
+    cliArgs.min_aspect_ratio = (
+        cliArgs.min_aspect_ratio or metadata.generator_min_aspect_ratio
+    )
 
     symbol_units_dict = group_pins_by_unit(pin_data)
     unit_names_list = sorted(symbol_units_dict.keys())
