@@ -79,3 +79,9 @@ check: lint test-klc-footprints test-klc-symbols test-comparelibs-symbols spelli
 .PHONY: install-deps
 install-deps:
 	pip3 install -r requirements.txt
+
+.PHONY: generate-symbols
+generate-symbols:
+	python3 symbol-generators/from_csv_generator.py symbol-generators/data \
+		--folder \
+		--output symbol-generators/output
