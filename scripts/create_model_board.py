@@ -18,15 +18,23 @@ fp_path = Path(os.path.abspath(args.footprint))
 io = pcbnew.PCB_IO_KICAD_SEXPR()
 b = pcbnew.BOARD()
 
+
+def duplicate_fp(fp):
+    try:
+        return fp.Duplicate(False)  # KiCad 10+
+    except TypeError:
+        return fp.Duplicate()  # KiCad <=9
+
+
 fp = io.ImportFootprint(str(fp_path), fp_path.stem)
 fp.Models()[0].m_Filename = str(Path(os.path.abspath(args.step)))
 b.Add(fp)
 fp.SetReference("FP")
 fp.SetPosition(pcbnew.VECTOR2I_MM(100, 100))
 bb = fp.GetCourtyard(0).BBox()
-fp_wrl = fp.Duplicate()
-fp_step = fp.Duplicate()
-fp_transp = fp.Duplicate()
+fp_wrl = duplicate_fp(fp)
+fp_step = duplicate_fp(fp)
+fp_transp = duplicate_fp(fp)
 fp.Models()[0].m_Show = False
 b.Add(fp_wrl)
 fp_wrl.SetPosition(
