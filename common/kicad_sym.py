@@ -1417,27 +1417,9 @@ class KicadLibrary(KicadSymbolBase):
             ["generator_version", self.quoted_string(self.version)],
         ]
 
-        def sym_order_key(sym: KicadSymbol) -> int:
-            """
-            This is an ordering key function that returns a tuple used for sorting symbols.
-            Hopefully this is the same order as KiCad does it in SCH_IO_KICAD_SEXPR_LIB_CACHE::Save
-            """
-            # Sort by ascending inheritance depth (root symbols first), then by name
-            return (self.get_symbol_inheritance_depth(sym), sym.name)
-
-        ordered_symbols = sorted(self.symbols, key=sym_order_key)
-
-        for sym in ordered_symbols:
+        for sym in self.symbols:
             sx.append(sym.get_sexpr())
         return sexpr.build_sexp(sx)
-
-    def get_symbol_inheritance_depth(self, symbol: KicadSymbol) -> int:
-        depth = 0
-        current = symbol
-        while current.extends is not None:
-            depth += 1
-            current = self.get_symbol(current.extends)
-        return depth
 
     def check_extends_order(self):
         """
