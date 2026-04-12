@@ -713,6 +713,8 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
 
     max_bounding_box_width = 0
     max_bounding_box_height = 0
+    max_x_offset = 0
+    max_y_offset = 0
 
     # for each unit add pins and bounding box rectangle
     for unit_index, unit_name in unit_names_dict.items():
@@ -745,16 +747,40 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
         )
         bounding_box_width, bounding_box_height = bounding_box
 
+        # pos_for_pin centers pins at ±50 for even pin counts due to
+        # integer division (pin_count // 2). Shift the rectangle to match
+        # the dominant side's pin center so pins are visually centered.
+        #   direction=False (left/right, y-axis): even count center at +50
+        #   direction=True (top/bottom, x-axis): even count center at -50
+        left_count = len(pin_stacks[PinData.Side.LEFT])
+        right_count = len(pin_stacks[PinData.Side.RIGHT])
+        top_count = len(pin_stacks[PinData.Side.TOP])
+        bottom_count = len(pin_stacks[PinData.Side.BOTTOM])
+
+        dominant_v = max(left_count, right_count)
+        dominant_h = max(top_count, bottom_count)
+        y_offset = 50 if dominant_v > 0 and dominant_v % 2 == 0 else 0
+        x_offset = -50 if dominant_h > 0 and dominant_h % 2 == 0 else 0
+
+        # Adjust bbox dimensions so perpendicular pin endpoints land on 100 mil grid.
+        # Required: (dim/2 + offset + pin_length) % 100 == 0
+        if (bounding_box_height // 2 + y_offset + pin_length) % 100 != 0:
+            bounding_box_height += 100
+        if (bounding_box_width // 2 + x_offset + pin_length) % 100 != 0:
+            bounding_box_width += 100
+
         if bounding_box_width > max_bounding_box_width:
             max_bounding_box_width = bounding_box_width
+            max_x_offset = x_offset
         if bounding_box_height > max_bounding_box_height:
             max_bounding_box_height = bounding_box_height
+            max_y_offset = y_offset
 
         # generate pins for each side
         generate_pins(
             new_symbol,
             pin_stacks[PinData.Side.LEFT],
-            lambda i: -bounding_box_width / 2 - pin_length,
+            lambda i: -bounding_box_width / 2 + x_offset - pin_length,
             lambda i: pos_for_pin(len(pin_stacks[PinData.Side.LEFT]), i, False),
             0,
             pin_length,
@@ -764,7 +790,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
         generate_pins(
             new_symbol,
             pin_stacks[PinData.Side.RIGHT],
-            lambda i: bounding_box_width / 2 + pin_length,
+            lambda i: bounding_box_width / 2 + x_offset + pin_length,
             lambda i: pos_for_pin(len(pin_stacks[PinData.Side.RIGHT]), i, False),
             180,
             pin_length,
@@ -775,7 +801,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
             new_symbol,
             pin_stacks[PinData.Side.TOP],
             lambda i: pos_for_pin(len(pin_stacks[PinData.Side.TOP]), i, True),
-            lambda i: bounding_box_height / 2 + pin_length,
+            lambda i: bounding_box_height / 2 + y_offset + pin_length,
             270,
             pin_length,
             unit_index,
@@ -785,7 +811,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
             new_symbol,
             pin_stacks[PinData.Side.BOTTOM],
             lambda i: pos_for_pin(len(pin_stacks[PinData.Side.BOTTOM]), i, True),
-            lambda i: -bounding_box_height / 2 - pin_length,
+            lambda i: -bounding_box_height / 2 + y_offset - pin_length,
             90,
             pin_length,
             unit_index,
@@ -794,10 +820,10 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
         # add bounding box rectangle
         new_symbol.rectangles.append(
             Rectangle(
-                mil_to_mm(bounding_box_width / 2),
-                mil_to_mm(bounding_box_height / 2),
-                mil_to_mm(-bounding_box_width / 2),
-                mil_to_mm(-bounding_box_height / 2),
+                mil_to_mm(bounding_box_width / 2 + x_offset),
+                mil_to_mm(bounding_box_height / 2 + y_offset),
+                mil_to_mm(-bounding_box_width / 2 + x_offset),
+                mil_to_mm(-bounding_box_height / 2 + y_offset),
                 stroke_width=mil_to_mm(10),
                 unit=unit_index,
             )
@@ -805,20 +831,20 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
 
     # add symbol metadata
     label_reference = new_symbol.get_property("Reference")
-    label_reference.posx = mil_to_mm(-max_bounding_box_width / 2)
-    label_reference.posy = mil_to_mm(max_bounding_box_height / 2 + 100)
+    label_reference.posx = mil_to_mm(-max_bounding_box_width / 2 + max_x_offset)
+    label_reference.posy = mil_to_mm(max_bounding_box_height / 2 + max_y_offset + 100)
 
     label_value = new_symbol.get_property("Value")
-    label_value.posx = mil_to_mm(max_bounding_box_width / 2)
-    label_value.posy = mil_to_mm(max_bounding_box_height / 2 + 100)
+    label_value.posx = mil_to_mm(max_bounding_box_width / 2 + max_x_offset)
+    label_value.posy = mil_to_mm(max_bounding_box_height / 2 + max_y_offset + 100)
 
     label_datasheet = new_symbol.get_property("Datasheet")
-    label_datasheet.posx = mil_to_mm(0)
-    label_datasheet.posy = mil_to_mm(-max_bounding_box_height / 2 - 600)
+    label_datasheet.posx = mil_to_mm(max_x_offset)
+    label_datasheet.posy = mil_to_mm(-max_bounding_box_height / 2 + max_y_offset - 600)
 
     label_description = new_symbol.get_property("Description")
-    label_description.posx = mil_to_mm(0)
-    label_description.posy = mil_to_mm(-max_bounding_box_height / 2 - 800)
+    label_description.posx = mil_to_mm(max_x_offset)
+    label_description.posy = mil_to_mm(-max_bounding_box_height / 2 + max_y_offset - 800)
     label_description.effects.v_justify = "top"
 
     # save library with symbol
