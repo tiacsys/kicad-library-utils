@@ -523,6 +523,67 @@ def check_label_intersection(
     return False
 
 
+def check_adjacent_label_intersections(
+    pin_stacks: Dict[PinData.Side, List[PinStack]],
+    bounding_box: Tuple[int, int],
+) -> bool:
+    """Checks if labels from perpendicular sides overlap at symbol corners.
+
+    A top/bottom pin's vertical label can overlap with a left/right pin's
+    horizontal label near a corner when both labels extend deep enough into
+    the body.
+
+    Parameters:
+        pin_stacks (dict): The pin stacks for each side.
+        bounding_box (tuple): The width and height of the current bounding box.
+
+    Returns:
+        bool: Whether any adjacent-side labels overlap.
+    """
+
+    # This function was generated using claude opus, an LLM. Proceed with caution.
+    # I (jaseg) tested it on many symbols from the new xilinx symbol generator, and
+    # it worked well in these cases where previously, we'd get problematic overlap.
+    bbox_w, bbox_h = bounding_box
+
+    for tb_side in [PinData.Side.TOP, PinData.Side.BOTTOM]:
+        for lr_side in [PinData.Side.LEFT, PinData.Side.RIGHT]:
+            tb_stacks = pin_stacks[tb_side]
+            lr_stacks = pin_stacks[lr_side]
+
+            if not tb_stacks or not lr_stacks:
+                continue
+
+            for i, tb_stack in enumerate(tb_stacks):
+                if tb_stack[0].type in ("space", "no_connect"):
+                    continue
+                tb_label = pin_label_width(tb_stack[0])
+                tb_x = pos_for_pin(len(tb_stacks), i, True)
+
+                for j, lr_stack in enumerate(lr_stacks):
+                    if lr_stack[0].type in ("space", "no_connect"):
+                        continue
+                    lr_label = pin_label_width(lr_stack[0])
+                    lr_y = pos_for_pin(len(lr_stacks), j, False)
+
+                    # Check x: is the tb pin within the lr label's horizontal extent?
+                    if lr_side == PinData.Side.RIGHT:
+                        x_overlaps = tb_x > bbox_w / 2 - lr_label - 200
+                    else:
+                        x_overlaps = tb_x < -bbox_w / 2 + lr_label + 200
+
+                    # Check y: is the lr pin within the tb label's vertical extent?
+                    if tb_side == PinData.Side.TOP:
+                        y_overlaps = lr_y > bbox_h / 2 - tb_label - 200
+                    else:
+                        y_overlaps = lr_y < -bbox_h / 2 + tb_label + 200
+
+                    if x_overlaps and y_overlaps:
+                        return True
+
+    return False
+
+
 def extend_bounding_box(
     pin_stacks: Dict[PinData.Side, List[PinStack]],
     bounding_box: Tuple[int, int],
@@ -577,6 +638,12 @@ def extend_bounding_box(
 
         if intersect_left or intersect_right:
             bounding_box_width += 200
+
+    # Grow bbox to prevent adjacent-side (90-degree) label overlaps at corners
+    while check_adjacent_label_intersections(
+        pin_stacks, (bounding_box_width, bounding_box_height)
+    ):
+        bounding_box_width += 200
 
     if (
         min_aspect_ratio is not None
