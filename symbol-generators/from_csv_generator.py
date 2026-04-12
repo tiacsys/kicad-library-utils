@@ -484,7 +484,6 @@ def check_label_intersection(
     pin_stacks: List[PinStack],
     pin_stacks_opposite: List[PinStack],
     current_bounding_box: Tuple[int, int],
-    pin_length: int,
 ) -> bool:
     """Checks if the labels of the given pin_stacks intersect with the labels of the opposite side.
 
@@ -492,7 +491,6 @@ def check_label_intersection(
         pin_stacks (list): A list of pin stacks to check the intersection of labels for.
         pin_stacks_opposite (list): The list of pin stacks on the opposite side.
         current_bounding_box (tuple): The width and height of the current bounding box.
-        pin_length (int): The pin length according to KLC S4.1.
 
     Returns:
         bool: Whether the labels of pin_stacks intersect with the labels of the opposite side or not.
@@ -505,20 +503,20 @@ def check_label_intersection(
         ]  # Use first pin in stack as pin stacks are grouped by label/name
         length = pin_label_width(pin)
         x_pos = pos_for_pin(len(pin_stacks), i, True)
-        y_pos = -b_height / 2 - pin_length
+        y_pos = -b_height / 2
 
         # Check intersection with each pin stack on the opposite side
         for j, pin_stack_opposite in enumerate(pin_stacks_opposite):
             pin_opposite = pin_stack_opposite[0]
             length_opposite = pin_label_width(pin_opposite)
-            x_pos_opposite = pos_for_pin(len(pin_stack_opposite), j, True)
-            y_pos_opposite = b_height / 2 + pin_length
+            x_pos_opposite = pos_for_pin(len(pin_stacks_opposite), j, True)
+            y_pos_opposite = b_height / 2
 
             # Check intersection of the two labels
             if (
                 x_pos_opposite < x_pos + 100
                 and x_pos_opposite + 100 > x_pos
-                and y_pos + length > y_pos_opposite - length_opposite - 50
+                and y_pos + length > y_pos_opposite - length_opposite - 200
             ):
                 return True  # Return if one pair of labels intersect
 
@@ -528,7 +526,6 @@ def check_label_intersection(
 def extend_bounding_box(
     pin_stacks: Dict[PinData.Side, List[PinStack]],
     bounding_box: Tuple[int, int],
-    pin_length: int,
     min_aspect_ratio: float,
 ) -> Tuple[int, int]:
     """Extends a given bounding box until no pin stack labels overlap anymore.
@@ -536,7 +533,6 @@ def extend_bounding_box(
     Parameters:
         pin_stacks (list): The list of pin stacks to check and remove intersections for.
         bounding_box (tuple): A tuple of the bounding box width and height.
-        pin_length (int): The pin length according to KLC S4.1 for this symbol.
         min_aspect_ratio (float): The min aspect ratio to enforce while calculating.
 
     Returns:
@@ -556,14 +552,12 @@ def extend_bounding_box(
             pin_stacks[PinData.Side.TOP],
             pin_stacks[PinData.Side.BOTTOM],
             (bounding_box_width, bounding_box_height),
-            pin_length,
         )
 
         intersect_bottom = check_label_intersection(
             pin_stacks[PinData.Side.BOTTOM],
             pin_stacks[PinData.Side.TOP],
             (bounding_box_width, bounding_box_height),
-            pin_length,
         )
 
         if intersect_top or intersect_bottom:
@@ -573,14 +567,12 @@ def extend_bounding_box(
             pin_stacks[PinData.Side.LEFT],
             pin_stacks[PinData.Side.RIGHT],
             (bounding_box_height, bounding_box_width),
-            pin_length,
         )
 
         intersect_right = check_label_intersection(
             pin_stacks[PinData.Side.RIGHT],
             pin_stacks[PinData.Side.LEFT],
             (bounding_box_height, bounding_box_width),
-            pin_length,
         )
 
         if intersect_left or intersect_right:
@@ -743,15 +735,13 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
 
         # extend bounding box to prevent pin label intersections
         bounding_box = extend_bounding_box(
-            pin_stacks, base_bounding_box, pin_length, cliArgs.min_aspect_ratio
+            pin_stacks, base_bounding_box, cliArgs.min_aspect_ratio
         )
         bounding_box_width, bounding_box_height = bounding_box
 
-        # pos_for_pin centers pins at ±50 for even pin counts due to
+        # pos_for_pin centers pins at +/-50 for even pin counts due to
         # integer division (pin_count // 2). Shift the rectangle to match
         # the dominant side's pin center so pins are visually centered.
-        #   direction=False (left/right, y-axis): even count center at +50
-        #   direction=True (top/bottom, x-axis): even count center at -50
         left_count = len(pin_stacks[PinData.Side.LEFT])
         right_count = len(pin_stacks[PinData.Side.RIGHT])
         top_count = len(pin_stacks[PinData.Side.TOP])
