@@ -24,6 +24,8 @@ from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+import traceback
+import re
 
 from kicad_sym import AltFunction, KicadLibrary, KicadSymbol, Pin, Rectangle, mil_to_mm
 
@@ -32,7 +34,7 @@ logger = logging.getLogger("kicad_utils.from_csv_generator")
 
 # Parser wide constants
 CHAR_WIDTH_GUESSTIMATE = 50
-PIN_NAME_LIMIT = 12
+PIN_NAME_LIMIT = 32
 
 
 # Parser specific type definitions
@@ -165,6 +167,25 @@ type PinStack = List[PinData]  # noqa: E999
 
 # function definitions used by this parser:
 
+# Handle both numeric pin ranges, and alphanumeric BGA pin ranges
+bga_letters = 'ABCDEFGHJKLMNPRTUVWY'
+bga_rows = [*bga_letters, *[a+b for a in bga_letters for b in bga_letters]]
+
+def pin_range(start, end):
+    if start_m := re.fullmatch(r'([A-Z]+)([0-9]+)', start):
+        end_m = re.fullmatch(r'([A-Z]+)([0-9]+)', start)
+        start_row, start_col = start_m.groups()
+        end_row, end_col = end_m.groups()
+
+        start_col, end_col = int(start_col), int(end_col)
+        start_row, end_row = bga_rows.index(start_row), bga_rows.index(end_row)
+
+        rows = [bga_rows[i] for i in range(start_row, end_row+1)]
+        cols = list(range(start_col, end_col+1))
+
+        return [f'{row}{col}' for row in rows for col in cols]
+    else:
+        return list(range(int(start), int(end)+1))
 
 # parse input CSV
 def parse_csv(
@@ -278,13 +299,21 @@ def parse_csv(
                             f'no unit set for pin {parsed_pin_data["pin"]} "{parsed_pin_data["name"]}"'
                         )
 
-                    # if there are multiple pins with the same number (e.g. GND pins) one can specify
-                    # them all in a single line like separated by comma like this: "1,2,5,7"
+                    # if there are multiple pins with the same name (e.g. GND pins) one can specify
+                    # them all in a single line like separated by comma like this: "1,2,5,7-11"
                     # This loop parses and splits that format.
-                    for pin_num_str in parsed_pin_data["pin"].split(","):
-                        new_pin = parsed_pin_data.copy()
-                        new_pin["pin"] = pin_num_str
-                        pin_data.append(PinData(new_pin, split_pin_names))
+                    if parsed_pin_data["pin"].strip() == "":
+                        pin_data.append(PinData(parsed_pin_data, split_pin_names))
+                    else:
+                        for pin_num_str in parsed_pin_data["pin"].split(","):
+                            pin_range_start, _, pin_range_end = pin_num_str.partition("-")
+                            if pin_range_end is None:
+                                pin_range_end = pin_range_start
+
+                            for pin_num in pin_range(pin_range_start, pin_range_end):
+                                new_pin = parsed_pin_data.copy()
+                                new_pin["pin"] = pin_num
+                                pin_data.append(PinData(new_pin, split_pin_names))
 
     if metadata is None:
         raise ValueError("Failed to parse metadata from CSV.")
@@ -636,6 +665,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
             f"Can not parse input CSV {input_csv_file}. Is it properly formatted?"
         )
         logger.error(str(parser_error))
+        logger.error(traceback.format_exc())
         raise parser_error
 
     # load generator default CLI args from CSV
@@ -701,7 +731,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
             list(
                 map(
                     lambda p: len(
-                        str(p.pin_number) if p.pin_number is not None else ""
+                        p.pin_number if p.pin_number is not None else ""
                     ),
                     pins,
                 )
