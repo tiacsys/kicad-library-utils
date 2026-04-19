@@ -146,17 +146,15 @@ def render_drill(pad, **style):
     if not drill:
         return
 
-    px = pad["pos"]["x"]
-    py = pad["pos"]["y"]
+    x = pad["pos"]["x"]
+    y = pad["pos"]["y"]
 
-    x = px - drill["offset"].get("x", 0)
-    y = py - drill["offset"].get("y", 0)
     w, h = drill["size"]["x"], drill["size"]["y"]
 
     # For now KiCad doesn't support drills with different orientations
     # to the pads, so we can just use the pad orientation.
     angle = pad["pos"]["orientation"]
-    transform = f"rotate({-angle} {px} {py})"
+    transform = f"rotate({-angle} {x} {y})"
 
     if drill["shape"] == "circular":
         assert w == h
@@ -258,48 +256,80 @@ def render_point(point):
     )
 
 
+def get_pad_position(pad):
+    drill_x, drill_y = pad["pos"]["x"], pad["pos"]["y"]
+
+    drill = pad.get("drill")
+    if drill:
+        pad_center_x = drill_x + drill["offset"].get("x", 0)
+        pad_center_y = drill_y + drill["offset"].get("y", 0)
+    else:
+        pad_center_x = drill_x
+        pad_center_y = drill_y
+
+    return pad_center_x, pad_center_y
+
+
 def render_pad_circle(pad, layer, **style):
-    x, y = pad["pos"]["x"], pad["pos"]["y"]
+    pad_center_x, pad_center_y = get_pad_position(pad)
     r = pad["size"]["x"] / 2
-    yield (x - r, y - r, x + r, y + r), Tag("circle", **style, cx=x, cy=y, r=r)
+
+    elem_bbox = bbox(
+        (pad_center_x - r, pad_center_y - r, pad_center_x + r, pad_center_y + r)
+    )
+    yield elem_bbox, Tag(
+        "circle",
+        **style,
+        cx=pad_center_x,
+        cy=pad_center_y,
+        r=r,
+    )
 
 
 def render_pad_rect(pad, layer, **style):
-    x, y = pad["pos"]["x"], pad["pos"]["y"]
+    drill_x, drill_y = pad["pos"]["x"], pad["pos"]["y"]
     w, h = pad["size"]["x"], pad["size"]["y"]
+    pad_center_x, pad_center_y = get_pad_position(pad)
 
     angle = pad["pos"]["orientation"]
-    transform = f"rotate({-angle} {x} {y})"
+    transform = f"rotate({-angle} {drill_x} {drill_y})"
 
-    elem_bbox = bbox((x - w / 2, y - h / 2), (x + w / 2, y + h / 2))
+    elem_bbox = bbox(
+        (pad_center_x - w / 2, pad_center_y - h / 2),
+        (pad_center_x + w / 2, pad_center_y + h / 2),
+    )
 
     yield elem_bbox, Tag(
         "rect",
         **style,
         transform=transform,
-        x=x - w / 2,
-        y=y - h / 2,
+        x=pad_center_x - w / 2,
+        y=pad_center_y - h / 2,
         width=w,
         height=h,
     )
 
 
 def render_pad_roundrect(pad, layer, **style):
-    x, y = pad["pos"]["x"], pad["pos"]["y"]
+    drill_x, drill_y = pad["pos"]["x"], pad["pos"]["y"]
     w, h = pad["size"]["x"], pad["size"]["y"]
     rx = min(w, h) * pad["roundrect_rratio"]
+    pad_center_x, pad_center_y = get_pad_position(pad)
 
     angle = pad["pos"]["orientation"]
-    transform = f"rotate({-angle} {x} {y})"
+    transform = f"rotate({-angle} {drill_x} {drill_y})"
 
-    elem_bbox = bbox((x - w / 2, y - h / 2), (x + w / 2, y + h / 2))
+    elem_bbox = bbox(
+        (pad_center_x - w / 2, pad_center_y - h / 2),
+        (pad_center_x + w / 2, pad_center_y + h / 2),
+    )
 
     yield elem_bbox, Tag(
         "rect",
         **style,
         transform=transform,
-        x=x - w / 2,
-        y=y - h / 2,
+        x=pad_center_x - w / 2,
+        y=pad_center_y - h / 2,
         width=w,
         height=h,
         rx=rx,
@@ -307,19 +337,23 @@ def render_pad_roundrect(pad, layer, **style):
 
 
 def render_pad_oval(pad, layer, **style):
-    x, y = pad["pos"]["x"], pad["pos"]["y"]
+    drill_x, drill_y = pad["pos"]["x"], pad["pos"]["y"]
     w, h = pad["size"]["x"], pad["size"]["y"]
+    pad_center_x, pad_center_y = get_pad_position(pad)
 
     angle = pad["pos"]["orientation"]
-    transform = f"rotate({-angle} {x} {y})"
-    elem_bbox = bbox((x - w / 2, y - h / 2), (x + w / 2, y + h / 2))
+    transform = f"rotate({-angle} {drill_x} {drill_y})"
+    elem_bbox = bbox(
+        (pad_center_x - w / 2, pad_center_y - h / 2),
+        (pad_center_x + w / 2, pad_center_y + h / 2),
+    )
 
     yield elem_bbox, Tag(
         "rect",
         **style,
         transform=transform,
-        x=x - w / 2,
-        y=y - h / 2,
+        x=pad_center_x - w / 2,
+        y=pad_center_y - h / 2,
         width=w,
         height=h,
         rx=min(w, h) / 2,
