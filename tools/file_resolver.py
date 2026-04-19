@@ -5,6 +5,7 @@ present them in a way that can be used by other tools (e.g. a diff tool).
 """
 
 import abc
+import logging
 import os
 from pathlib import Path
 
@@ -12,6 +13,8 @@ from pathlib import Path
 class ResolvedFilePair:
     """
     Represents a pair of files that are to be compared.
+    There is no guarantee that either of those files exists.
+    The user should call .exists() on them before accessing them.
     """
 
     # File A
@@ -32,12 +35,15 @@ class ResolvedFilePair:
     # Note that in either example, the actual file _names_ don't have
     # to match - there could be other criteria for declaring a resolved
     # match.
-    name: str
+    name: Path
 
     def __init__(self, file1, file2, name):
         self.file1 = Path(file1)
         self.file2 = Path(file2)
         self.name = Path(name)
+
+    def __repr__(self):
+        return f'ResolvedFilePair("{self.file1}", "{self.file2}", "{self.name}")'
 
 
 class FileResolver(abc.ABC):
@@ -146,11 +152,16 @@ class GitIndexResolver(FileResolver):
         import git
 
         self.repo = git.Repo(repo)
-        self.repo_diffs = self.repo.index.diff(None)
+        self.repo_diffs = self.repo.index.diff(None)  # get the uncommitted changes
         self.file_filter = file_filter
+        self.index = self.repo.index
 
         # Lives until the resolver is deleted
-        self.temp_dir = tempfile.TemporaryDirectory(prefix="kicad-library-utils-")
+        # TODO: it does not get deleted, because we are not using this as a context
+        #       we need to implement the __enter__ and __exit__ method
+        self.temp_dir = Path(
+            tempfile.TemporaryDirectory(prefix="kicad-library-utils-").name
+        )
 
     @property
     def files(self):
@@ -158,27 +169,97 @@ class GitIndexResolver(FileResolver):
         files = []
 
         for diff in self.repo_diffs:
-            if not diff.a_path:
-                continue
+            # default file paths and names
+            rel_path = (
+                diff.a_path
+            )  # this is the 'old' filename, relative to the git root directory
+            curr_file = Path(self.repo.working_tree_dir).joinpath(rel_path)
+            prev_file = Path(
+                "does_not_exist"
+            )  # this is a workaround because we cannot create Path(None)
 
-            if diff.a_path != diff.b_path:
-                continue
-
-            assert diff.change_type in ["M", "D"]
-
-            rel_path = diff.a_path
-
+            # skip this change if we want to filter it out
             if self.file_filter is not None:
                 if not self.file_filter(Path(rel_path)):
                     continue
 
-            self.repo.index.checkout(rel_path, prefix=f"{self.temp_dir.name}{os.sep}")
+            # depending on the change type (addition, deletion, move, ...) we
+            # need to perform different actions
+            match diff.change_type:
+                case "D":
+                    # Deleted file, that means the current file is none
+                    curr_file = Path("does_not_exist")
+                    # we need to checkout the old file, use empty string as marker that
+                    # the prev_file needs to be fetched from git
+                    prev_file = ""
+                    logging.debug(f"File {rel_path} was deleted.")
+                case "A":
+                    # File was added there is no prev_file
+                    prev_file = Path("does_not_exist")
+                    logging.debug(f"File {rel_path} was added.")
+                case "M":
+                    # Modified file, the old and new name are the same
+                    # they exists in both trees
+                    # mark prev_file so we fetch it from git
+                    prev_file = ""
+                    logging.debug(f"File {rel_path} was modified.")
+                case "R":
+                    # currently we don't track renames
+                    # We could extend ResolvedFilePair have a 'renamed' property
+                    continue
+                case "C":
+                    # file was copied, to nothing
+                    # one could argue that this should be handled like an addition...
+                    continue
+                case _:
+                    # Unknown change type, don't to anything but warn
+                    # This could be
+                    logging.warn(
+                        f"Change-type {diff.change_type} of file {rel_path} ignored"
+                    )
+                    continue
 
-            temp_file = os.path.join(self.temp_dir.name, rel_path)
-            curr_file = os.path.join(self.repo.working_tree_dir, rel_path)
-            files.append(ResolvedFilePair(temp_file, curr_file, rel_path))
+            # we want to pull the contents of the previous version from git
+            if prev_file == "":
+                # the file we want to check out might be in a subdir,
+                # we need to create it
+                prev_file = self.temp_dir.joinpath(rel_path)
+                prev_file.parent.mkdir(parents=True, exist_ok=True)
+
+                # create a new file, write the blob contents to it
+                with open(prev_file, "wb") as checkout_file:
+                    diff.a_blob.stream_data(checkout_file)
+
+            # we set all required variables (some might be None), add this to the list of changed files
+            files.append(ResolvedFilePair(prev_file, curr_file, rel_path))
 
         return files
+
+
+class GitHistoryResolver(GitIndexResolver):
+    """
+    This is a class that resolves files changed between two commits
+    in a Git repository
+    """
+
+    def __init__(self, repo, commit_id, file_filter=None):
+        # do the same initial setup as the GitIndexResolver
+        super().__init__(repo, file_filter)
+
+        try:
+            # select the first commit that matches the passed commit_id
+            commit_iterator = self.repo.iter_commits(all=True)
+            self.commit = list(
+                filter(lambda commit: str(commit) == commit_id, commit_iterator)
+            )[0]
+        except IndexError:
+            raise ValueError(f"Could not resolve commit with id {commit_id}")
+
+        # point the index we use to checkout file to the commit
+        self.index = self.commit.repo.index
+        # now build the diff based on the commit we just extracted
+        head = self.repo.commit()
+        self.repo_diffs = self.commit.diff(head)
 
 
 def get_resolver(path1: Path, path2=None, file_filter=None):
@@ -195,7 +276,13 @@ def get_resolver(path1: Path, path2=None, file_filter=None):
         path2 = Path(path2)
 
         if not path2.exists():
-            raise ValueError(f"Path doesn't exist: {path2}")
+            # path2 could be a git revision-id
+            if len(path2.name) == 40 and path1.is_dir() and (path1 / ".git").is_dir():
+                return GitHistoryResolver(
+                    repo=path1, commit_id=path2.name, file_filter=file_filter
+                )
+            else:
+                raise ValueError(f"Path doesn't exist: {path2}")
 
         if path1.is_dir() and path2.is_dir():
             return DirectoryFileResolver(path1, path2, file_filter=file_filter)
