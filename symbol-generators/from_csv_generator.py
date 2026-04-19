@@ -26,6 +26,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 import traceback
 import re
+from dataclasses import dataclass, field
+import textwrap
 
 from kicad_sym import AltFunction, KicadLibrary, KicadSymbol, Pin, Rectangle, mil_to_mm
 
@@ -38,57 +40,32 @@ PIN_NAME_LIMIT = 32
 
 
 # Parser specific type definitions
+@dataclass
 class Metadata:
-    """
-    The metadata of the symbol to generate.
-    """
-
     reference: str
     name: str
-    footprint: str | None
-    footprint_filter: str | None
-    datasheet: str | None
-    description: str | None
-    keywords: str | None
-    generator_split_pin_names: int | None
+    footprint: str | None = None
+    footprint_filter: str | None = None
+    datasheet: str | None = None
+    description: str | None = None
+    keywords: str | None = None
+    generator_split_pin_names: int | None = True
     generator_min_aspect_ratio: float | None = None
 
-    def __init__(self, data: Dict[str, str]):
-        if type(data) is not dict:
-            raise TypeError("Parameter data must be of type dict.")
-        if "reference" not in data or "name" not in data:
-            raise ValueError(
-                "The required keys 'reference' and/or 'name' are missing in the data."
-            )
-        self.reference = data.get("reference") or ""
-        self.name = data.get("name") or ""
-        self.footprint = data.get("footprint")
-        self.footprint_filter = data.get("footprint_filter")
-        self.datasheet = data.get("datasheet")
-        self.description = data.get("description")
-        self.keywords = data.get("keywords")
-        split_pin_names = data.get("generator_split_pin_names")
-        self.generator_split_pin_names = (
-            int(split_pin_names) if split_pin_names else None
-        )
-        min_aspect_ratio = data.get("generator_min_aspect_ratio")
-        self.generator_min_aspect_ratio = (
-            float(min_aspect_ratio) if min_aspect_ratio else None
-        )
-
     def __str__(self):
-        string_rep = f"{self.reference} '{self.name}':\n"
-        string_rep += f"\tfootprint: {self.footprint}\n"
-        string_rep += f"\tfootprint_filter: {self.footprint_filter}\n"
-        string_rep += f"\tdatasheet: {self.datasheet}\n"
-        string_rep += f"\tdescription: {self.description}\n"
-        string_rep += f"\tkeywords: {self.keywords}\n"
-        string_rep += f"\tgenerator_split_pin_names: {self.generator_split_pin_names}\n"
+        out = textwrap.dedent('''
+        {self.reference} '{self.name}':
+            footprint: {self.footprint}
+            footprint_filter: {self.footprint_filter}
+            datasheet: {self.datasheet}
+            description: {self.description}
+            keywords: {self.keywords}
+            generator_split_pin_names: {self.generator_split_pin_names}
+        ''')
+
         if self.generator_min_aspect_ratio is not None:
-            string_rep += (
-                f"\tgenerator_min_aspect_ratio: {self.generator_min_aspect_ratio}\n"
-            )
-        return string_rep
+            out += f"    generator_min_aspect_ratio: {self.generator_min_aspect_ratio}\n"
+        return out
 
     def __repr__(self):
         return f"{self.reference} '{self.name}'"
@@ -211,49 +188,24 @@ def parse_csv(
         )  # filter out lines with comments
         for row in reader:
             if in_metadata_section:  # parse metadata
-                if (
-                    len(row) == 0 or len(row[0].strip()) == 0
-                ):  # skip from metadata to pin data on first empty line
+                if not row or not row[0].strip():
+                    # skip from metadata to pin data on first empty line
                     in_metadata_section = False
 
                     try:
-                        metadata = Metadata(metadata_dict)
-                        if not metadata.footprint:
-                            logger.warning('key "footprint" is missing in the metadata')
-                        if not metadata.footprint_filter:
-                            logger.warning(
-                                'key "footprint_filter" is missing in the metadata'
-                            )
-                        if not metadata.datasheet:
-                            logger.warning('key "datasheet" is missing in the metadata')
-                        if not metadata.description:
-                            logger.warning(
-                                'key "description" is missing in the metadata'
-                            )
-                        if not metadata.keywords:
-                            logger.warning('key "keywords" is missing in the metadata')
-                    except ValueError as e:
-                        if "reference" not in metadata_dict.keys():
-                            logger.error('key "reference" is missing in the metadata')
-                        if "name" not in metadata_dict.keys():
-                            logger.error('key "name" is missing in the metadata')
-                        raise e
+                        metadata = Metadata(**metadata_dict)
+                    except (ValueError, TypeError) as e:
+                        raise ValueError("Error parsing metadata section") from e
 
                     # fallback to split pin names from metadata section
                     if split_pin_names is None:
                         split_pin_names = metadata.generator_split_pin_names
 
                     continue
-                else:  # add row to metadata
-                    metadata_key = row[0].lower().replace(" ", "_")
-                    metadata_value = row[1]
-                    if metadata_key not in metadata_dict:
-                        if len(metadata_value) > 0:
-                            metadata_dict[metadata_key] = metadata_value
-                    else:
-                        raise ValueError(
-                            f'metadata key "{metadata_key}" defined multiple times'
-                        )
+
+                else: # add row to metadata
+                    metadata_dict[row[0]] = row[1]
+
             else:  # parse pin data
                 if len(row) == 0 or all(
                     map(lambda cell: cell == "", row)
