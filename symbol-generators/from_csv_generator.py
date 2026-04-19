@@ -51,7 +51,7 @@ class Metadata:
     description: str | None
     keywords: str | None
     generator_split_pin_names: int | None
-    generator_min_aspect_ratio: float | None
+    generator_min_aspect_ratio: float | None = None
 
     def __init__(self, data: Dict[str, str]):
         if type(data) is not dict:
@@ -84,9 +84,10 @@ class Metadata:
         string_rep += f"\tdescription: {self.description}\n"
         string_rep += f"\tkeywords: {self.keywords}\n"
         string_rep += f"\tgenerator_split_pin_names: {self.generator_split_pin_names}\n"
-        string_rep += (
-            f"\tgenerator_min_aspect_ratio: {self.generator_min_aspect_ratio}\n"
-        )
+        if self.generator_min_aspect_ratio is not None:
+            string_rep += (
+                f"\tgenerator_min_aspect_ratio: {self.generator_min_aspect_ratio}\n"
+            )
         return string_rep
 
     def __repr__(self):
@@ -115,7 +116,7 @@ class PinData:
     side: Side
     unit: str | None
 
-    def __init__(self, data: dict, split_pin_names: int | None = None):
+    def __init__(self, data: dict, split_pin_names: bool = True):
         if type(data) is not dict:
             raise TypeError("Parameter data must be of type dict.")
 
@@ -131,14 +132,10 @@ class PinData:
         else:
             self.pin_number = None
 
-        if split_pin_names is not None:
-            pin_names = list(map(str.strip, data.get("name", "").split("/")))
-            split_index = max(split_pin_names, 1)
-            self.name = "/".join(pin_names[:split_index])
-            self.alt_names = pin_names[split_index:]
+        if split_pin_names:
+            self.name, *self.alt_names = data.get("name", "").split(";")
         else:
-            self.name = data.get("name", "")
-            self.alt_names = []
+            self.name, self.alt_names = data.get("name", ""), []
 
         if len(self.name) > PIN_NAME_LIMIT:
             logger.warning(
@@ -189,13 +186,13 @@ def pin_range(start, end):
 
 # parse input CSV
 def parse_csv(
-    filename: str, split_pin_names: int | None = None
+    filename: str, split_pin_names: (bool | None) = None
 ) -> Tuple[Metadata, List[PinData]]:
     """Parses the given CSV file into a list of pins and metadata.
 
     Parameters:
         filename (str): The path to the CSV file to parse.
-        split_pin_names (int | None): If and how often to split pin names into alt names by '/'.
+        split_pin_names (bool | None): Whether to split pin names into alt names by ';'.
 
     Returns:
         tuple: A tuple with the symbol metadata as a dict as the first element
@@ -243,9 +240,8 @@ def parse_csv(
                         raise e
 
                     # fallback to split pin names from metadata section
-                    split_pin_names = (
-                        split_pin_names or metadata.generator_split_pin_names
-                    )
+                    if split_pin_names is None:
+                        split_pin_names = metadata.generator_split_pin_names
 
                     continue
                 else:  # add row to metadata
@@ -587,7 +583,7 @@ def check_adjacent_label_intersections(
 def extend_bounding_box(
     pin_stacks: Dict[PinData.Side, List[PinStack]],
     bounding_box: Tuple[int, int],
-    min_aspect_ratio: float,
+    min_aspect_ratio: (float | None) = None,
 ) -> Tuple[int, int]:
     """Extends a given bounding box until no pin stack labels overlap anymore.
 
@@ -645,13 +641,9 @@ def extend_bounding_box(
     ):
         bounding_box_width += 200
 
-    if (
-        min_aspect_ratio is not None
-        and bounding_box_width / bounding_box_height < min_aspect_ratio
-    ):
-        bounding_box_width = int(
-            math.ceil(bounding_box_height * min_aspect_ratio / 200.0) * 200
-        )
+    if min_aspect_ratio is not None:
+        if bounding_box_width / bounding_box_height < min_aspect_ratio:
+            bounding_box_width = math.ceil(bounding_box_height * min_aspect_ratio / 200) * 200
 
     return (bounding_box_width, bounding_box_height)
 
@@ -718,7 +710,7 @@ def generate_pins(
 def output_symbol(input_csv_file: str, cli_args: Any) -> None:
     # parse csv and get units
     try:
-        metadata, pin_data = parse_csv(input_csv_file, cliArgs.split)
+        metadata, pin_data = parse_csv(input_csv_file, cli_args.split)
     except ValueError as parser_error:
         logger.error(
             f"Can not parse input CSV {input_csv_file}. Is it properly formatted?"
@@ -728,10 +720,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
         raise parser_error
 
     # load generator default CLI args from CSV
-    cliArgs.split = cliArgs.split or metadata.generator_split_pin_names
-    cliArgs.min_aspect_ratio = (
-        cliArgs.min_aspect_ratio or metadata.generator_min_aspect_ratio
-    )
+    min_aspect_ratio = cliArgs.min_aspect_ratio or metadata.generator_min_aspect_ratio
 
     symbol_units_dict = group_pins_by_unit(pin_data)
     unit_names_list = sorted(symbol_units_dict.keys())
@@ -739,7 +728,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
 
     # generate kicad symbol
 
-    output_base_path = cliArgs.output or cliArgs.input
+    output_base_path = cli_args.output or cli_args.input
 
     if cli_args.folder_mode:
         input_file_parts = Path(input_csv_file).parts[len(Path(cli_args.input).parts) :]
@@ -802,7 +791,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
 
         # extend bounding box to prevent pin label intersections
         bounding_box = extend_bounding_box(
-            pin_stacks, base_bounding_box, cliArgs.min_aspect_ratio
+            pin_stacks, base_bounding_box, min_aspect_ratio
         )
         bounding_box_width, bounding_box_height = bounding_box
 
@@ -931,12 +920,11 @@ if __name__ == "__main__":
         + " input CSV(s) with the extension .kicad_sym is used.",
     )
     parser.add_argument(
-        "--split-alt-pinnames",
-        type=int,
+        "--dont-split-altfuncs",
+        action="store_false",
+        default=None, # default to info from csv metadata section; if that's not there default to True
         dest="split",
-        help="If given split pin names on '/' into alt pin names."
-        + " An integer can be given to ignore the first n '/'."
-        + " The default is to do no splitting.",
+        help='Disable splitting pin names into alternate functions on ";".'
     )
     parser.add_argument(
         "--min-aspect-ratio",
