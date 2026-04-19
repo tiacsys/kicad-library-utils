@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 import traceback
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import textwrap
 
 from kicad_sym import AltFunction, KicadLibrary, KicadSymbol, Pin, Rectangle, mil_to_mm
@@ -53,7 +53,7 @@ class Metadata:
     generator_min_aspect_ratio: float | None = None
 
     def __str__(self):
-        out = textwrap.dedent('''
+        out = textwrap.dedent("""
         {self.reference} '{self.name}':
             footprint: {self.footprint}
             footprint_filter: {self.footprint_filter}
@@ -61,10 +61,12 @@ class Metadata:
             description: {self.description}
             keywords: {self.keywords}
             generator_split_pin_names: {self.generator_split_pin_names}
-        ''')
+        """)
 
         if self.generator_min_aspect_ratio is not None:
-            out += f"    generator_min_aspect_ratio: {self.generator_min_aspect_ratio}\n"
+            out += (
+                f"    generator_min_aspect_ratio: {self.generator_min_aspect_ratio}\n"
+            )
         return out
 
     def __repr__(self):
@@ -139,31 +141,30 @@ class PinData:
 type PinStack = List[PinData]  # noqa: E999
 
 
-# function definitions used by this parser:
-
 # Handle both numeric pin ranges, and alphanumeric BGA pin ranges
-bga_letters = 'ABCDEFGHJKLMNPRTUVWY'
-bga_rows = [*bga_letters, *[a+b for a in bga_letters for b in bga_letters]]
+bga_letters = "ABCDEFGHJKLMNPRTUVWY"
+bga_rows = [*bga_letters, *[a + b for a in bga_letters for b in bga_letters]]
+
 
 def pin_range(start, end):
-    if start_m := re.fullmatch(r'([A-Z]+)([0-9]+)', start):
-        end_m = re.fullmatch(r'([A-Z]+)([0-9]+)', start)
+    if start_m := re.fullmatch(r"([A-Z]+)([0-9]+)", start):
+        end_m = re.fullmatch(r"([A-Z]+)([0-9]+)", start)
         start_row, start_col = start_m.groups()
         end_row, end_col = end_m.groups()
 
         start_col, end_col = int(start_col), int(end_col)
         start_row, end_row = bga_rows.index(start_row), bga_rows.index(end_row)
 
-        rows = [bga_rows[i] for i in range(start_row, end_row+1)]
-        cols = list(range(start_col, end_col+1))
+        rows = [bga_rows[i] for i in range(start_row, end_row + 1)]
+        cols = list(range(start_col, end_col + 1))
 
-        return [f'{row}{col}' for row in rows for col in cols]
+        return [f"{row}{col}" for row in rows for col in cols]
     else:
-        return list(range(int(start), int(end)+1))
+        return list(range(int(start), int(end) + 1))
 
-# parse input CSV
+
 def parse_csv(
-    filename: str, split_pin_names: (bool | None) = None
+    filename: str, split_pin_names: bool | None = None
 ) -> Tuple[Metadata, List[PinData]]:
     """Parses the given CSV file into a list of pins and metadata.
 
@@ -203,7 +204,7 @@ def parse_csv(
 
                     continue
 
-                else: # add row to metadata
+                else:  # add row to metadata
                     metadata_dict[row[0]] = row[1]
 
             else:  # parse pin data
@@ -254,7 +255,9 @@ def parse_csv(
                         pin_data.append(PinData(parsed_pin_data, split_pin_names))
                     else:
                         for pin_num_str in parsed_pin_data["pin"].split(","):
-                            pin_range_start, _, pin_range_end = pin_num_str.partition("-")
+                            pin_range_start, _, pin_range_end = pin_num_str.partition(
+                                "-"
+                            )
                             if pin_range_end is None:
                                 pin_range_end = pin_range_start
 
@@ -535,7 +538,7 @@ def check_adjacent_label_intersections(
 def extend_bounding_box(
     pin_stacks: Dict[PinData.Side, List[PinStack]],
     bounding_box: Tuple[int, int],
-    min_aspect_ratio: (float | None) = None,
+    min_aspect_ratio: float | None = None,
 ) -> Tuple[int, int]:
     """Extends a given bounding box until no pin stack labels overlap anymore.
 
@@ -595,7 +598,9 @@ def extend_bounding_box(
 
     if min_aspect_ratio is not None:
         if bounding_box_width / bounding_box_height < min_aspect_ratio:
-            bounding_box_width = math.ceil(bounding_box_height * min_aspect_ratio / 200) * 200
+            bounding_box_width = (
+                math.ceil(bounding_box_height * min_aspect_ratio / 200) * 200
+            )
 
     return (bounding_box_width, bounding_box_height)
 
@@ -732,9 +737,7 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
         max_pin_number_length = max(
             list(
                 map(
-                    lambda p: len(
-                        p.pin_number if p.pin_number is not None else ""
-                    ),
+                    lambda p: len(p.pin_number if p.pin_number is not None else ""),
                     pins,
                 )
             )
@@ -842,7 +845,9 @@ def output_symbol(input_csv_file: str, cli_args: Any) -> None:
 
     label_description = new_symbol.get_property("Description")
     label_description.posx = mil_to_mm(max_x_offset)
-    label_description.posy = mil_to_mm(-max_bounding_box_height / 2 + max_y_offset - 800)
+    label_description.posy = mil_to_mm(
+        -max_bounding_box_height / 2 + max_y_offset - 800
+    )
     label_description.effects.v_justify = "top"
 
     # save library with symbol
@@ -874,9 +879,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dont-split-altfuncs",
         action="store_false",
-        default=None, # default to info from csv metadata section; if that's not there default to True
+        default=None,  # default to info from csv metadata section; if that's not there default to True
         dest="split",
-        help='Disable splitting pin names into alternate functions on ";".'
+        help='Disable splitting pin names into alternate functions on ";".',
     )
     parser.add_argument(
         "--min-aspect-ratio",
