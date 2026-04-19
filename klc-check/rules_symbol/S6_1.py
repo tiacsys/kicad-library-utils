@@ -63,7 +63,6 @@ class Rule(KLCRule):
 
     def checkReferenceValue(self) -> bool:
         ref = self.component.get_property("Reference")
-        print(ref)
         if ref.value not in AllowedDesignators:
             self.error(
                 "Component Reference designator not in list of allowed designators"
