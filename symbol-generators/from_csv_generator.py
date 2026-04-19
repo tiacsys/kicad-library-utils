@@ -19,15 +19,15 @@ import argparse
 import csv
 import logging
 import math
+import re
+import textwrap
+import traceback
 from collections import OrderedDict, defaultdict
 from collections.abc import Callable
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-import traceback
-import re
-from dataclasses import dataclass
-import textwrap
 
 from kicad_sym import AltFunction, KicadLibrary, KicadSymbol, Pin, Rectangle, mil_to_mm
 
