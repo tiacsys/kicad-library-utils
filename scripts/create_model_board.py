@@ -21,9 +21,11 @@ b = pcbnew.BOARD()
 
 def duplicate_fp(fp):
     try:
-        return fp.Duplicate(False)  # KiCad 10+
+        dup = fp.Duplicate(False)  # KiCad 10+
     except TypeError:
-        return fp.Duplicate()  # KiCad <=9
+        dup = fp.Duplicate()  # KiCad <=9
+
+    return pcbnew.Cast_to_FOOTPRINT(dup)
 
 
 fp = io.ImportFootprint(str(fp_path), fp_path.stem)
