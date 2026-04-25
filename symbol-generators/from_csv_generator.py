@@ -160,7 +160,7 @@ def pin_range(start, end):
 
         return [f"{row}{col}" for row in rows for col in cols]
     else:
-        return list(range(int(start), int(end) + 1))
+        return list(map(str, range(int(start), int(end) + 1)))
 
 
 def parse_csv(
@@ -258,7 +258,7 @@ def parse_csv(
                             pin_range_start, _, pin_range_end = pin_num_str.partition(
                                 "-"
                             )
-                            if pin_range_end is None:
+                            if not pin_range_end:
                                 pin_range_end = pin_range_start
 
                             for pin_num in pin_range(pin_range_start, pin_range_end):

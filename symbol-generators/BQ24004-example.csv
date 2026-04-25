@@ -1,10 +1,10 @@
-Name,BQ24004,,,,
-Reference,U,,,,
-Footprint,Package_SO:HTSSOP-20-1EP_4.4x6.5mm_P0.65mm_EP3.4x6.5mm_Mask2.4x3.7mm,,,,
-Footprint Filter,HTSSOP*1EP*4.4x6.5mm*P0.65mm*,,,,
-Description,"2-Cell Li-Ion Charge Management IC, HTSSOP-20",,,,
-Keywords,2-Cell Li-Ion Charge,,,,
-Datasheet,http://www.ti.com/lit/ds/symlink/bq24006.pdf,,,,
+name,BQ24004,,,,
+reference,U,,,,
+footprint,Package_SO:HTSSOP-20-1EP_4.4x6.5mm_P0.65mm_EP3.4x6.5mm_Mask2.4x3.7mm,,,,
+footprint_filter,HTSSOP*1EP*4.4x6.5mm*P0.65mm*,,,,
+description,"2-Cell Li-Ion Charge Management IC, HTSSOP-20",,,,
+keywords,2-Cell Li-Ion Charge,,,,
+datasheet,http://www.ti.com/lit/ds/symlink/bq24006.pdf,,,,
 ,,,,,
 Pin,Name,Type,Side,Debug1,Debug2
 4,VCC,power_in,top,0 mils,-700 mils

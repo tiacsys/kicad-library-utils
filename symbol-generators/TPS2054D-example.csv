@@ -1,10 +1,10 @@
-Name,TPS2054D-gen,,,
-Reference,U,,,
-Footprint,Package_SO:SOIC-16_3.9x9.9mm_P1.27mm,,,
-Footprint Filter,HTSSOP*1EP*4.4x6.5mm*P0.65mm*,,,
-Description,Quad power-distribution switcher,,,
-Keywords,4-chanel power-distribution USB,,,
-Datasheet,http://www.ti.com/lit/ds/symlink/tps2044.pdf,,,
+name,TPS2054D-gen,,,
+reference,U,,,
+footprint,Package_SO:SOIC-16_3.9x9.9mm_P1.27mm,,,
+footprint_filter,HTSSOP*1EP*4.4x6.5mm*P0.65mm*,,,
+description,Quad power-distribution switcher,,,
+keywords,4-chanel power-distribution USB,,,
+datasheet,http://www.ti.com/lit/ds/symlink/tps2044.pdf,,,
 ,,,,
 Pin,Name,Type,Unit,Side
 5,GND,power_in,B,Bottom
