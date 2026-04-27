@@ -16,10 +16,22 @@ help:
 	@echo
 
 
+.PHONY: style-check
+style-check:
+	black --check . && \
+	python3 -m isort --check-only . || \
+		{ printf "Formatting issues found.\n\033[1;33mRun 'make style' to fix.\033[0m\n"; exit 1; }
+
+
+.PHONY: style
+style:
+	python3 -m isort .
+	black .
+
+
 .PHONY: lint
-lint:
+lint: style-check
 	python3 -m flake8 .
-	black --check .
 
 
 .PHONY: spelling
@@ -30,17 +42,6 @@ spelling:
 		--ignore-regex='[A-Za-z0-9+/]{70,}' \
 		$(patsubst %, --skip="%",$(SPELLING_SKIP_FILENAMES)) \
 		$(SPELLING_PATHS)
-
-
-.PHONY: style
-style:
-	python3 -m isort .
-	black .
-
-.PHONY: style-check 
-style-check:
-	python3 -m isort --check-only . 
-	black --check .
 
 
 .PHONY: test-klc-footprints

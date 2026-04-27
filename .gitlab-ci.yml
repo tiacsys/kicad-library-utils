@@ -41,7 +41,6 @@ check_python_code:
   script:
     - pip install flake8
     - make lint
-    - make style-check
 
 check_spelling:
   rules:
