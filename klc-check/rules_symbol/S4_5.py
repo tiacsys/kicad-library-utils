@@ -5,20 +5,28 @@ class Rule(KLCRule):
     """Pins not connected on the footprint may be omitted from the symbol"""
 
     def checkMissingPins(self) -> bool:
-        int_pins = []
+        # builds a map listing all pins under the same prefix
+        # i.e {"": [1,2,3], "C": [2,3,6], "AM": [2,3]}
+        prefix_pinnr_map = {}
         for pin in self.component.pins:
             try:
-                int_pins.append(int(pin.number))
+                unstacked_pins = pin.unstack() if pin.is_stack() else [pin]
+                for p in unstacked_pins:
+                    prefix = p.get_pin_number_prefix(p.number)
+                    prefixlist = prefix_pinnr_map.setdefault(prefix, [])
+                    prefixlist += [int(p.number.removeprefix(prefix))]
             except ValueError:
                 pass
 
-        if not int_pins:
+        if not prefix_pinnr_map:
             return False
 
+        # check rows for missing pin numbers
         missing_pins = []
-        for i in range(1, max(int_pins) + 1):
-            if i not in int_pins:
-                missing_pins.append(i)
+        for prefix, pin_number_list in prefix_pinnr_map.items():
+            for pin_number in range(min(pin_number_list), max(pin_number_list) + 1):
+                if pin_number not in pin_number_list:
+                    missing_pins.append(prefix + str(pin_number))
         if missing_pins:
             self.warning(
                 "Pin{s} {n} {v} missing.".format(

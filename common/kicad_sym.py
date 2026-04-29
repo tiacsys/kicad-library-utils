@@ -401,16 +401,26 @@ class Pin(KicadSymbolBase):
         if stack_list := re.match(r"^\[(.*?)\]$", self.number):
             pin_list = []
             pins_in_stack = stack_list.group(1).split(",")
-            print(f"pins in native stack {pins_in_stack}")
             for pin_number in pins_in_stack:
-                # we first make a copy of the pin, then overwrite its
-                # number with the unstacked number
-                pinstack_pin = deepcopy(self)
-                pinstack_pin.number = pin_number
-                pin_list.append(pinstack_pin)
+                # if the current 'pin-number' is a range, we need to unpack that
+                if "-" in pin_number and len(pin_number.split("-")) == 2:
+                    pin_prefix = Pin.get_pin_number_prefix(pin_number)
+                    pin_num_start, pin_num_end = [
+                        p.removeprefix(pin_prefix) for p in pin_number.split("-")
+                    ]
+                    for i in range(int(pin_num_start), int(pin_num_end) + 1):
+                        pinstack_pin = deepcopy(self)
+                        pinstack_pin.number = pin_prefix + str(i)
+                        pin_list.append(pinstack_pin)
+                else:
+                    # make a copy of the pin, then overwrite its
+                    # number with the unstacked number
+                    pinstack_pin = deepcopy(self)
+                    pinstack_pin.number = pin_number
+                    pin_list.append(pinstack_pin)
             return pin_list
         else:
-            return []
+            return [self]
 
     """
     Returns true when this pin is a native pin stack
@@ -418,6 +428,20 @@ class Pin(KicadSymbolBase):
 
     def is_stack(self) -> bool:
         return True if re.match(r"^\[(.*?)\]$", self.number) else False
+
+    """
+    Returns the pin native stack number or range alpha-char prefix
+    Like A4 -> "A", AM6 -> "AM", AD12-AD22 -> "AD" or non on simple numbers 4 -> ""
+    """
+
+    @staticmethod
+    def get_pin_number_prefix(pin_name) -> str:
+        # return everything up to the first digit...
+        for i in range(len(pin_name)):
+            if pin_name[i].isdigit():
+                return pin_name[:i]
+        # ...or the whole name
+        return pin_name
 
     @classmethod
     def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> "Pin":
