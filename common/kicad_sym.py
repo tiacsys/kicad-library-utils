@@ -236,9 +236,9 @@ class TextEffect(KicadSymbolBase):
         if self.face:
             fnt.append(["face", self.face])
         if self.is_italic:
-            fnt.append("italic")
+            fnt.append(["italic", "yes"])
         if self.is_bold:
-            fnt.append("bold")
+            fnt.append(["bold", "yes"])
         sx = ["effects", fnt]
         if self.is_mirrored:
             sx.append("mirror")
@@ -999,6 +999,7 @@ class Property(KicadSymbolBase):
     posy: float = 0.0
     rotation: float = 0.0
     is_hidden: bool = False
+    show_name: bool = False
     effects: Optional[TextEffect] = None
     private: bool = False
     do_not_autoplace: bool = False
@@ -1017,9 +1018,13 @@ class Property(KicadSymbolBase):
         ]
         sx.append(["at", self.posx, self.posy, self.rotation])
 
+        sx.append(["show_name", "yes" if self.show_name else "no"])
+
         sx.append(["do_not_autoplace", "yes" if self.do_not_autoplace else "no"])
 
-        sx.append(["hide", "yes" if self.is_hidden else "no"])
+        # KiCad 10 only output when hidden
+        if self.is_hidden:
+            sx.append(["hide", "yes" if self.is_hidden else "no"])
 
         if self.effects:
             sx.append(self.effects.get_sexpr())
@@ -1058,6 +1063,8 @@ class Property(KicadSymbolBase):
         if len(hidearray) and "yes" in hidearray[0]:
             is_hidden = True
 
+        show_name = _get_yesno_value_of(sexpr, "show_name")
+
         return Property(
             name,
             value,
@@ -1065,6 +1072,7 @@ class Property(KicadSymbolBase):
             posy,
             rotation,
             is_hidden,
+            show_name,
             effects,
             private,
             do_not_autoplace,
@@ -1172,60 +1180,61 @@ class KicadSymbol(KicadSymbolBase):
         for prop in self.properties:
             sx.append(prop.get_sexpr())
 
-        if self.extends:
+        if not self.extends:
             # if the symbol extends another one, we do not add any graphical elements
             # or pins, those are all inherited from the parent symbol
-            return sx
 
-        # add embedded files
-        file_expression = []
-        for file in self.files:
-            file_expression.append(file.get_sexpr())
-        if len(file_expression) > 0:
-            sx.append(["embedded_files", *file_expression])
+            # add embedded files
+            file_expression = []
+            for file in self.files:
+                file_expression.append(file.get_sexpr())
+            if len(file_expression) > 0:
+                sx.append(["embedded_files", *file_expression])
 
-        def pin_sort_key(pin: Pin) -> tuple:
-            # This is a bit fiddly, and the comments in KiCad seems wrong
-            # Pins are sorted by:
-            #   pin position (y first, then x) in SCH_ITEM::compare
-            # then by pin-specific values:
-            #   pin number (as integer if possible, otherwise as string)
-            #   ...
-            return (
-                pin.posx,
-                -pin.posy,
-                pin.number,
-                pin.length,
-                pin.rotation,
-                pin.shape,
-                pin.etype,
-                pin.is_hidden,
-            )
+            def pin_sort_key(pin: Pin) -> tuple:
+                # This is a bit fiddly, and the comments in KiCad seems wrong
+                # Pins are sorted by:
+                #   pin position (y first, then x) in SCH_ITEM::compare
+                # then by pin-specific values:
+                #   pin number (as integer if possible, otherwise as string)
+                #   ...
+                return (
+                    pin.posx,
+                    -pin.posy,
+                    pin.number,
+                    pin.length,
+                    pin.rotation,
+                    pin.shape,
+                    pin.etype,
+                    pin.is_hidden,
+                )
 
-        # add units
-        for d in range(0, self.demorgan_count + 1):
-            for u in range(0, self.unit_count + 1):
-                unit_elements = []
-                for pin in (
-                    self.arcs
-                    + self.circles
-                    + self.texts
-                    + self.rectangles
-                    + self.beziers
-                    + self.polylines
-                    + sorted(self.pins, key=pin_sort_key)
-                ):
-                    if pin.is_unit(u, d):
-                        unit_elements.append(pin.get_sexpr())
+            # add units
+            for d in range(0, self.demorgan_count + 1):
+                for u in range(0, self.unit_count + 1):
+                    unit_elements = []
+                    for pin in (
+                        self.arcs
+                        + self.circles
+                        + self.texts
+                        + self.rectangles
+                        + self.beziers
+                        + self.polylines
+                        + sorted(self.pins, key=pin_sort_key)
+                    ):
+                        if pin.is_unit(u, d):
+                            unit_elements.append(pin.get_sexpr())
 
-                if unit_elements:
-                    subsym_name = self.quoted_string("{}_{}_{}".format(self.name, u, d))
-                    unit = ["symbol", subsym_name, *unit_elements]
+                    if unit_elements:
+                        subsym_name = self.quoted_string(
+                            "{}_{}_{}".format(self.name, u, d)
+                        )
+                        unit = ["symbol", subsym_name, *unit_elements]
 
-                    if n := self.unit_names.get(u):
-                        unit.append(["unit_name", n])
+                        if n := self.unit_names.get(u):
+                            unit.append(["unit_name", n])
 
-                    sx.append(unit)
+                        sx.append(unit)
 
         sx.append(["embedded_fonts", "yes" if self.embedded_fonts else "no"])
         return sx
