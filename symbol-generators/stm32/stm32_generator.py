@@ -1161,8 +1161,16 @@ def cli(
             tqdm.tqdm.write(f"Skipping RF SoM {refname}.")
             continue
 
-        if any(fnmatch.fnmatch(refname, pattern) for pattern in ignore_devices):
-            tqdm.tqdm.write(f"Skipping device from ignore list {refname}.")
+        variants_out = []
+        for var in variants:
+            _desc, _keywords, _datasheet, _flash, _ram, refname, _package = var
+            if any(fnmatch.fnmatch(refname, pattern) for pattern in ignore_devices):
+                tqdm.tqdm.write(f"Skipping device from ignore list {refname}.")
+                continue
+            variants_out.append(var)
+        variants = variants_out
+
+        if not variants:
             continue
 
         dev = Device(xml)
