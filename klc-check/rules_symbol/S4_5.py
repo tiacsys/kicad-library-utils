@@ -24,6 +24,13 @@ class Rule(KLCRule):
         # check rows for missing pin numbers
         missing_pins = []
         for prefix, pin_number_list in prefix_pinnr_map.items():
+            if not pin_number_list:
+                # the names of some pins only consist of letters (e.g. "SH");
+                # prefix_pinnr_map then stores the whole name as the prefix
+                # and maps it to an empty list:
+                # {"": [1,2,3], "SH": []}
+                # skip over such entries here
+                continue
             for pin_number in range(min(pin_number_list), max(pin_number_list) + 1):
                 if pin_number not in pin_number_list:
                     missing_pins.append(prefix + str(pin_number))
