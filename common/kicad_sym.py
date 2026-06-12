@@ -1390,10 +1390,18 @@ class KicadSymbol(KicadSymbolBase):
 
     def get_pins_by_number(self, num) -> Optional[Pin]:
         for pin in self.pins:
-            # @todo num does not exist in pin...
-            if pin.num == str(num):
+            if pin.number == str(num):
                 return pin
         return None
+
+    def get_pins_by_unit(self, unit_num) -> List[Pin]:
+        pins = []
+        if unit_num > 0 and unit_num <= self.unit_count:
+            for pin in self.pins:
+                # unit 0 contains pins shared among all units
+                if pin.unit == unit_num or pin.unit == 0:
+                    pins += [pin]
+        return pins
 
     def filter_pins(
         self,
@@ -1572,9 +1580,14 @@ class KicadLibrary(KicadSymbolBase):
                     # parse s-expr
                     sexpr_data = sexpr.parse_sexp(f.read())
         except ValueError as exc:
-            raise KicadFileFormatError(
-                f"Problem while parsing the s-expr file: {exc}"
-            ) from None
+            if data:
+                raise KicadFileFormatError(
+                    f"Problem while parsing the s-expr from data {data}: {exc}"
+                ) from None
+            else:
+                raise KicadFileFormatError(
+                    f"Problem while parsing the s-expr in file {filename}: {exc}"
+                ) from None
 
         # Because of the various file format changes in the development of kicad v6 and v7, we want
         # to ensure that this parser is only used with v6 files. Any other version will most likely
