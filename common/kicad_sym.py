@@ -2,9 +2,11 @@
 Library for processing KiCad's symbol files.
 """
 
+import hashlib
 import json
 import math
 import re
+import shutil
 import sys
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -1144,12 +1146,13 @@ class KicadSymbol(KicadSymbolBase):
     body_style_count: int = 0
     embedded_fonts = False
     files: List[KicadEmbeddedFile] = field(default_factory=list)
-    unit_names: dict[int, str | None] = field(default_factory=dict)
-    body_styles: list[str] = field(default_factory=list)
     """
     A dictionary mapping unit numbers (int, 1-indexed) to unit names (str).
     None values indicate that the unit has no specific name.
     """
+    unit_names: dict[int, str | None] = field(default_factory=dict)
+    body_styles: list[str] = field(default_factory=list)
+    digest: str = ""
 
     # List of parent symbols, the first element is the direct parent,
     # the last element is the root symbol
@@ -1560,6 +1563,12 @@ class KicadSymbol(KicadSymbolBase):
 
         return newsym
 
+    def _calculate_hash(self) -> str:
+        """
+        Calculate sha256 hash of the symbol sexpr. It is for internal use.
+        """
+        return hashlib.sha256(str(self.get_sexpr()).encode("utf-8")).hexdigest()
+
 
 @dataclass
 class KicadLibrary(KicadSymbolBase):
@@ -1572,11 +1581,131 @@ class KicadLibrary(KicadSymbolBase):
     generator: str = "kicad-library-utils"
     version: str = "20251024"
 
-    def write(self) -> None:
-        with open(self.filename, "w", encoding="utf-8") as lib_file:
-            lib_file.write(self.get_sexpr() + "\n")
+    def write(self, write_modified_only: bool = True):
+        """
+        Write a library to disk as a single file .kicad_sym or .kicad_symdir format. This function is
+        meant to blindly overwrite the library.
 
-    def get_sexpr(self) -> str:
+        By default a library is written only when symbols are changed. If the format is .kicad_sym, a change in
+        a single symbol causes the full rewrite of the library. With the .kicad_symdir format, symbols are
+        selectively saved only when changed since loading time. This is useful when modifying a symbol of an
+        .kicad_symdir library to reduce amount of git changes. It is possible to force writing of all symbols by
+        setting write_modified_only to False.
+        """
+        if self.filename.suffix == ".kicad_sym":
+            if write_modified_only:
+                is_modified = False
+                for s in self.symbols:
+                    if s.digest != s._calculate_hash():
+                        is_modified = True
+                        break
+            else:
+                is_modified = True
+
+            if is_modified:
+                for s in self.symbols:
+                    s.digest = s._calculate_hash()
+
+                with open(
+                    self.filename, "w", encoding="utf-8", newline="\n"
+                ) as lib_file:
+                    lib_file.write(self.get_sexpr() + "\n")
+        elif self.filename.suffix == ".kicad_symdir":
+            if not self.filename.exists():
+                self.filename.mkdir(parents=True)
+
+            for s in self.symbols:
+                # write only when modified or explicitly asked for
+                h = s._calculate_hash()
+                if not write_modified_only or s.digest != h:
+                    s.digest = h
+                    with open(
+                        s.filename, "w", encoding="utf-8", newline="\n"
+                    ) as lib_file:
+                        lib_file.write(self.get_sexpr(s.name) + "\n")
+        else:
+            raise Exception(f"unsupported library name {self.filename}")
+
+    def write_as_file(self, libfile: str | Path, overwrite: bool = False):
+        """
+        Write a library to disk using single file format .kicad_sym, this method is meant
+        to be used to save to a different libfile than the one used to load the library.
+
+        It is an helper function on top of write() and is useful to convert format from a directory.
+        The symbols are updated accordingly to reflect the new layout.
+        """
+
+        libfile = Path(libfile)
+
+        if libfile == self.filename:
+            raise Exception("Please use write() to write to the same libfile")
+
+        if not libfile.suffix == ".kicad_sym":
+            raise Exception(
+                f"Trying to save library as a single file but filename {libfile} doesn't end with .kicad_sym"
+            )
+
+        if libfile.exists():
+            if libfile.is_dir():
+                # this should never happen
+                raise Exception(
+                    f"Trying to save library as a single file but filename {libfile} is already present as a dir"
+                )
+            elif libfile.is_file():
+                if not overwrite:
+                    raise Exception(
+                        f"Trying to save library {libfile} but found an old file with the same name, overwrite if you are sure"
+                    )
+
+        self.filename = libfile
+        for s in self.symbols:
+            s.libname = libfile.stem
+            s.filename = libfile
+
+        self.write(write_modified_only=False)
+
+    def write_as_dir(self, libdir: str | Path, overwrite: bool = False):
+        """
+        Write a library to disk using directory format .kicad_symdir, this method is meant
+        to be used to save to a different libdir than the one used to load the library.
+
+        It is an helper function on top of write() and is useful to convert format from a single library file.
+        The symbols are updated accordingly to reflect the new layout.
+        """
+        libdir = Path(libdir)
+
+        if libdir == self.filename:
+            raise Exception("Please use write() to write to the same libdir")
+
+        if not libdir.suffix == ".kicad_symdir":
+            raise Exception(
+                f"Trying to save library as dir format but filename {libdir} doesn't end with .kicad_symdir"
+            )
+
+        if libdir.exists():
+            if libdir.is_file():
+                # this should never happen
+                raise Exception(
+                    f"Trying to save library as dir format but filename {libdir} is already present as a file"
+                )
+            elif libdir.is_dir():
+                if not overwrite:
+                    raise Exception(
+                        f"Trying to save library {libdir} but found an old folder with the same name, overwrite if you are sure"
+                    )
+
+                # delete to avoid mixing of symbols from two libraries
+                shutil.rmtree(libdir)
+        libdir.mkdir(parents=True)
+
+        self.filename = libdir
+        for s in self.symbols:
+            s.libname = libdir.stem
+            s.filename = libdir / Path(f"{s.name}.kicad_sym")
+
+        self.write(write_modified_only=False)
+
+    def get_sexpr(self, sym_name: str = "") -> str:
         sx = [
             "kicad_symbol_lib",
             ["version", self.version],
@@ -1584,7 +1713,16 @@ class KicadLibrary(KicadSymbolBase):
             ["generator_version", self.quoted_string(self.version)],
         ]
 
-        for sym in self.symbols:
+        if sym_name:
+            sym_list = [self.get_symbol(sym_name)]
+            if not sym_list[0]:
+                raise Exception(
+                    f"Asked sexpr of the symbol {sym_name} which doesn't exist"
+                )
+        else:
+            sym_list = self.symbols
+
+        for sym in sym_list:
             sx.append(sym.get_sexpr())
         return sexpr.build_sexp(sx)
 
@@ -1888,6 +2026,8 @@ class KicadLibrary(KicadSymbolBase):
                 raise KicadFileFormatError(
                     f"The amount of body styles found for symbol {symbol.name} does not match the metadata: there are {symbol.body_style_count} different styles, but the list of body styles has {len(symbol.body_styles)} entries."
                 )
+
+            symbol.digest = symbol._calculate_hash()
 
             # add it to the list of symbols
             library.symbols.append(symbol)
