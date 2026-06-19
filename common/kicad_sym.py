@@ -1504,6 +1504,71 @@ class KicadSymbol(KicadSymbolBase):
 
         return result
 
+    def derive(self, name: str, new_prop_values: dict = {}) -> "KicadSymbol":
+        """
+        Create a new symbol deriving from an existing one.
+
+        A derived symbol inherits all the properties, standard and custom, from the base symbol.
+        Here, by default, the property Value is set to the new symbol name while Reference is set
+        equal to the base symbol value. All the other standard properties of the derived symbol are
+        instead reset. It is also possible to specify custom initial values by passing a dictionary
+        new_prop_values where the keys are the property names.
+        """
+        newsym = deepcopy(self)
+        newsym._inheritance = [self]
+
+        # remove graphical part
+        newsym.pins = []
+        newsym.rectangles = []
+        newsym.circles = []
+        newsym.arcs = []
+        newsym.polylines = []
+        newsym.beziers = []
+        newsym.texts = []
+
+        # reset members related to graphical part
+        newsym.unit_names = {}
+        newsym.unit_count = 0
+        newsym.body_styles = []
+        newsym.body_style_count = 0
+
+        newsym.name = name
+        newsym.extends = self.name
+        if self.filename.parent.suffix == ".kicad_symdir":
+            newsym.filename = newsym.filename.with_name(f"{name}.kicad_sym")
+        elif self.filename.suffix == ".kicad_sym":
+            pass  # same filename
+        else:
+            raise Exception(f"unsupported library name {self.filename}")
+
+        # standard properties
+        prop_list = [
+            "Reference",
+            "Value",
+            "Footprint",
+            "Datasheet",
+            "Description",
+            "ki_keywords",
+            "ki_fp_filters",
+        ]
+
+        for p in prop_list:
+            if p in new_prop_values:
+                newsym.get_property(p).value = new_prop_values[p]
+            else:
+                # default values
+                if p == "Value":
+                    # Value is update with new symbol name
+                    newsym.get_property(p).value = name
+                elif p == "Reference":
+                    # Reference is likely the same (same library) -> preserved
+                    pass
+                else:
+                    newsym.get_property(p).value = ""
+
+        return newsym
+
+
 @dataclass
 class KicadLibrary(KicadSymbolBase):
     """
@@ -1891,6 +1956,53 @@ class KicadLibrary(KicadSymbolBase):
             if symbol.name == name:
                 return symbol
         return None
+
+    def add_derived_symbol(
+        self,
+        base_name: str,
+        derived_name: str,
+        overwrite: bool = False,
+        allow_recursive_inheritance: bool = False,
+    ):
+        """
+        Add a new derived symbol derived_name starting from base_name.
+
+        It is possible to overwrite an already present symbol or allow recursive derivation
+        (inheritance).
+        """
+        basesym = None
+        idx_to_remove = None
+        for idx in range(0, len(self.symbols)):
+            s = self.symbols[idx]
+            if derived_name == s.name:
+                if not overwrite:
+                    raise ValueError(
+                        f"a symbol {derived_name} already exists, overwrite if sure"
+                    )
+                else:
+                    idx_to_remove = idx
+            if base_name == s.name:
+                basesym = s
+        if not basesym:
+            raise ValueError(
+                f"a symbol {base_name} doesn't exist, cannot use it as base symbol"
+            )
+        if basesym.extends and not allow_recursive_inheritance:
+            raise Exception(
+                "derivation of a derived symbol is technically feasible but discouraged"
+            )
+        # overwrite symbol
+        if idx_to_remove:
+            self.symbols.pop(idx_to_remove)
+
+        newsym = basesym.derive(derived_name)
+
+        parent = self.get_symbol(newsym.extends)
+        while parent.extends:
+            parent = self.get_symbol(parent.extends)
+            newsym._inheritance.append(parent)
+
+        self.symbols.append(newsym)
 
 
 if __name__ == "__main__":
