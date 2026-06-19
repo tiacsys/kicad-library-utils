@@ -1581,6 +1581,9 @@ class KicadLibrary(KicadSymbolBase):
     generator: str = "kicad-library-utils"
     version: str = "20251024"
 
+    imported_generator: str = ""
+    imported_generator_version: str = ""
+
     def write(self, write_modified_only: bool = True):
         """
         Write a library to disk as a single file .kicad_sym or .kicad_symdir format. This function is
@@ -1865,7 +1868,10 @@ class KicadLibrary(KicadSymbolBase):
             raise KicadFileFormatError(
                 f'Version of symbol file is "{version}", not "{KicadLibrary.version}"'
             )
-        library.generator = _get_value_of(sexpr_data, "generator")
+        library.imported_generator = _get_value_of(sexpr_data, "generator")
+        library.imported_generator_version = _get_value_of(
+            sexpr_data, "generator_version"
+        )
 
         # for tracking derived symbols we need another dict
         symbol_names = {}
