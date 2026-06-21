@@ -1241,13 +1241,15 @@ if __name__ == "__main__":
                         ls_path += "/"
 
                     proc = subprocess.run(
-                        ["git", "ls-tree", "--name-only", base_rev, ls_path],
+                        ["git", "ls-tree", "--name-only", base_rev, ls_path, "-z"],
                         check=True,
                         capture_output=True,
                         text=True,
                         cwd=path.parent,
                     )
-                    for fn in proc.stdout.splitlines():
+                    for fn in proc.stdout.split("\000"):
+                        if not fn:
+                            continue
                         out_fn = tmpd / Path(fn).name
                         with out_fn.open("w") as outf:
                             subprocess.run(
