@@ -275,7 +275,7 @@ def render_pad_circle(pad, layer, **style):
     r = pad["size"]["x"] / 2
 
     elem_bbox = bbox(
-        (pad_center_x - r, pad_center_y - r, pad_center_x + r, pad_center_y + r)
+        (pad_center_x - r, pad_center_y - r), (pad_center_x + r, pad_center_y + r)
     )
     yield elem_bbox, Tag(
         "circle",
