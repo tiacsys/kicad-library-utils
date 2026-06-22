@@ -33,6 +33,7 @@ AllowedDesignators = [
     "SW",
     "T",
     "TC",
+    "TJ",
     "TP",
     "U",
     "Y",
@@ -41,7 +42,7 @@ AllowedDesignators = [
 
 
 class Rule(KLCRule):
-    """If part is in oscillator library,"""
+    """Correct reference designators should be used"""
 
     def checkRD(self) -> bool:
         fail = False
