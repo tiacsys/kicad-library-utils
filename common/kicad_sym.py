@@ -1757,27 +1757,28 @@ class KicadLibrary(KicadSymbolBase):
                 raise KicadFileFormatError(f"Duplicate symbols: {partname}")
             symbol_names[partname] = symbol
 
-            # Extract body_styles field, it is not always present and contains a list of style names.
-            # After parsing, the body_styles member will be a list that always contains:
-            # - a "standard" element as first and only entry if 1 style is present,
-            #   in datafile: body_styles not present
-            # - "standard" and "demorgan" elements for 2 styles where the second is DeMorgan style,
-            #   in datafile: (body_styles demorgan)
-            # - the style names saved in the datafile (generic case since kicad 10),
-            #   in datafile: (body_styles "name1" "name2" ...)
-            bs = _get_array2(item, "body_styles")
-            if bs:
-                if bs[0][1] == "demorgan":
-                    symbol.body_styles = ["standard", "demorgan"]
-                else:
-                    symbol.body_styles.extend(bs[0][1:])
-            else:
-                symbol.body_styles = ["standard"]
-
             # extract extends field
             extends = _get_array2(item, "extends")
             if extends:
                 symbol.extends = extends[0][1]
+            else:
+                # Extract body_styles field, it is not always present and contains a list of style names.
+                # After parsing, the body_styles member will be a list that always contains:
+                # - a "standard" element as first and only entry if 1 style is present,
+                #   in datafile: body_styles not present
+                # - "standard" and "demorgan" elements for 2 styles where the second is DeMorgan style,
+                #   in datafile: (body_styles demorgan)
+                # - the style names saved in the datafile (generic case since kicad 10),
+                #   in datafile: (body_styles "name1" "name2" ...)
+                bs = _get_array2(item, "body_styles")
+                if bs:
+                    if bs[0][1] == "demorgan":
+                        symbol.body_styles = ["standard", "demorgan"]
+                    else:
+                        symbol.body_styles.extend(bs[0][1:])
+                else:
+                    symbol.body_styles = ["standard"]
+                symbol.body_style_count = len(symbol.body_styles)
 
             # extract properties
             for prop in _get_array(item, "property"):
