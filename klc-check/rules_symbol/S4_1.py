@@ -55,7 +55,7 @@ class Rule(KLCRule):
         test_pins = self.component.pins
         seen = set()
         for pin in test_pins:
-            identity = (pin.number, pin.demorgan, pin.unit)
+            identity = (pin.number, pin.body_style_idx, pin.unit)
             if identity in seen:
                 self.error("Pin {n} is duplicated:".format(n=pin.number))
                 self.errorExtra(pinString(pin))

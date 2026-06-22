@@ -85,7 +85,7 @@ class DrawingPin:
         self.num = number
         self.name = str(kwargs.get("name", self.num))
         self.unit_idx = int(kwargs.get("unit_idx", 1))
-        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.style_idx = int(kwargs.get("style_idx", 1))
         self.pin_length = int(kwargs.get("pin_length", 100))
         self.fontsize_pinnumber = int(kwargs.get("sizenumber", 50))
         self.fontsize_pinname = int(kwargs.get("sizename", self.fontsize_pinnumber))
@@ -175,7 +175,7 @@ class DrawingRectangle:
         self.start = Point(start)
         self.end = Point(end)
         self.unit_idx = int(kwargs.get("unit_idx", 1))
-        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.style_idx = int(kwargs.get("style_idx", 1))
         self.line_width = int(kwargs.get("line_width", 10))
 
         fill = kwargs.get("fill", ElementFill.NO_FILL)
@@ -195,7 +195,7 @@ class DrawingRectangle:
         polyline = DrawingPolyline(
             points=points,
             unit_idx=self.unit_idx,
-            deMorgan_idx=self.deMorgan_idx,
+            style_idx=self.style_idx,
             line_width=self.line_width,
             fill=self.fill,
         )
@@ -245,7 +245,7 @@ class DrawingRectangle:
 class DrawingPolyline:
     def __init__(self, points, **kwargs):
         self.unit_idx = int(kwargs.get("unit_idx", 1))
-        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.style_idx = int(kwargs.get("style_idx", 1))
         self.line_width = int(kwargs.get("line_width", 10))
 
         fill = kwargs.get("fill", ElementFill.NO_FILL)
@@ -333,7 +333,7 @@ class DrawingArc:
         self.__ensureUniqueDrawing()
 
         self.unit_idx = int(kwargs.get("unit_idx", 1))
-        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.style_idx = int(kwargs.get("style_idx", 1))
         self.line_width = int(kwargs.get("line_width", 10))
 
         fill = kwargs.get("fill", ElementFill.NO_FILL)
@@ -381,7 +381,7 @@ class DrawingCircle:
         self.radius = int(radius)
 
         self.unit_idx = int(kwargs.get("unit_idx", 1))
-        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.style_idx = int(kwargs.get("style_idx", 1))
         self.line_width = int(kwargs.get("line_width", 10))
 
         fill = kwargs.get("fill", ElementFill.NO_FILL)
@@ -455,7 +455,7 @@ class DrawingText:
         self.size = int(kwargs.get("size", 50))
 
         self.unit_idx = int(kwargs.get("unit_idx", 1))
-        self.deMorgan_idx = int(kwargs.get("deMorgan_idx", 1))
+        self.style_idx = int(kwargs.get("style_idx", 1))
 
         self.hidden = int(kwargs.get("hidden", 0))
         if self.hidden not in [0, 1]:
@@ -631,7 +631,7 @@ class Drawing:
             rect.stroke_width = kicad_sym.mil_to_mm(r.line_width)
             rect.fill_type = r.fill
             rect.unit = r.unit_idx
-            rect.demorgan = r.deMorgan_idx
+            rect.body_style_idx = r.style_idx
             symbol.rectangles.append(rect)
 
         for p in self.pins:
@@ -652,7 +652,7 @@ class Drawing:
             pin.number_effect.sizey = pin.number_effect.sizex
             pin.altfuncs = p.altfuncs
             pin.unit = p.unit_idx
-            pin.demorgan = p.deMorgan_idx
+            pin.body_style_idx = p.style_idx
             symbol.pins.append(pin)
 
         for a in self.arc:
@@ -672,7 +672,7 @@ class Drawing:
                 stroke_width=kicad_sym.mil_to_mm(a.line_width),
                 fill_type=a.fill,
                 unit=a.unit_idx,
-                demorgan=a.deMorgan_idx,
+                body_style_idx=a.style_idx,
             )
 
             symbol.arcs.append(arc)
@@ -686,7 +686,7 @@ class Drawing:
             )
             circle.fill_type = c.fill
             circle.unit = c.unit_idx
-            circle.demorgan = c.deMorgan_idx
+            circle.body_style_idx = c.style_idx
             symbol.circles.append(circle)
 
         for t in self.text:
@@ -715,7 +715,7 @@ class Drawing:
             elif t.valign == DrawingText.VerticalAlignment.BOTTOM:
                 text.effects.v_justify = "bottom"
             text.unit = t.unit_idx
-            text.demorgan = t.deMorgan_idx
+            text.body_style_idx = t.style_idx
             symbol.texts.append(text)
 
         for p in self.polyline:
@@ -725,13 +725,13 @@ class Drawing:
 
             poly = kicad_sym.Polyline(pts)
             poly.unit = p.unit_idx
-            poly.demorgan = p.deMorgan_idx
+            poly.body_style_idx = p.style_idx
             poly.stroke_width = kicad_sym.mil_to_mm(p.line_width)
             poly.fill_type = p.fill
             symbol.polylines.append(poly)
 
         symbol.unit_count = 1
-        symbol.demorgan_count = 1
+        symbol.style_count = 1
 
 
 class DrawingArray(Drawing):

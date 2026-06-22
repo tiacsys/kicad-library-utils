@@ -173,9 +173,9 @@ class KicadSymbolBase:
             )
         return False
 
-    def is_unit(self, unit, demorgan):
-        if hasattr(self, "unit") and hasattr(self, "demorgan"):
-            return self.unit == unit and self.demorgan == demorgan
+    def is_unit(self, unit, body_style_idx):
+        if hasattr(self, "unit") and hasattr(self, "body_style_idx"):
+            return self.unit == unit and self.body_style_idx == body_style_idx
         return False
 
     @classmethod
@@ -322,7 +322,7 @@ class Pin(KicadSymbolBase):
     number_effect: Optional[TextEffect] = None
     altfuncs: List[AltFunction] = field(default_factory=list)
     unit: int = 0
-    demorgan: int = 0
+    body_style_idx: int = 0
 
     def __post_init__(self):
         # try to parse the pin_number into an integer if possible
@@ -444,7 +444,7 @@ class Pin(KicadSymbolBase):
         return pin_name
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> "Pin":
+    def from_sexpr(cls, sexpr, unit: int, body_style_idx: int) -> "Pin":
         is_hidden = False
         is_global = False
         # The first 3 items are pin, type and shape
@@ -498,7 +498,7 @@ class Pin(KicadSymbolBase):
             number_effect,
             altfuncs=altfuncs,
             unit=unit,
-            demorgan=demorgan,
+            body_style_idx=body_style_idx,
         )
 
 
@@ -513,7 +513,7 @@ class Circle(KicadSymbolBase):
     fill_type: str = "none"
     fill_color: Optional[Color] = None
     unit: int = 0
-    demorgan: int = 0
+    body_style_idx: int = 0
 
     def get_sexpr(self) -> List[Any]:
         stroke_sx = ["stroke", ["width", self.stroke_width]]
@@ -532,7 +532,7 @@ class Circle(KicadSymbolBase):
         return sx
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int):
+    def from_sexpr(cls, sexpr, unit: int, body_style_idx: int):
         # The first 3 items are pin, type and shape
         if sexpr.pop(0) != "circle":
             return None
@@ -551,7 +551,7 @@ class Circle(KicadSymbolBase):
             fill,
             fcolor,
             unit=unit,
-            demorgan=demorgan,
+            body_style_idx=body_style_idx,
         )
 
     @property
@@ -577,7 +577,7 @@ class Arc(KicadSymbolBase):
     fill_type: str = "none"
     fill_color: Optional[Color] = None
     unit: int = 0
-    demorgan: int = 0
+    body_style_idx: int = 0
 
     def get_sexpr(self) -> List[Any]:
         stroke_sx = [
@@ -601,7 +601,7 @@ class Arc(KicadSymbolBase):
         return sx
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Arc"]:
+    def from_sexpr(cls, sexpr, unit: int, body_style_idx: int) -> Optional["Arc"]:
         if sexpr.pop(0) != "arc":
             return None
         startx, starty = _get_xy(sexpr, "start")
@@ -622,7 +622,7 @@ class Arc(KicadSymbolBase):
             fill,
             fcolor,
             unit=unit,
-            demorgan=demorgan,
+            body_style_idx=body_style_idx,
         )
 
     @property
@@ -681,7 +681,7 @@ class Polyline(KicadSymbolBase):
     fill_type: str = "none"
     fill_color: Optional[Color] = None
     unit: int = 0
-    demorgan: int = 0
+    body_style_idx: int = 0
 
     def get_sexpr(self):
         pts_list: list[Any] = [x.get_sexpr() for x in self.points]
@@ -731,7 +731,7 @@ class Polyline(KicadSymbolBase):
             self.fill_type,
             self.fill_color,
             unit=self.unit,
-            demorgan=self.demorgan,
+            body_style_idx=self.body_style_idx,
         )
 
     def get_center_of_boundingbox(self) -> Tuple[float, float]:
@@ -759,7 +759,7 @@ class Polyline(KicadSymbolBase):
         return True
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Polyline"]:
+    def from_sexpr(cls, sexpr, unit: int, body_style_idx: int) -> Optional["Polyline"]:
         pts = []
         if sexpr.pop(0) != "polyline":
             return None
@@ -770,7 +770,14 @@ class Polyline(KicadSymbolBase):
         stroke, sline, scolor = _get_stroke(sexpr)
         fill, fcolor = _get_fill(sexpr)
         return Polyline(
-            pts, stroke, sline, scolor, fill, fcolor, unit=unit, demorgan=demorgan
+            pts,
+            stroke,
+            sline,
+            scolor,
+            fill,
+            fcolor,
+            unit=unit,
+            body_style_idx=body_style_idx,
         )
 
     def get_segs(self):
@@ -803,7 +810,7 @@ class Bezier(KicadSymbolBase):
     fill_type: str = "none"
     fill_color: Optional[Color] = None
     unit: int = 0
-    demorgan: int = 0
+    body_style_idx: int = 0
 
     def get_sexpr(self):
         pts_list: list[Any] = [x.get_sexpr() for x in self.points]
@@ -827,7 +834,7 @@ class Bezier(KicadSymbolBase):
         return sx
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Bezier"]:
+    def from_sexpr(cls, sexpr, unit: int, body_style_idx: int) -> Optional["Bezier"]:
         if sexpr.pop(0) != "bezier":
             return None
         points = []
@@ -844,7 +851,7 @@ class Bezier(KicadSymbolBase):
             fill_type,
             fill_color,
             unit,
-            demorgan,
+            body_style_idx,
         )
 
 
@@ -857,7 +864,7 @@ class Text(KicadSymbolBase):
     effects: TextEffect
     is_hidden: bool
     unit: int = 0
-    demorgan: int = 0
+    body_style_idx: int = 0
 
     def get_sexpr(self) -> List[Any]:
         sx = [
@@ -870,7 +877,7 @@ class Text(KicadSymbolBase):
         return sx
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Text"]:
+    def from_sexpr(cls, sexpr, unit: int, body_style_idx: int) -> Optional["Text"]:
         if sexpr.pop(0) != "text":
             return None
         text = sexpr.pop(0)
@@ -883,7 +890,14 @@ class Text(KicadSymbolBase):
             is_hidden = True
 
         return Text(
-            text, posx, posy, rotation, effects, is_hidden, unit=unit, demorgan=demorgan
+            text,
+            posx,
+            posy,
+            rotation,
+            effects,
+            is_hidden,
+            unit=unit,
+            body_style_idx=body_style_idx,
         )
 
     @property
@@ -908,7 +922,7 @@ class Rectangle(KicadSymbolBase):
     fill_type: str = "background"
     fill_color: Optional[Color] = None
     unit: int = 0
-    demorgan: int = 0
+    body_style_idx: int = 0
 
     @property
     def area(self) -> float:
@@ -959,7 +973,7 @@ class Rectangle(KicadSymbolBase):
             self.fill_type,
             self.fill_color,
             unit=self.unit,
-            demorgan=self.demorgan,
+            body_style_idx=self.body_style_idx,
         )
 
     def get_center(self) -> Tuple[float, float]:
@@ -968,7 +982,7 @@ class Rectangle(KicadSymbolBase):
         return (x, y)
 
     @classmethod
-    def from_sexpr(cls, sexpr, unit: int, demorgan: int) -> Optional["Rectangle"]:
+    def from_sexpr(cls, sexpr, unit: int, body_style_idx: int) -> Optional["Rectangle"]:
         if sexpr.pop(0) != "rectangle":
             return None
         # the 1st element
@@ -987,7 +1001,7 @@ class Rectangle(KicadSymbolBase):
             fill,
             fcolor,
             unit=unit,
-            demorgan=demorgan,
+            body_style_idx=body_style_idx,
         )
 
 
@@ -1134,10 +1148,11 @@ class KicadSymbol(KicadSymbolBase):
     on_board: bool = True
     extends: Optional[str] = None
     unit_count: int = 0
-    demorgan_count: int = 0
+    body_style_count: int = 0
     embedded_fonts = False
     files: List[KicadEmbeddedFile] = field(default_factory=list)
     unit_names: dict[int, str | None] = field(default_factory=dict)
+    body_styles: list[str] = field(default_factory=list)
     """
     A dictionary mapping unit numbers (int, 1-indexed) to unit names (str).
     None values indicate that the unit has no specific name.
@@ -1160,6 +1175,15 @@ class KicadSymbol(KicadSymbolBase):
             sx.append(["extends", self.quoted_string(self.extends)])
 
         if not self.extends:
+            # the body_styles field is only written when there is at least a second style
+            if len(self.body_styles) > 1:
+                bs = ["body_styles"]
+                if self.body_styles[1] == "demorgan":
+                    bs.append(self.quoted_string("demorgan"))
+                else:
+                    bs.extend([self.quoted_string(s) for s in self.body_styles])
+                sx.append(bs)
+
             pn: list[Any] = ["pin_names"]
             if self.pin_names_offset != 0.508:
                 pn.append(["offset", self.pin_names_offset])
@@ -1210,7 +1234,7 @@ class KicadSymbol(KicadSymbolBase):
                 )
 
             # add units
-            for d in range(0, self.demorgan_count + 1):
+            for d in range(0, self.body_style_count + 1):
                 for u in range(0, self.unit_count + 1):
                     unit_elements = []
                     for pin in (
@@ -1288,16 +1312,14 @@ class KicadSymbol(KicadSymbolBase):
                 unit_list = list(range(1, self.unit_count + 1))
 
             # if the unit is 0 that means this pin is common to all units
-            demorgan_list = [pin.demorgan]
-            if pin.demorgan == 0:
-                demorgan_list = list(range(1, self.demorgan_count + 1))
+            style_list = [pin.body_style_idx]
+            if pin.body_style_idx == 0:
+                style_list = list(range(1, self.body_style_count + 1))
 
             # add the pin to the correct stack
-            for demorgan in demorgan_list:
+            for style in style_list:
                 for unit in unit_list:
-                    loc = "x{0}_y{1}_u{2}_d{3}".format(
-                        pin.posx, pin.posy, unit, demorgan
-                    )
+                    loc = "x{0}_y{1}_u{2}_d{3}".format(pin.posx, pin.posy, unit, style)
                     # add this location to the dict if it does not exist
                     stacks.setdefault(loc, [])
                     stacks[loc].append(pin)
@@ -1394,12 +1416,40 @@ class KicadSymbol(KicadSymbolBase):
                 return pin
         return None
 
-    def get_pins_by_unit(self, unit_num) -> List[Pin]:
+    # by default return pins in style 1
+    def get_pins_by_unit(self, unit_num: int, body_style: int | str = 1) -> List[Pin]:
+        """
+        Returns all the pins of a specified unit number unit_num. The method uses by default
+        body style with index 1 (first style) which is always available. It is possible to ask for
+        a different style with parameter body_style which can be a numerical index or the name.
+
+        The available names for a body_style depends on how a symbol is defined. When only one
+        style is implemented for a symbol, by default it is not explicitly named and we use
+        the conventional name "standard". Legacy symbols before kicad 10, with an optional body style,
+        were calling the second body style as "demorgan". Since kicady 10 it is possible to have a
+        custom number of body style and the names are defined locally in the symbol itself, in this
+        case "standard" or "demorgan" may not work. You can use the method get_unit_body_styles()
+        to discover the available names.
+        """
+        if isinstance(body_style, str):
+            if body_style not in self.body_styles:
+                raise ValueError(f"{body_style} is not a valid body style")
+            body_style_idx = self.body_styles.index(body_style) + 1
+        else:
+            body_style_idx = body_style
+
+        if unit_num > self.unit_count:
+            raise ValueError(f"unit id {unit_num} is out of possible values")
+        if body_style_idx > self.body_style_count:
+            raise ValueError(f"style id {body_style_idx} is out of possible values")
+
         pins = []
-        if unit_num > 0 and unit_num <= self.unit_count:
+        if unit_num > 0 and body_style_idx > 0:
             for pin in self.pins:
-                # unit 0 contains pins shared among all units
-                if pin.unit == unit_num or pin.unit == 0:
+                # unit 0 means pin shared among all units, style 0 means pin shared among all styles
+                if (pin.unit == unit_num or pin.unit == 0) and (
+                    pin.body_style_idx == body_style_idx or pin.body_style_idx == 0
+                ):
                     pins += [pin]
         return pins
 
@@ -1433,6 +1483,25 @@ class KicadSymbol(KicadSymbolBase):
             return True
 
         return False
+
+    def get_unit_body_styles(self, unit_num: int = 0) -> list[tuple[int, int, str]]:
+        """
+        Returns the available body styles of a specific or all units. The result is a list
+        of three-elements tuples where the first item is the unit number, the second is the
+        body style index number, and the third element is the body style name.
+        """
+        result = []
+
+        if unit_num > 0:
+            unit_list = [unit_num]
+        else:
+            unit_list = range(1, self.unit_count + 1)
+        for u in unit_list:
+            for style_idx, style in enumerate(self.body_styles):
+                if self.get_pins_by_unit(u, style):
+                    result.append((u, style_idx + 1, style))
+
+        return result
 
 
 @dataclass
@@ -1619,7 +1688,24 @@ class KicadLibrary(KicadSymbolBase):
                 raise KicadFileFormatError(f"Duplicate symbols: {partname}")
             symbol_names[partname] = symbol
 
-            # extract extends property
+            # Extract body_styles field, it is not always present and contains a list of style names.
+            # After parsing, the body_styles member will be a list that always contains:
+            # - a "standard" element as first and only entry if 1 style is present,
+            #   in datafile: body_styles not present
+            # - "standard" and "demorgan" elements for 2 styles where the second is DeMorgan style,
+            #   in datafile: (body_styles demorgan)
+            # - the style names saved in the datafile (generic case since kicad 10),
+            #   in datafile: (body_styles "name1" "name2" ...)
+            bs = _get_array2(item, "body_styles")
+            if bs:
+                if bs[0][1] == "demorgan":
+                    symbol.body_styles = ["standard", "demorgan"]
+                else:
+                    symbol.body_styles.extend(bs[0][1:])
+            else:
+                symbol.body_styles = ["standard"]
+
+            # extract extends field
             extends = _get_array2(item, "extends")
             if extends:
                 symbol.extends = extends[0][1]
@@ -1687,13 +1773,15 @@ class KicadLibrary(KicadSymbolBase):
                         f"Failed to parse subsymbol due to invalid name: {name}"
                     )
 
-                unit_idx, demorgan_idx = (m1.group(1), m1.group(2))
+                unit_idx, body_style_idx = (m1.group(1), m1.group(2))
                 unit_idx = int(unit_idx)
-                demorgan_idx = int(demorgan_idx)
+                body_style_idx = int(body_style_idx)
 
-                # update the amount of units, alternative-styles (demorgan)
+                # update the amount of units, alternative-styles
+                # kicad 10 introduced support for multi style units, previously demorgan was
+                # the only admitted second style name
                 symbol.unit_count = max(unit_idx, symbol.unit_count)
-                symbol.demorgan_count = max(demorgan_idx, symbol.demorgan_count)
+                symbol.body_style_count = max(body_style_idx, symbol.body_style_count)
 
                 unit_name = _get_array2(unit_data, "unit_name")
                 if unit_name:
@@ -1702,34 +1790,42 @@ class KicadLibrary(KicadSymbolBase):
                 # extract pins and graphical items
                 for pin in _get_array(unit_data, "pin"):
                     try:
-                        symbol.pins.append(Pin.from_sexpr(pin, unit_idx, demorgan_idx))
+                        symbol.pins.append(
+                            Pin.from_sexpr(pin, unit_idx, body_style_idx)
+                        )
                     except ValueError as valexc:
                         raise KicadFileFormatError(
                             f"Failed to parse symbol {partname}: {valexc}"
                         ) from None
                 for circle in _get_array(unit_data, "circle"):
                     symbol.circles.append(
-                        Circle.from_sexpr(circle, unit_idx, demorgan_idx)
+                        Circle.from_sexpr(circle, unit_idx, body_style_idx)
                     )
                 for arc in _get_array(unit_data, "arc"):
-                    symbol.arcs.append(Arc.from_sexpr(arc, unit_idx, demorgan_idx))
+                    symbol.arcs.append(Arc.from_sexpr(arc, unit_idx, body_style_idx))
                 for rect in _get_array(unit_data, "rectangle"):
                     # symbol.polylines.append(
                     #     Rectangle.from_sexpr(rect, unit, demorgan).as_polyline()
                     # )
                     symbol.rectangles.append(
-                        Rectangle.from_sexpr(rect, unit_idx, demorgan_idx)
+                        Rectangle.from_sexpr(rect, unit_idx, body_style_idx)
                     )
                 for poly in _get_array(unit_data, "polyline"):
                     symbol.polylines.append(
-                        Polyline.from_sexpr(poly, unit_idx, demorgan_idx)
+                        Polyline.from_sexpr(poly, unit_idx, body_style_idx)
                     )
                 for bezier in _get_array(unit_data, "bezier"):
                     symbol.beziers.append(
-                        Bezier.from_sexpr(bezier, unit_idx, demorgan_idx)
+                        Bezier.from_sexpr(bezier, unit_idx, body_style_idx)
                     )
                 for text in _get_array(unit_data, "text"):
-                    symbol.texts.append(Text.from_sexpr(text, unit_idx, demorgan_idx))
+                    symbol.texts.append(Text.from_sexpr(text, unit_idx, body_style_idx))
+
+            # integrity check, only for base not derived symbols
+            if subsymbols and len(symbol.body_styles) != symbol.body_style_count:
+                raise KicadFileFormatError(
+                    f"The amount of body styles found for symbol {symbol.name} does not match the metadata: there are {symbol.body_style_count} different styles, but the list of body styles has {len(symbol.body_styles)} entries."
+                )
 
             # add it to the list of symbols
             library.symbols.append(symbol)
