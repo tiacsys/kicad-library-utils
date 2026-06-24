@@ -30,7 +30,7 @@ def _symbol_properties(old: KicadSymbol, new: KicadSymbol) -> list[DiffProperty]
         ["Is in BOM", "in_bom"],
         ["Is on board", "on_board"],
         ["Number of units", "unit_count"],
-        ["Number of styles", "body_styles_count"],
+        ["Number of styles", "body_style_count"],
     ]
 
     properties = []
