@@ -1018,11 +1018,11 @@ class Property(KicadSymbolBase):
             self.effects = TextEffect(1.27, 1.27)
 
     def get_sexpr(self) -> List[Any]:
-        sx = [
-            "property private" if self.private else "property",
-            self.quoted_string(self.name),
-            self.quoted_string(self.value),
-        ]
+        sx = ["property"]
+        if self.private:
+            sx.append("private")
+        sx.append(self.quoted_string(self.name))
+        sx.append(self.quoted_string(self.value))
         sx.append(["at", self.posx, self.posy, self.rotation])
 
         sx.append(["show_name", "yes" if self.show_name else "no"])
