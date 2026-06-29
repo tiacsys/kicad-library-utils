@@ -861,7 +861,6 @@ class Text(KicadSymbolBase):
     posy: float
     rotation: float
     effects: TextEffect
-    is_hidden: bool
     unit: int = 0
     body_style_idx: int = 0
 
@@ -870,7 +869,6 @@ class Text(KicadSymbolBase):
             "text",
             self.quoted_string(self.text),
             ["at", self.posx, self.posy, self.rotation],
-            ["hide", "yes" if self.is_hidden else "no"],
             self.effects.get_sexpr(),
         ]
         return sx
@@ -883,18 +881,12 @@ class Text(KicadSymbolBase):
         posx, posy, rotation = _parse_at(sexpr)
         effects = TextEffect.from_sexpr(_get_array(sexpr, "effects")[0])
 
-        is_hidden = False
-        hidearray = _get_array2(sexpr, "hide")
-        if len(hidearray) and "yes" in hidearray[0]:
-            is_hidden = True
-
         return Text(
             text,
             posx,
             posy,
             rotation,
             effects,
-            is_hidden,
             unit=unit,
             body_style_idx=body_style_idx,
         )
