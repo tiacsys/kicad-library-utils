@@ -472,6 +472,9 @@ def render_footprints(
                 footprint_infos[footprint]["im"] = footprint_im
             except ValueError as e:
                 print(f"Error rendering footprint: {e}")
+                # Drop the footprint so it's skipped when composing/saving
+                # instead of crashing later on a missing "im".
+                del footprint_infos[footprint]
 
     return footprint_infos
 
