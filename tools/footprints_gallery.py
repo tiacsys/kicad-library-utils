@@ -544,7 +544,9 @@ def make_gallery(config, footprints, tmp_files_dir: pathlib.Path, composed_png):
         if config["directory_output_path"]:
             save_footprint_pngs(config, footprint_infos)
 
-        if config["should_make_composed"]:
+        if config["should_make_composed"] and not footprint_infos:
+            print("Warning: No footprints rendered; skipping composed image")
+        elif config["should_make_composed"]:
             composed_im = make_composed_gallery_page(config, footprint_infos)
 
             # Save composed image
