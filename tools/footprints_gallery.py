@@ -25,10 +25,20 @@ import os
 import pathlib
 import re
 import subprocess
+import sys
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
 
 from PIL import Image, ImageDraw, ImageFont
+
+common = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, "common")
+)
+if common not in sys.path:
+    sys.path.insert(0, common)
+
+from boundingbox import BoundingBox  # noqa: E402
+from kicad_mod import KicadMod  # noqa: E402
 
 BLANK_PCB = """
 (kicad_pcb
@@ -104,27 +114,18 @@ class Footprint:
             raise ValueError(f"Invalid PCB shape: {config['pcb_shape']}")
 
     def load(self):
-        footprint_file = open(self.pathlib_entry.absolute(), "rb")
+        with open(self.pathlib_entry.absolute(), "rb") as footprint_file:
+            raw = footprint_file.read()
+
         element_re = re.compile(r"(\t*)\(([^\n ]+) *(.*)")
 
         self._text = b""
+        self.model = None
 
-        context = ""
-        pad = {}
-        self.min_x = float("inf")
-        self.min_y = float("inf")
-        self.max_x = float("-inf")
-        self.max_y = float("-inf")
-
-        while True:
-            raw_line = footprint_file.readline()
-            if not raw_line:
-                break
-
+        # Re-emit the footprint body and get the 3D model reference
+        for raw_line in raw.splitlines(keepends=True):
             line = raw_line.decode().rstrip()
-            if line[0] == ")":
-                raw_line = footprint_file.readline()
-                assert not raw_line
+            if line and line[0] == ")":
                 break
             self._text += b"\t" + raw_line
 
@@ -137,43 +138,36 @@ class Footprint:
             element_attribs = element_match[3]
 
             if indentation == 1:
-                context = element_name
                 if element_name == "property":
                     self._text += b"\t\t(hide yes)\n"
                 elif element_name == "model":
                     self.model = element_attribs[1:-1]
-                elif element_name == "pad":
-                    pad = {}
-            elif indentation == 2:
-                if context in ["fp_line", "fp_rect"]:
-                    if element_name in ["start", "end"]:
-                        assert element_attribs.endswith(")")
-                        x, y = [float(n) for n in element_attribs[:-1].split()]
-                        self.min_x = min(self.min_x, x)
-                        self.min_y = min(self.min_y, y)
-                        self.max_x = max(self.max_x, x)
-                        self.max_y = max(self.max_y, y)
-                elif context == "pad":
-                    if element_name == "at":
-                        pad["x"], pad["y"] = [
-                            float(n) for n in element_attribs[:-1].split()[:2]
-                        ]
-                    elif element_name == "size":
-                        pad["w"], pad["h"] = [
-                            float(n) for n in element_attribs[:-1].split()
-                        ]
 
-                    if "x" in pad and "w" in pad:
-                        self.min_x = min(self.min_x, pad["x"] - pad["w"] / 2)
-                        self.min_y = min(self.min_y, pad["y"] - pad["h"] / 2)
-                        self.max_x = max(self.max_x, pad["x"] + pad["w"] / 2)
-                        self.max_y = max(self.max_y, pad["y"] + pad["h"] / 2)
-                        pad = {}
+        # Compute the bounding box
+        module = KicadMod(data=raw.decode())
 
-        footprint_file.close()
+        layers = set()
+        for elements in (
+            module.lines,
+            module.rects,
+            module.circles,
+            module.polys,
+            module.arcs,
+        ):
+            for element in elements:
+                layers.add(element["layer"])
 
-        self.w = self.max_x - self.min_x
-        self.h = self.max_y - self.min_y
+        bbox = BoundingBox()
+        for layer in layers:
+            bbox.addBoundingBox(module.geometricBoundingBox(layer))
+        bbox.addBoundingBox(module.overpadsBounds())
+
+        self.min_x = bbox.xmin
+        self.min_y = bbox.ymin
+        self.max_x = bbox.xmax
+        self.max_y = bbox.ymax
+        self.w = bbox.width
+        self.h = bbox.height
 
     def has_model(self, config):
         if not self.model:
