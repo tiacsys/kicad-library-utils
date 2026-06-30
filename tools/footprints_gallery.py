@@ -418,11 +418,11 @@ def render_one_footprint(
         stderr=subprocess.PIPE,
         env=kicad_cli_env,
     )
-    kicad_cli_returncode = kicad_cli_proc.wait()
-    if kicad_cli_returncode != 0:
+    _, kicad_cli_stderr = kicad_cli_proc.communicate()
+    if kicad_cli_proc.returncode != 0:
         raise ValueError(
             f"Can't render footprint: {footprint.get_filename()}\n"
-            f"{kicad_cli_returncode.stderr.decode()}"
+            f"{kicad_cli_stderr.decode()}"
         )
 
     footprint_im = Image.open(footprint_png)
