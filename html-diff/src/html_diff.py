@@ -51,10 +51,7 @@ ERROR_TEMPLATE = """<!DOCTYPE html>
 </body>
 """
 
-if __name__ == "__main__":
-    loader = jinja2.FileSystemLoader(Path(__file__).parent.with_name("templates"))
-else:
-    loader = jinja2.PackageLoader("html_diff")
+loader = jinja2.FileSystemLoader(Path(__file__).parent.with_name("templates"))
 j2env = jinja2.Environment(loader=loader, autoescape=jinja2.select_autoescape())
 
 
