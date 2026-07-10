@@ -65,11 +65,13 @@ class Metadata:
         self.datasheet = data.get("datasheet")
         self.description = data.get("description")
         self.keywords = data.get("keywords")
-        self.generator_split_pin_names = int(
-            data.get("generator_split_pin_names") or "None"
+        split_pin_names = data.get("generator_split_pin_names")
+        self.generator_split_pin_names = (
+            int(split_pin_names) if split_pin_names else None
         )
-        self.generator_min_aspect_ratio = float(
-            data.get("generator_min_aspect_ratio") or "None"
+        min_aspect_ratio = data.get("generator_min_aspect_ratio")
+        self.generator_min_aspect_ratio = (
+            float(min_aspect_ratio) if min_aspect_ratio else None
         )
 
     def __str__(self):
