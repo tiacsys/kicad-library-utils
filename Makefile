@@ -60,6 +60,11 @@ test-klc-symbols:
 	--unittest \
 	klc-check/test_symbol/*.kicad_symdir
 
+
+.PHONY: test-symgen
+test-symgen:
+	symbol-generators/from_csv_generator.py symbol-generators/BQ24004-example.csv
+
 # Compare the libraries in the test_symbol directory to make sure comparelibs.py works
 # We do all the checks, but we exclude S5.1 because there are no footprints in this repo.
 # We also discard the 2 and 3 return codes, because we don't actually care if the library
@@ -75,7 +80,7 @@ test-comparelibs-symbols:
 		if [ $$? -eq 2 ] || [ $$? -eq 3 ] ; then true; fi
 
 .PHONY: check
-check: lint test-klc-footprints test-klc-symbols test-comparelibs-symbols spelling
+check: lint test-symgen test-klc-footprints test-klc-symbols test-comparelibs-symbols spelling
 
 .PHONY: install-deps
 install-deps:
