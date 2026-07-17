@@ -26,6 +26,7 @@ check-code-formatting:
         - gitlabci/**/*
         - .gitlab-ci.yml
         - src/**/*
+        - tests/**/*
         - KicadModTree/**/*
   before_script:
     - python --version
@@ -43,6 +44,7 @@ check-static-typing:
         - gitlabci/**/*
         - .gitlab-ci.yml
         - src/**/*
+        - tests/**/*
         - KicadModTree/**/*
   before_script:
     - python --version
@@ -60,6 +62,7 @@ pytest:
         - gitlabci/**/*
         - .gitlab-ci.yml
         - src/**/*
+        - tests/**/*
         - KicadModTree/**/*
   before_script:
     - python --version
