@@ -17,6 +17,9 @@ import os
 from pathlib import Path
 
 css = """
+    :root {
+        color-scheme: light dark;
+    }
     html, body {
         height: 100%;
         margin: 0;
@@ -43,6 +46,21 @@ css = """
     }
     .library-button.disabled {
         background-color: grey;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        html, body {
+            background-color: #1e1e1e;
+            color: #ddd;
+        }
+        .library-button {
+            background-color: #80a8e8;
+            color: black;
+        }
+        .library-button.disabled {
+            background-color: #555;
+            color: #999;
+        }
     }
 """
 
