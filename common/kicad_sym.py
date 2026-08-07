@@ -1576,13 +1576,21 @@ class KicadLibrary(KicadSymbolBase):
     A class to parse kicad_sym files format of the KiCad
     """
 
-    filename: Path
+    filename: str | Path
     symbols: list[KicadSymbol] = field(default_factory=list)
     generator: str = "kicad-library-utils"
     version: str = "20251024"
 
     imported_generator: str = ""
     imported_generator_version: str = ""
+
+    def __post_init__(self):
+        self.filename = Path(self.filename)
+
+        if self.filename.suffix not in [".kicad_sym", ".kicad_symdir"]:
+            raise ValueError(
+                "library filename should end with .kicad_sym or .kicad_symdir"
+            )
 
     def write(self, write_modified_only: bool = True):
         """
