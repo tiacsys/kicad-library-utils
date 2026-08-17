@@ -731,7 +731,7 @@ class Drawing:
             symbol.polylines.append(poly)
 
         symbol.unit_count = 1
-        symbol.style_count = 1
+        symbol.body_style_count = 1
 
 
 class DrawingArray(Drawing):
