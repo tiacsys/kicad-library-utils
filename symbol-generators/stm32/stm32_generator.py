@@ -1004,7 +1004,8 @@ def cli(
         frequency = tag.find("Frequency")
         frequency = f"{frequency.text} MHz, " if frequency else ""
         ram = int(tag.find("Ram").text)
-        flash = int(tag.find("Flash").text)
+        flash = tag.find("Flash")
+        flash = int(flash.text) if flash else None
         io = int(tag.find("IONb").text)
         voltage = tag.find("Voltage")
         if voltage:
@@ -1016,8 +1017,9 @@ def cli(
         core = tag.find("Core").text
 
         # Make strings for DCM entries
+        flash_desc = "{flash}KB flash, " if flash is not None else ""
         desc = (
-            f"STMicroelectronics {core} MCU, {{flash}}KB flash, "
+            f"STMicroelectronics {core} MCU, {flash_desc}"
             f"{{ram}}KB RAM, {frequency}{voltage}{io} GPIO, {{package}}"
         )
         keywords = (
@@ -1134,6 +1136,7 @@ def cli(
             flashes = [
                 flash
                 for _desc, _keywords, _datasheet, flash, _ram, _refname, _package in variants
+                if flash is not None
             ]
             ramses = [
                 ram
@@ -1147,7 +1150,7 @@ def cli(
                     )
                 )
             )
-            minf, maxf = min(flashes), max(flashes)
+            minf, maxf = min(flashes, default=None), max(flashes, default=None)
             minr, maxr = min(ramses), max(ramses)
             desc = desc.format(
                 package=packages,
