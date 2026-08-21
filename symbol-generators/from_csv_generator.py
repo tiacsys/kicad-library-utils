@@ -205,7 +205,7 @@ def parse_csv(
                     continue
 
                 else:  # add row to metadata
-                    metadata_dict[row[0]] = row[1]
+                    metadata_dict[row[0].lower()] = row[1]
 
             else:  # parse pin data
                 if len(row) == 0 or all(
